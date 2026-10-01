@@ -161,12 +161,6 @@
 .ustyazi__h .ln { display: block; }
 .ustyazi__p { max-width: 46ch; color: var(--ink-2); font-size: clamp(1.02rem, 0.95rem + 0.25vw, 1.15rem); line-height: 1.5; }
 .ustyazi__act { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
-.only-touch { display: none; }
-
-@media (hover: none) {
-  .only-fine { display: none; }
-  .only-touch { display: inline; }
-}
 
 @media (max-width: 1200px) {
   .wall__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -195,6 +189,7 @@
 /* ---------- 2 · Takvim ---------- */
 
 .takvim { position: relative; }
+.takvim__in { overflow-x: clip; } /* koparılan yapraklar yana savrulurken sayfayı genişletmesin */
 .takvim__in {
   min-height: 100svh;
   display: grid;
@@ -535,3 +530,6 @@ html:not(.js) .takvim__text, .takvim.is-static .takvim__text { position: sticky;
 .masa__h { font-size: var(--t-h1); text-transform: uppercase; }
 .masa__act { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 @media (max-width: 860px) { .masa__in { grid-template-columns: 1fr; } }
+
+/* JavaScript yoksa mercek yok: ona dair düğme ve yönerge de görünmesin */
+html:not(.js) [data-plain-all], html:not(.js) .only-fine, html:not(.js) .only-touch { display: none; }

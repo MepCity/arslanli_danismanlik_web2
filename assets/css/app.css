@@ -115,6 +115,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
+  overflow-x: clip; /* dönen kaşe, kopan yaprak gibi süslemeler yatay kaydırma yaratmasın */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: calc(var(--hdr-h) + 16px);
@@ -348,8 +349,9 @@ body[data-theme="dark"] .btn--ink { --b-bg: var(--fg); --b-bg-solid: var(--fg); 
   vector-effect: non-scaling-stroke;
 }
 .annot--red { color: var(--red); }
-.js .annot path { stroke-dasharray: 1; stroke-dashoffset: 1; }
-.js .annot.is-on path { stroke-dashoffset: 0; transition: stroke-dashoffset var(--d, 0.9s) cubic-bezier(0.55, 0.1, 0.35, 1) var(--delay, 0s); }
+/* kalem çizgisi soldan sağa çizilir (gerilmiş SVG'de dash yöntemi Chrome'da kesik çizer; kırpma kullanılır) */
+.js .annot { clip-path: inset(-30% 100% -30% -4%); }
+.js .annot.is-on { clip-path: inset(-30% -4% -30% -4%); transition: clip-path var(--d, 0.9s) cubic-bezier(0.55, 0.1, 0.35, 1) var(--delay, 0s); }
 .annot-wrap { position: relative; display: inline-block; white-space: nowrap; }
 .annot--circle { inset: -0.32em -0.45em -0.28em -0.5em; width: calc(100% + 0.95em); height: calc(100% + 0.6em); }
 .annot--under { left: -0.1em; right: -0.1em; bottom: -0.32em; width: calc(100% + 0.2em); height: 0.42em; }
@@ -388,6 +390,7 @@ body[data-theme="dark"] .kase { mix-blend-mode: screen; color: #8ea3ee; }
   pointer-events: none;
 }
 .hdr.is-hidden { transform: translateY(-110%); }
+html:not(.js) .hdr { position: absolute; } /* JS yoksa üst bilgi sayfayla birlikte kayar, metnin üstüne binmez */
 .hdr__in {
   height: 100%;
   display: grid;
@@ -690,6 +693,12 @@ body[data-theme="dark"] .logo__wave rect { fill: var(--salmon); opacity: 0.9; }
 
 /* ---------- Ortak sayfa parçaları ---------- */
 
+.only-touch { display: none; }
+@media (hover: none) {
+  .only-fine { display: none; }
+  .only-touch { display: inline; }
+}
+
 .section { padding-block: var(--section); position: relative; }
 
 /* sayfa başı: her sayfada farklı kurulur, bu yalnızca en sade iskelet */
@@ -741,14 +750,14 @@ body[data-theme="dark"] .next:hover .next__t span { color: var(--ink); }
   @view-transition { navigation: none; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
   .js [data-rise] { opacity: 1; transform: none; }
-  .js .annot path { stroke-dashoffset: 0; }
+  .js .annot { clip-path: none; }
   .js .kase[data-stamp] { opacity: 1; }
   .js [data-hl] { --hl-size: 100%; }
 }
 
 /* JavaScript 4 saniyede yüklenemezse her şey görünür kalsın */
 .reveal-fallback [data-rise], .reveal-fallback .kase[data-stamp] { opacity: 1 !important; transform: none !important; }
-.reveal-fallback .annot path { stroke-dashoffset: 0 !important; }
+.reveal-fallback .annot { clip-path: none !important; }
 .reveal-fallback [data-hl] { --hl-size: 100% !important; }
 
 /* Lenis */

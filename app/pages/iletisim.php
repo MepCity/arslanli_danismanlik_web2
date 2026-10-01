@@ -89,7 +89,7 @@ $date  = today_official();
           Bana
           <span class="field blank" style="--w:14ch">
             <label class="sr-only" for="dk-phone">Telefon numaranız</label>
-            <input class="in" id="dk-phone" name="phone" type="tel" maxlength="20" pattern="[0-9 +()\-]{7,20}" autocomplete="tel" inputmode="tel" placeholder="05xx xxx xx xx">
+            <input class="in" id="dk-phone" name="phone" type="tel" maxlength="20" pattern="[0-9 +\(\)\-]{7,20}" autocomplete="tel" inputmode="tel" placeholder="05xx xxx xx xx">
             <span class="field__err" aria-live="polite"></span>
           </span>
           numarasından ya da
@@ -140,15 +140,19 @@ $date  = today_official();
       <div class="kv__in">
         <div class="kv__face kv__front">
           <span class="kv__logo"><?php require APP . '/partials/logo.php'; ?></span>
-          <span class="kv__name"><?= e(cfg('name')) ?></span>
-          <span class="kv__rows">
-            <a href="tel:<?= e(cfg('phone_href')) ?>"><?= e(cfg('phone')) ?></a>
-            <a href="mailto:<?= e(cfg('email')) ?>"><?= e(cfg('email')) ?></a>
+          <span class="kv__id">
+            <span class="kv__name"><?= e(cfg('name')) ?></span>
+            <span class="kv__rows">
+              <a href="tel:<?= e(cfg('phone_href')) ?>"><?= e(cfg('phone')) ?></a>
+              <a href="mailto:<?= e(cfg('email')) ?>"><?= e(cfg('email')) ?></a>
+            </span>
           </span>
         </div>
         <div class="kv__face kv__back">
-          <span class="kv__k">Adres</span>
-          <a class="kv__addr" href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank"><?= e(cfg('address')) ?></a>
+          <span class="kv__id">
+            <span class="kv__k">Adres</span>
+            <a class="kv__addr" href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank"><?= e(cfg('address')) ?></a>
+          </span>
           <span class="kv__rows">
             <a href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank">Haritada aç</a>
             <a href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank">WhatsApp’tan yazın</a>

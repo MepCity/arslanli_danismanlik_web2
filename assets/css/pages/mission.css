@@ -1,0 +1,178 @@
+/* ==========================================================================
+   Misyonumuz · çizgili defter
+   ========================================================================== */
+
+.ms { padding-bottom: var(--section); }
+.ms__in {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  gap: 48px clamp(40px, 5vw, 96px);
+  align-items: start;
+}
+.ms__head { position: sticky; top: calc(var(--hdr-h) + 40px); }
+.ms__h { margin: 18px 0 22px; font-size: var(--t-h1); text-transform: uppercase; }
+.ms__lead { max-width: 30ch; }
+
+/* ---------- Defter ---------- */
+
+.defter {
+  --rl: 40px;          /* satır aralığı */
+  --margin: 104px;     /* kırmızı kenar çizgisi */
+  position: relative;
+  margin-top: 26px;
+  transform: rotate(-0.7deg);
+}
+.defter__page {
+  position: relative;
+  padding: calc(var(--rl) * 1.5) clamp(22px, 3vw, 48px) calc(var(--rl) * 2) calc(var(--margin) + 22px);
+  background:
+    /* kırmızı çift kenar çizgisi */
+    linear-gradient(90deg, transparent calc(var(--margin) - 1px), rgba(207, 65, 47, 0.75) calc(var(--margin) - 1px) var(--margin), transparent var(--margin) calc(var(--margin) + 3px), rgba(207, 65, 47, 0.55) calc(var(--margin) + 3px) calc(var(--margin) + 4px), transparent calc(var(--margin) + 4px)),
+    /* mavi satır çizgileri */
+    repeating-linear-gradient(180deg, transparent 0 calc(var(--rl) - 1px), rgba(64, 104, 190, 0.32) calc(var(--rl) - 1px) var(--rl)) 0 calc(var(--rl) * 0.5 - 2px) / 100% 100%,
+    #fbfaf4;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.05),
+    0 40px 80px -46px rgba(0, 0, 0, 0.5),
+    0 12px 26px -18px rgba(0, 0, 0, 0.25);
+}
+/* spiral: kâğıttaki delikler + tel halkalar */
+.defter__spiral {
+  position: absolute;
+  z-index: 2;
+  left: 26px; right: 26px; top: -16px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.defter__spiral i {
+  position: relative;
+  width: 12px;
+  height: 36px;
+  border-radius: 7px;
+  border: 3px solid #8c8a84;
+  border-left-color: #c9c6be;
+  border-right-color: #6c6a64;
+  background: transparent;
+  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.18);
+}
+.defter__spiral i::after {
+  /* kâğıttaki delik */
+  content: "";
+  position: absolute;
+  left: 50%; top: 22px;
+  width: 9px; height: 9px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  z-index: -1;
+}
+
+.defter__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 28px;
+  line-height: var(--rl);
+  font-size: 0.95rem;
+  color: var(--ink-3);
+}
+.defter__meta em { font-size: 1.15rem; color: var(--pen); margin-left: 6px; }
+
+.defter__statement {
+  margin-top: var(--rl);
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.85rem);
+  line-height: calc(var(--rl) * 1.5);
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  text-wrap: pretty;
+  position: relative;
+  top: 6px;
+}
+.defter__statement .annot-wrap { white-space: normal; }
+.defter__statement .annot--under { bottom: -0.05em; height: 0.36em; --sw: 2.6; }
+
+.defter__h {
+  display: inline-block;
+  margin-top: var(--rl);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.55rem;
+  line-height: var(--rl);
+  color: var(--pen);
+  position: relative;
+  top: 8px;
+  background: linear-gradient(var(--pen), var(--pen)) no-repeat 0 calc(100% - 3px) / 100% 1.5px;
+}
+
+.todo { margin-top: 0; }
+.todo__i {
+  position: relative;
+  padding: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(1.18rem, 1.05rem + 0.45vw, 1.45rem);
+  line-height: var(--rl);
+  color: var(--pen);
+}
+.todo__t { position: relative; top: 8px; display: block; text-wrap: pretty; }
+.todo__no {
+  position: absolute;
+  left: calc(var(--margin) * -1 - 6px);
+  width: 38px;
+  top: 8px;
+  text-align: right;
+  font-style: normal;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--ink-3);
+}
+.todo__box {
+  position: absolute;
+  left: calc(var(--margin) * -1 + 44px);
+  top: 9px;
+  width: 26px;
+  height: 26px;
+}
+.todo__box svg { position: absolute; overflow: visible; }
+.todo__box svg:first-child { inset: 0; width: 100%; height: 100%; }
+.todo__frame { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.todo__tick { left: -2px; top: -12px; width: 40px; height: 36px; }
+.todo__tick path { fill: none; stroke: var(--pen); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.js .todo__tick path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.js .todo__i.is-on .todo__tick path { stroke-dashoffset: 0; transition: stroke-dashoffset 0.55s cubic-bezier(0.55, 0.05, 0.35, 1) var(--delay, 0.15s); }
+.reveal-fallback .todo__tick path { stroke-dashoffset: 0 !important; }
+
+.defter__sign {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 18px;
+  margin-top: var(--rl);
+  line-height: var(--rl);
+  position: relative;
+  top: 8px;
+  color: var(--ink-3);
+}
+.defter__sign em { font-size: 1.25rem; color: var(--pen); }
+
+@media (max-width: 960px) {
+  .ms__in { grid-template-columns: 1fr; }
+  .ms__head { position: static; }
+  .ms__lead { max-width: 44ch; }
+}
+@media (max-width: 600px) {
+  .defter { --rl: 34px; --margin: 54px; transform: none; margin-inline: calc(var(--gutter) * -0.5); }
+  .defter__page { padding-left: calc(var(--margin) + 12px); padding-right: 16px; }
+  .defter__spiral { left: 12px; right: 12px; }
+  .defter__spiral i:nth-child(n + 13) { display: none; }
+  .defter__statement { font-size: 1.55rem; }
+  .todo__i { font-size: 1.12rem; }
+  .todo__t { top: 6px; }
+  .todo__no { display: none; }
+  .todo__box { left: calc(var(--margin) * -1 + 15px); top: 5px; width: 22px; height: 22px; }
+  .todo__tick { width: 34px; height: 31px; top: -10px; }
+}

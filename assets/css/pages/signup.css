@@ -1,0 +1,212 @@
+/* ==========================================================================
+   Haberdar Ol · Kupon
+   ========================================================================== */
+
+.kp-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px clamp(32px, 6vw, 110px);
+  align-items: end;
+  padding-bottom: clamp(36px, 5vw, 70px);
+}
+.kp-head .label { grid-column: 1 / -1; }
+.kp-head__h { font-size: clamp(3rem, 7.4vw, 8rem); text-transform: uppercase; }
+.kp-head__lead { max-width: 46ch; }
+
+.kp {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.75fr);
+  gap: clamp(36px, 5vw, 90px);
+  align-items: start;
+  padding-bottom: var(--section);
+}
+
+/* dergi sayfası */
+.kp__page {
+  position: relative;
+  padding: clamp(18px, 2.4vw, 34px) clamp(16px, 3vw, 48px) clamp(26px, 3.4vw, 52px);
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 .3  0 0 0 0 .28  0 0 0 0 .2  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    #f3efe3;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 40px 80px -42px rgba(0, 0, 0, 0.42), 0 10px 22px -16px rgba(0, 0, 0, 0.2);
+}
+.kp__run {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: clamp(18px, 2.4vw, 30px);
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--ink);
+  font-family: var(--font-sans);
+  font-weight: 740;
+  font-stretch: 76%;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+.kp__run span:last-child { font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: 0; color: var(--ink-3); }
+
+.kp__stage { display: grid; }
+.kp__stage > * { grid-area: 1 / 1; }
+
+/* kesilince kalan boşluk */
+.kp__hole {
+  align-self: stretch;
+  display: grid;
+  align-items: start;
+  min-height: 280px;
+  border-radius: 14px;
+  background: var(--paper-2);
+  box-shadow: inset 0 8px 22px -10px rgba(0, 0, 0, 0.32), inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.kp__slip {
+  margin: clamp(18px, 3vw, 40px);
+  padding: clamp(22px, 3vw, 40px);
+  max-width: 560px;
+  display: grid;
+  gap: 12px;
+  background: var(--sheet);
+  box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.4);
+  transform: rotate(-1deg);
+}
+.kp__slip:focus { outline: none; }
+.kp__slip-h { font-size: clamp(2rem, 3.8vw, 3.4rem); }
+.kp__slip-msg { color: var(--ink-2); }
+.kp__slip-more { font-size: var(--t-small); color: var(--ink-2); }
+
+/* kupon */
+.kupon {
+  position: relative;
+  z-index: 2;
+  padding: clamp(22px, 3.2vw, 46px) clamp(18px, 3.2vw, 48px) clamp(22px, 3vw, 40px);
+  background: #fbf8ef;
+  border-radius: 14px;
+  outline: 2px dashed var(--ink-3);
+  outline-offset: -1px;
+}
+.js .kupon.has-cut { outline: none; }
+.kupon__cut { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.kupon__dash { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-dasharray: 9 7; }
+.kupon__line { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.kupon__scissors {
+  position: absolute;
+  left: 0; top: 0;
+  z-index: 3;
+  width: 56px;
+  height: 28px;
+  margin: -14px 0 0 -28px;
+  offset-rotate: auto;
+  offset-distance: 0%;
+  pointer-events: none;
+  opacity: 0;
+}
+.kupon.has-cut .kupon__scissors { margin: 0; opacity: 1; }
+.kupon__scissors svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.22)); }
+.kupon__scissors circle { fill: #fbf8ef; stroke: var(--ink); stroke-width: 2.6; }
+.kupon__scissors path { fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.kupon__scissors .pv { fill: var(--salmon); stroke: none; }
+.kupon__scissors .bl { transform-origin: 30px 16px; transform-box: view-box; }
+.kupon__scissors.is-cutting .bl--a { animation: snip-a 0.24s ease-in-out infinite alternate; }
+.kupon__scissors.is-cutting .bl--b { animation: snip-b 0.24s ease-in-out infinite alternate; }
+@keyframes snip-a { from { transform: rotate(-11deg); } to { transform: rotate(0deg); } }
+@keyframes snip-b { from { transform: rotate(11deg); } to { transform: rotate(0deg); } }
+
+.kupon__notice { margin-bottom: 18px; padding: 10px 14px; border-left: 3px solid var(--red); color: var(--red); font-family: var(--font-sans); font-stretch: 88%; font-size: var(--t-small); }
+
+.kupon__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: end;
+  gap: 14px 24px;
+  margin-bottom: clamp(20px, 3vw, 36px);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.kupon__kicker {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-stretch: 64%;
+  font-size: clamp(3rem, 6.4vw, 5.6rem);
+  line-height: 0.94;
+  text-transform: uppercase;
+  color: var(--red);
+  letter-spacing: -0.01em;
+}
+.kupon__kicker em {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  text-transform: none;
+  font-size: 0.5em;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.kupon__steps { display: flex; gap: 18px; font-style: italic; font-size: var(--t-small); color: var(--ink-2); }
+.kupon__steps b {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6em; height: 1.6em;
+  margin-right: 4px;
+  border: 1.3px solid currentColor;
+  border-radius: 50%;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 80%;
+  font-size: 0.8em;
+}
+
+.kupon__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; }
+.kupon__wide { grid-column: 1 / -1; }
+.kupon .opt { font-size: 0.86em; color: var(--ink-3); }
+
+.kupon__ilgi { margin: clamp(26px, 3vw, 38px) 0 0; padding: 0; border: 0; min-width: 0; }
+.kupon__ilgi legend { padding: 0; margin-bottom: 12px; font-family: var(--font-serif); font-style: italic; font-size: var(--t-small); color: var(--ink-2); }
+.kupon__boxes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 20px; }
+.kupon .check { font-style: normal; }
+.kupon__boxes .check { color: var(--ink); font-family: var(--font-sans); font-stretch: 86%; font-weight: 540; font-size: 0.95rem; }
+
+.kupon__consent { display: grid; gap: 14px; margin-top: clamp(26px, 3vw, 36px); padding-top: 20px; border-top: 1px solid var(--rule); }
+.kupon__consent .check { font-size: 0.88rem; }
+
+.kupon__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-top: clamp(22px, 3vw, 34px); }
+.kupon__foot .form-status { flex: 1 1 220px; }
+.kupon__foot .btn { margin-left: auto; }
+.kupon__form.is-busy .btn { opacity: 0.6; pointer-events: none; }
+
+/* yan sütun */
+.kp__side { position: sticky; top: calc(var(--hdr-h) + 24px); display: grid; gap: 22px; }
+.kp__side-h {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-stretch: 70%;
+  font-size: clamp(1.8rem, 2.6vw, 2.5rem);
+  line-height: 0.96;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--ink);
+}
+.kp__list { display: grid; gap: 18px; }
+.kp__list li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; font-size: 1rem; line-height: 1.45; color: var(--ink-2); }
+.kp__list b { color: var(--ink); font-weight: 600; }
+.kp__n { font-family: var(--font-display); font-size: 2rem; line-height: 0.9; color: var(--red); }
+.kp__note { font-size: var(--t-small); color: var(--ink-3); }
+
+@media (max-width: 1080px) {
+  .kp { grid-template-columns: 1fr; }
+  .kp__side { position: static; grid-template-columns: 1fr; max-width: 640px; }
+}
+@media (max-width: 760px) {
+  .kp-head { grid-template-columns: 1fr; }
+  .kp-head__h { font-size: clamp(2.8rem, 15vw, 5rem); }
+  .kupon__grid { grid-template-columns: 1fr; }
+  .kupon__boxes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kupon__steps { display: none; }
+}
+@media (max-width: 400px) {
+  .kupon__boxes { grid-template-columns: 1fr; }
+}

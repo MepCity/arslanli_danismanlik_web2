@@ -69,15 +69,18 @@ export default function init({ reduced }) {
 
   // Bir sürtme izi: yan yana, kenarlara doğru soluklaşan ince çizgiler
   function newLines() {
-    const n = 9;
-    return Array.from({ length: n }, (_, k) => {
+    const n = 14;
+    const ls = Array.from({ length: n }, (_, k) => {
       const t = k / (n - 1) - 0.5;
       return {
-        off: t + (Math.random() - 0.5) * 0.08,
-        a: Math.max(0.05, 0.6 * (1 - Math.abs(t) * 1.55) * (0.55 + Math.random() * 0.45)),
-        w: 1.1 + Math.random() * 2.8,
+        off: t + (Math.random() - 0.5) * 0.06,
+        a: Math.max(0.04, 0.34 * (1 - Math.abs(t) * 1.6) * (0.4 + Math.random() * 0.6)),
+        w: 0.8 + Math.random() * 2.2,
       };
     });
+    // alttaki yumuşak sıvama: çizgilerin arası boş kalmasın
+    ls.unshift({ off: 0, a: 0.11, w: rubWidth() * 0.78, base: true });
+    return ls;
   }
 
   function segment(a, b, lines) {
@@ -87,7 +90,7 @@ export default function init({ reduced }) {
     const nx = -dy / len, ny = dx / len;
     const w = rubWidth();
     ctx.save();
-    ctx.lineCap = 'round';
+    ctx.lineCap = 'butt';
     ctx.strokeStyle = pattern;
     for (const l of lines) {
       const o = l.off * w;
@@ -175,15 +178,22 @@ export default function init({ reduced }) {
 
   /* ---------- otomatik sürtme ---------- */
 
-  // Bir ilkenin alanında soldan sağa, sağdan sola zikzak bir yol
+  // Bir ilkenin alanında ileri geri, uçlarda yavaşlayan (elle sürtme gibi) bir yol
   function zigzag(box) {
     const pts = [];
-    const passes = 5;
+    const passes = 4;
+    const tilt = (Math.random() - 0.5) * 0.12;
+    const x0 = box.x - 12, x1 = box.x + box.w + 12;
+    const ys = Array.from({ length: passes + 1 }, (_, i) => box.y + box.h * (0.08 + 0.84 * (i / passes)));
+    const phase = Math.random() * 6;
     for (let i = 0; i < passes; i++) {
-      const y = box.y + box.h * (0.1 + 0.8 * (i / (passes - 1))) + (Math.random() - 0.5) * 8;
-      const xs = [box.x - 14, box.x + box.w + 14];
-      if (i % 2) xs.reverse();
-      pts.push({ x: xs[0], y }, { x: xs[1], y: y + (Math.random() - 0.5) * 10 });
+      for (let k = 0; k <= 24; k++) {
+        const t = k / 24;
+        const e = (1 - Math.cos(Math.PI * t)) / 2;
+        const x = i % 2 ? x1 + (x0 - x1) * e : x0 + (x1 - x0) * e;
+        const y = ys[i] + (ys[i + 1] - ys[i]) * t + Math.sin(t * 6 + phase + i) * 4 + tilt * (x - box.x);
+        pts.push({ x, y });
+      }
     }
     return pts;
   }
@@ -230,7 +240,7 @@ export default function init({ reduced }) {
     allBtn.disabled = true;
     for (const r of regions) {
       if (r.done) continue;
-      await rubPath(zigzag(r.box), 560);
+      await rubPath(zigzag(r.box), 620);
       reveal(r);
     }
     busy = false;

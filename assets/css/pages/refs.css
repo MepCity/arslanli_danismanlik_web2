@@ -2,12 +2,6 @@
    Referanslar · Kaşe masası
    ========================================================================== */
 
-.only-touch { display: none; }
-@media (hover: none) {
-  .only-fine { display: none; }
-  .only-touch { display: inline; }
-}
-
 /* ---------- Baş ---------- */
 
 .kmasa { padding-bottom: clamp(40px, 5vw, 70px); }
@@ -88,9 +82,9 @@
 .imp {
   --ink: var(--pen);
   position: absolute;
-  width: clamp(130px, 15vw, 230px);
+  width: clamp(120px, 12.8vw, 200px);
   aspect-ratio: 1.62;
-  padding: clamp(14px, 1.6vw, 22px);
+  padding: clamp(12px, 1.4vw, 20px);
   color: var(--ink);
   border: 2.5px solid currentColor;
   border-radius: 9px;
@@ -310,10 +304,11 @@
 @media (max-width: 860px) {
   .kmasa__head { grid-template-columns: 1fr; }
   .desk { height: min(70vh, 560px); }
-  .imp { width: clamp(118px, 34vw, 170px); padding: 12px; }
+  .imp { width: clamp(96px, 29vw, 150px); padding: 10px; border-width: 2px; }
   .book { grid-template-columns: 1fr; }
   .book::before { display: none; }
-  .book__page + .book__page { margin-top: -6px; }
+  .book__page:first-child { padding-bottom: 0; }
+  .book__page + .book__page { margin-top: 0; }
   .book__page + .book__page .book__cols { display: none; }
   .book__page:first-child .book__folio { display: none; }
 }

@@ -1,0 +1,274 @@
+/* ==========================================================================
+   Makaleler · Arslanlı Bülteni (gazete ön sayfası)
+   ========================================================================== */
+
+/* ---------- Gazete baskısı: yarım ton fotoğraf ---------- */
+
+.halftone {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: #fff;
+  filter: contrast(2400%);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+.halftone img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) brightness(0.56) contrast(1.05) blur(1.4px);
+}
+.halftone::after {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  background: radial-gradient(circle at center, #000, #fff) 0 0 / 5px 5px;
+  mix-blend-mode: color-dodge;
+  transform: rotate(18deg);
+  pointer-events: none;
+}
+.halftone--sm::after { background-size: 4px 4px; }
+
+/* ---------- Kâğıt ---------- */
+
+.gazete { padding-bottom: clamp(48px, 6vw, 90px); overflow-x: clip; }
+.np { position: relative; perspective: 2200px; }
+.np__top, .np__bottom {
+  position: relative;
+  background: var(--sheet);
+  padding-inline: clamp(18px, 3.2vw, 56px);
+}
+.np__top {
+  padding-top: clamp(18px, 2.4vw, 34px);
+  padding-bottom: clamp(30px, 3.4vw, 52px);
+  transform-origin: 50% 100%;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  animation: np-unfold 1.5s cubic-bezier(0.2, 0.75, 0.2, 1) 0.35s both;
+}
+/* katlanma gölgesi: açıldıkça kaybolur */
+.np__top::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(26, 26, 29, 0.32), rgba(26, 26, 29, 0.08) 60%, rgba(26, 26, 29, 0.02));
+  pointer-events: none;
+  opacity: 0;
+  animation: np-shade 1.5s cubic-bezier(0.2, 0.75, 0.2, 1) 0.35s both;
+}
+.np__bottom {
+  padding-top: clamp(30px, 3.4vw, 52px);
+  padding-bottom: clamp(18px, 2vw, 28px);
+  box-shadow: 0 50px 80px -50px rgba(0, 0, 0, 0.5), 0 18px 30px -24px rgba(0, 0, 0, 0.3);
+  animation: np-settle 1.5s cubic-bezier(0.2, 0.75, 0.2, 1) 0.35s both;
+}
+/* kalıcı kat izi */
+.np__bottom::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -1px;
+  height: 14px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.09), transparent);
+  pointer-events: none;
+}
+.np__top { z-index: 2; }
+
+@keyframes np-unfold {
+  0% { transform: rotateX(-96deg); }
+  70% { transform: rotateX(4deg); }
+  100% { transform: rotateX(0); }
+}
+@keyframes np-shade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes np-settle {
+  0% { transform: translateY(26px); }
+  100% { transform: none; }
+}
+
+/* ---------- Künye ---------- */
+
+.np__strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  font-style: italic;
+  font-size: var(--t-small);
+  color: var(--ink-2);
+}
+.np__name {
+  padding: 6px 0 10px;
+  border-top: 3px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  box-shadow: 0 4px 0 -3px var(--ink);
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(3rem, 10.4vw, 10.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+.np__sections {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 22px;
+  padding: 14px 0 12px;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-sans);
+  font-weight: 650;
+  font-stretch: 82%;
+  font-size: 0.95rem;
+}
+.np__lbl { font-family: var(--font-serif); font-style: italic; font-weight: 400; color: var(--ink-3); }
+.np__sections a { text-decoration: none; background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 80% / 0% 45%; transition: background-size 0.4s var(--ease-out); }
+.np__sections a:hover, .np__sections a[aria-current="page"] { background-size: 100% 45%; }
+.np__note { margin-top: 16px; font-style: italic; font-size: var(--t-small); color: var(--ink-2); }
+.np__note b { font-style: normal; font-family: var(--font-sans); font-weight: 650; font-stretch: 85%; color: var(--ink); }
+
+/* ---------- Manşet ---------- */
+
+.np__lead {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 24px clamp(24px, 3vw, 52px);
+  margin-top: clamp(26px, 3vw, 44px);
+}
+.np__kicker { font-style: italic; font-size: var(--t-small); color: var(--ink-3); }
+.np__h {
+  margin: 12px 0 18px;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-stretch: 70%;
+  font-size: clamp(2.3rem, 4.4vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+.np__h a, .np__sh a { text-decoration: none; background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 0% 38%; transition: background-size 0.5s var(--ease-out); }
+.np__h a:hover, .np__sh a:hover { background-size: 100% 38%; }
+.np__dek { font-size: clamp(1.08rem, 1rem + 0.3vw, 1.25rem); line-height: 1.5; color: var(--ink-2); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.drop::first-letter {
+  float: left;
+  margin: 0.04em 0.1em 0 0;
+  font-family: var(--font-display);
+  font-size: 4.1em;
+  line-height: 0.8;
+  color: var(--ink);
+}
+.drop--sm::first-letter { font-size: 3em; }
+.np__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  font-family: var(--font-sans);
+  font-weight: 650;
+  font-stretch: 84%;
+  text-decoration: none;
+}
+.np__more .arw { width: 34px; height: 14px; overflow: visible; }
+.np__more .arw path { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.np__more:hover .arw { transform: translateX(4px); transition: transform 0.3s var(--ease-out); }
+.np__fig { align-self: start; }
+.np__fig figcaption { margin-top: 8px; font-style: italic; font-size: var(--t-micro); color: var(--ink-3); }
+.np__empty { padding: 40px 0 10px; text-align: center; }
+.np__empty .np__h { font-size: clamp(1.8rem, 3vw, 2.6rem); }
+
+/* ---------- İç sayfa sütunları ---------- */
+
+.np__cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 0.9fr);
+}
+.np__cols--solo { grid-template-columns: minmax(0, 1fr); max-width: 520px; margin-left: auto; }
+.np__cols > * { padding: 0 clamp(16px, 2vw, 32px); border-left: 1px solid var(--rule-2); }
+.np__cols > :first-child { padding-left: 0; border-left: 0; }
+.np__cols > :last-child { padding-right: 0; }
+.np__sh {
+  margin: 10px 0 16px;
+  font-family: var(--font-sans);
+  font-weight: 780;
+  font-stretch: 74%;
+  font-size: clamp(1.55rem, 2.1vw, 2.15rem);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+.np__story .halftone { margin-bottom: 16px; }
+.np__text { font-size: 1rem; line-height: 1.52; color: var(--ink-2); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+
+.np__aside { display: grid; gap: 22px; align-content: start; }
+.np__boxh {
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 2px solid var(--ink);
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-stretch: 70%;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.np__index li a {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+  font-size: 0.98rem;
+  line-height: 1.3;
+}
+.np__index li a:hover span:first-child { text-decoration: underline; text-underline-offset: 0.18em; }
+.np__pg { flex: none; font-style: italic; font-size: var(--t-micro); color: var(--ink-3); }
+
+.np__ilan {
+  display: grid;
+  gap: 10px;
+  padding: 18px 18px 16px;
+  border: 1.5px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--sheet), inset 0 0 0 4.5px var(--ink);
+  text-align: center;
+  text-decoration: none;
+  transition: transform 0.35s var(--ease-stamp);
+}
+.np__ilan:hover { transform: rotate(-1.2deg); }
+.np__ilanh { font-family: var(--font-sans); font-weight: 900; font-stretch: 62%; font-size: 2.4rem; line-height: 0.95; text-transform: uppercase; letter-spacing: 0.04em; }
+.np__ilant { font-size: 0.98rem; line-height: 1.4; color: var(--ink-2); }
+.np__ilanc { display: inline-flex; justify-self: center; align-items: center; gap: 8px; font-family: var(--font-sans); font-weight: 650; font-stretch: 84%; }
+.np__ilanc .arw { width: 30px; height: 12px; overflow: visible; }
+.np__ilanc .arw path { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.np__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: clamp(28px, 3vw, 44px);
+  padding-top: 10px;
+  border-top: 1px solid var(--ink);
+  font-style: italic;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+
+/* ---------- Dar ekran ---------- */
+
+@media (max-width: 980px) {
+  .np__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .np__aside { grid-column: 1 / -1; padding: 30px 0 0 !important; border-left: 0 !important; grid-template-columns: 1fr 1fr; gap: 26px; }
+}
+@media (max-width: 760px) {
+  .np__strip .np__motto { display: none; }
+  .np__lead { grid-template-columns: 1fr; }
+  .np__fig { order: -1; }
+  .np__cols, .np__aside { grid-template-columns: 1fr !important; }
+  .np__cols > * { padding: 26px 0 0; border-left: 0; border-top: 1px solid var(--rule-2); margin-top: 26px; }
+  .np__cols > :first-child { padding-top: 0; border-top: 0; margin-top: 0; }
+  .np__aside { padding-top: 26px !important; border-top: 1px solid var(--rule-2) !important; }
+  .np__dek, .np__text { text-align: left; }
+}
+
+.nw { white-space: nowrap; }

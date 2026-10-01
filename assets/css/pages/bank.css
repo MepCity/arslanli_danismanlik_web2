@@ -1,0 +1,148 @@
+/* ==========================================================================
+   Hesap Numaralarımız · Dekont
+   ========================================================================== */
+
+.bank-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px clamp(32px, 6vw, 110px);
+  align-items: end;
+  padding-bottom: clamp(40px, 6vw, 90px);
+}
+.bank-head .label { grid-column: 1 / -1; }
+.bank-head__h { font-size: clamp(2.8rem, 6.4vw, 6.8rem); text-transform: uppercase; max-width: 13ch; }
+.bank-head__lead { max-width: 44ch; }
+
+.pos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 380px)) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 70px);
+  align-items: start;
+  padding-bottom: var(--section);
+}
+
+/* yazıcı */
+.pos__unit { display: grid; justify-items: center; }
+.pos__printer {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 64px;
+  border-radius: 16px 16px 6px 6px;
+  background: linear-gradient(180deg, #34343a 0%, #1b1b1f 70%, #121214 100%);
+  box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.pos__led {
+  position: absolute;
+  left: 20px; top: 18px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #3c4a3f;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.pos__unit.is-printing .pos__led { background: #5ee08a; box-shadow: 0 0 8px #5ee08a; animation: led 0.35s steps(2) infinite; }
+.pos__unit.is-done .pos__led { background: #5ee08a; box-shadow: 0 0 6px rgba(94, 224, 138, 0.7); }
+@keyframes led { 50% { opacity: 0.35; } }
+.pos__brand {
+  position: absolute;
+  right: 20px; top: 13px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-stretch: 82%;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.5);
+}
+.pos__slot {
+  position: absolute;
+  left: 18px; right: 18px; bottom: 12px;
+  height: 6px;
+  border-radius: 3px;
+  background: #050506;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* fişin çıktığı ağız: üstte yazıcıya gömülü */
+.pos__mouth {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 44px);
+  margin-top: -14px;
+  padding: 0 0 16px;
+  overflow: hidden;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.16));
+}
+
+/* fiş */
+.fis {
+  --tooth: 9px;
+  position: relative;
+  padding: 26px 20px calc(22px + var(--tooth));
+  background: linear-gradient(180deg, #ecebe6 0, #fbfbf8 22px, #fdfdfb 70%, #f5f4ef 100%);
+  color: #2b2b2e;
+  font-family: var(--font-type);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  -webkit-mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / calc(var(--tooth) * 2) var(--tooth) repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat;
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / calc(var(--tooth) * 2) var(--tooth) repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat;
+}
+.fis p { margin: 0; }
+.fis__c { text-align: center; }
+.fis__bank { font-weight: 700; font-size: 1.02rem; letter-spacing: 0.02em; line-height: 1.35; }
+.fis__small { font-size: 0.82rem; letter-spacing: 0.12em; color: #55555a; }
+.fis__sep { margin: 12px 0; border: 0; border-top: 1.5px dashed #9a9a9e; }
+.fis__dl { display: grid; gap: 4px; }
+.fis__dl div { display: flex; justify-content: space-between; gap: 12px; }
+.fis__dl dt { color: #6a6a70; }
+.fis__dl dd { text-align: right; font-weight: 700; }
+.fis__k { color: #6a6a70; }
+.fis__iban { font-weight: 700; font-size: 1.08rem; letter-spacing: 0.02em; line-height: 1.45; word-spacing: 0.08em; }
+.fis__row { display: flex; justify-content: space-between; gap: 12px; }
+.fis__row span:first-child { color: #6a6a70; }
+.fis__row span:last-child { text-align: right; }
+.fis__end { margin-top: 14px !important; font-size: 0.8rem; letter-spacing: 0.06em; color: #6a6a70; }
+
+/* JS ve hareket varsa fiş yazıcının içinde bekler */
+@media (prefers-reduced-motion: no-preference) {
+  .js .fis { transform: translateY(-101%); }
+}
+.reveal-fallback .fis { transform: none !important; }
+
+.pos__act { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
+.pos__act .btn.is-copied { --b-fg: #1c7a43; }
+.pos__ghost { font-weight: 560; }
+
+/* not */
+.pos__note { align-self: start; padding-top: 8px; }
+.pos__note-h {
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1.5px solid var(--ink);
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-stretch: 70%;
+  font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+  line-height: 0.96;
+  text-transform: uppercase;
+}
+.pos__note ol { display: grid; gap: 14px; padding: 0; margin: 0; list-style: none; }
+.pos__note li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; color: var(--ink-2); line-height: 1.45; }
+.pos__note li span { font-family: var(--font-display); font-size: 1.7rem; line-height: 0.9; color: var(--red); }
+.pos__note b { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 1100px) {
+  .pos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pos__note { grid-column: 1 / -1; max-width: 560px; }
+}
+@media (max-width: 720px) {
+  .bank-head { grid-template-columns: 1fr; }
+  .bank-head__h { font-size: clamp(2.6rem, 13vw, 4.4rem); }
+  .pos { grid-template-columns: 1fr; justify-items: center; }
+  .pos__unit { width: min(100%, 360px); }
+  .pos__note { justify-self: stretch; }
+}

@@ -92,6 +92,9 @@ function foldAndSend(gsap, lenis, form, post, done) {
 
   const makeClone = (offset) => {
     const c = form.cloneNode(true);
+    // seçili konu ve yazılan değerler kopyaya da geçsin
+    const src = form.querySelectorAll('input, select, textarea');
+    c.querySelectorAll('input, select, textarea').forEach((el, i) => { if (src[i]) el.value = src[i].value; });
     c.classList.remove('is-stamped');
     c.classList.add('fold__clone', 'is-received');
     c.removeAttribute('data-form');
@@ -118,6 +121,10 @@ function foldAndSend(gsap, lenis, form, post, done) {
     }
     return p;
   };
+
+  // Katlanma görünür olsun diye dilekçenin ortası ekranın ortasına gelir
+  const centerY = desk.getBoundingClientRect().top + window.scrollY + form.offsetTop + H / 2 - window.innerHeight / 2;
+  if (lenis) lenis.scrollTo(centerY, { duration: 0.9 }); else window.scrollTo({ top: centerY, behavior: 'smooth' });
 
   const mid = panel('mid', third, false);
   const bot = panel('bot', third * 2, true);
@@ -166,7 +173,7 @@ function foldAndSend(gsap, lenis, form, post, done) {
     },
   });
 
-  tl.to(bot, { rotationX: 180, transformPerspective: 1800, duration: 0.75, ease: 'power2.inOut' })
+  tl.to(bot, { rotationX: 180, transformPerspective: 1800, duration: 0.8, ease: 'power2.inOut', delay: 0.5 })
     .to(top, { rotationX: -180, transformPerspective: 1800, duration: 0.75, ease: 'power2.inOut' }, '+=0.05')
     .to(fold, { scale: s, duration: 0.7, ease: 'power3.inOut', transformOrigin: '50% 50%' }, '+=0.1')
     .to([zBack, zFront], { autoAlpha: 1, y: 0, duration: 0.6, ease: 'expo.out' }, '<0.25')

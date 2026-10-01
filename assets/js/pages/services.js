@@ -35,8 +35,8 @@ export default function init({ gsap, ScrollTrigger, lenis, reduced }) {
       } else {
         // öndeki dosya: alt kenarından menteşelenip öne düşer
         const t = Math.min(1, -d);
-        tf = `translate3d(0,${(t * 40).toFixed(1)}px,${(t * 30).toFixed(1)}px) rotateX(${(-t * 84).toFixed(2)}deg)`;
-        op = Math.max(0, 1 - t * 1.35);
+        tf = `translate3d(0,${(t * 120).toFixed(1)}px,${(t * 24).toFixed(1)}px) rotateX(${(-t * 80).toFixed(2)}deg)`;
+        op = t < 0.55 ? 1 : Math.max(0, 1 - (t - 0.55) / 0.45);
       }
       el.style.transform = tf;
       el.style.opacity = op.toFixed(3);

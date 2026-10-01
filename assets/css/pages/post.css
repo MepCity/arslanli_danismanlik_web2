@@ -1,0 +1,215 @@
+/* ==========================================================================
+   Makale · sakin okuma sayfası
+   ========================================================================== */
+
+/* ---------- Baş ---------- */
+
+.yazi__back { font-style: italic; font-size: var(--t-small); color: var(--ink-3); }
+.yazi__back .link { font-style: normal; color: var(--ink); }
+.yazi__h {
+  margin-top: 22px;
+  max-width: 19ch;
+  font-size: clamp(2.5rem, 5.6vw, 6.2rem);
+}
+.yazi__meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: 20px clamp(32px, 6vw, 110px);
+  align-items: start;
+  margin-top: clamp(28px, 3.4vw, 48px);
+  padding-top: 18px;
+  border-top: 1.5px solid var(--ink);
+}
+.yazi__meta .docmeta { flex-direction: column; gap: 6px; }
+.yazi__lead { max-width: 44ch; font-size: var(--t-lead); line-height: 1.4; color: var(--ink-2); text-wrap: pretty; }
+
+/* ---------- Gazete baskısı fotoğraf ---------- */
+
+.yazi__fig { margin-top: clamp(36px, 4.6vw, 70px); }
+.halftone {
+  position: relative;
+  display: block;
+  aspect-ratio: 21 / 9;
+  overflow: hidden;
+  background: #fff;
+  filter: contrast(2400%);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+.halftone img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) brightness(0.56) contrast(1.05) blur(1.4px);
+}
+.halftone::after {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  background: radial-gradient(circle at center, #000, #fff) 0 0 / 5px 5px;
+  mix-blend-mode: color-dodge;
+  transform: rotate(18deg);
+  pointer-events: none;
+}
+.yazi__fig figcaption { margin-top: 8px; font-style: italic; font-size: var(--t-micro); color: var(--ink-3); }
+
+/* ---------- Metin ---------- */
+
+.yazi__body {
+  display: grid;
+  grid-template-columns: minmax(40px, 1fr) minmax(0, 57rem) minmax(0, 0.35fr);
+  column-gap: clamp(20px, 3vw, 48px);
+  margin-top: clamp(48px, 6vw, 96px);
+}
+.yazi__text {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 40rem) minmax(0, 14rem);
+  column-gap: clamp(28px, 4vw, 64px);
+  align-items: start;
+  max-width: none;
+  font-size: clamp(1.08rem, 1rem + 0.3vw, 1.24rem);
+  line-height: 1.62;
+}
+.yazi__text > * { grid-column: 1; }
+.yazi__text > p:first-child::first-letter {
+  float: left;
+  margin: 0.06em 0.1em 0 0;
+  font-family: var(--font-display);
+  font-size: 4.3em;
+  line-height: 0.78;
+}
+.yazi__text h2 { font-size: clamp(1.5rem, 2.1vw, 2rem); }
+.yazi__text ul { padding-left: 0; list-style: none; }
+.yazi__text ul li { position: relative; padding-left: 1.5em; }
+.yazi__text ul li::before {
+  content: "";
+  position: absolute;
+  left: 0.15em; top: 0.72em;
+  width: 0.7em; height: 2px;
+  background: var(--pen);
+  border-radius: 1px;
+  transform: rotate(-4deg);
+}
+.yazi__text blockquote {
+  grid-column: 2;
+  grid-row: span 4;
+  align-self: start;
+  position: relative;
+  margin: 0.4em 0 0;
+  padding: 2px 0 2px 18px;
+  font-style: italic;
+  font-size: 1.12rem;
+  line-height: 1.42;
+  color: var(--pen);
+}
+.yazi__text blockquote::before {
+  content: "Kenar notu";
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+.yazi__text blockquote::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 2px; bottom: 2px;
+  width: 8px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 100' preserveAspectRatio='none'><path d='M7 2C2 3 2 6 2.5 20 3 40 1.5 60 2.5 80 3 94 2 97 7 98' fill='none' stroke='%2323409c' stroke-width='1.6' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>") no-repeat 0 0 / 100% 100%;
+}
+
+/* ---------- Kurşun kalem: okuma ilerlemesi ---------- */
+
+.pencil {
+  --p: 0;
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  position: relative;
+  width: 22px;
+  margin-right: 4px;
+}
+.pencil__line {
+  position: absolute;
+  left: 10px; top: 0;
+  width: 2px;
+  height: calc(var(--p) * 100%);
+  border-radius: 1px;
+  background: #3b3b40;
+  opacity: 0.6;
+}
+.pencil__tool {
+  position: absolute;
+  left: 0;
+  top: calc(var(--p) * 100% - 147px);
+  width: 22px;
+  height: 150px;
+  transform: rotate(var(--wob, 0deg));
+  transform-origin: 50% 98%;
+  filter: drop-shadow(3px 4px 3px rgba(0, 0, 0, 0.18));
+}
+html:not(.js) .pencil { display: none; }
+
+/* ---------- Paylaş ---------- */
+
+.yazi__foot {
+  grid-column: 2;
+  grid-row: 2;
+  max-width: 40rem;
+  margin-top: clamp(40px, 5vw, 70px);
+  padding-top: 18px;
+  border-top: 1px solid var(--rule-2);
+}
+.yazi__share { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 10px; }
+.yazi__copy {
+  padding: 0;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+.yazi__copy.is-copied { text-decoration-color: transparent; background: var(--hl); }
+
+/* ---------- Aynı sayıdan ---------- */
+
+.yazi__moreh { padding-bottom: 14px; border-bottom: 1.5px solid var(--ink); text-transform: uppercase; }
+.yazi__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.yazi__item { padding: 22px clamp(18px, 2.4vw, 40px) 0; border-left: 1px solid var(--rule-2); }
+.yazi__item:first-child { padding-left: 0; border-left: 0; }
+.yazi__item h3 {
+  margin: 8px 0 10px;
+  font-family: var(--font-sans);
+  font-weight: 780;
+  font-stretch: 74%;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.04;
+}
+.yazi__item h3 a { text-decoration: none; background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 0% 40%; transition: background-size 0.45s var(--ease-out); }
+.yazi__item h3 a:hover { background-size: 100% 40%; }
+.yazi__item p:last-child { color: var(--ink-2); font-size: 1rem; max-width: 52ch; }
+
+.next__t--post { font-size: clamp(1.9rem, 4.2vw, 4.4rem); line-height: 1; text-transform: none; max-width: 24ch; }
+
+/* ---------- Dar ekran ---------- */
+
+@media (max-width: 1100px) {
+  .yazi__body { grid-template-columns: minmax(0, 1fr); }
+  .yazi__text { grid-column: 1; grid-template-columns: minmax(0, 1fr); max-width: 42rem; }
+  .yazi__text blockquote { grid-column: 1; grid-row: auto; margin: 1.4em 0; }
+  .yazi__foot { grid-column: 1; }
+  /* kalem yerine üstte ince bir çizgi */
+  .pencil { position: fixed; inset: 0 0 auto 0; z-index: 70; justify-self: stretch; width: auto; height: 3px; margin: 0; pointer-events: none; }
+  .pencil__line { left: 0; top: 0; width: calc(var(--p) * 100%); height: 100%; opacity: 0.75; }
+  .pencil__tool { display: none; }
+}
+@media (max-width: 760px) {
+  .yazi__meta { grid-template-columns: 1fr; }
+  .halftone { aspect-ratio: 3 / 2; }
+  .yazi__list { grid-template-columns: 1fr; }
+  .yazi__item { padding: 22px 0 0; border-left: 0; }
+  .yazi__item + .yazi__item { margin-top: 22px; border-top: 1px solid var(--rule-2); }
+}
+
+.nw { white-space: nowrap; }

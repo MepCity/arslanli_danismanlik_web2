@@ -1,0 +1,236 @@
+/* ==========================================================================
+   Yasal metinler (Çerez Politikası, KVKK): sözleşme düzeni + sade özet
+   ========================================================================== */
+
+.lg-head { padding-bottom: clamp(48px, 7vw, 110px); }
+.lg-head__in {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: 40px clamp(32px, 6vw, 110px);
+  align-items: end;
+}
+.lg-head__lead { max-width: 40ch; margin-top: 22px; }
+.lg-head__h {
+  margin-top: 16px;
+  font-size: var(--t-h1);
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+/* Kısaca: bantla yapıştırılmış sade özet */
+.kisaca {
+  position: relative;
+  padding: clamp(24px, 2.6vw, 34px) clamp(22px, 2.6vw, 34px) clamp(18px, 2vw, 26px);
+  background: var(--sheet);
+  transform: rotate(0.9deg);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.04),
+    0 32px 64px -36px rgba(0, 0, 0, 0.42),
+    0 8px 18px -12px rgba(0, 0, 0, 0.2);
+}
+.kisaca::before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 128px;
+  height: 30px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(226, 214, 178, 0.78);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  clip-path: polygon(0 8%, 4% 0, 8% 10%, 12% 0, 88% 2%, 92% 10%, 96% 0, 100% 8%, 100% 92%, 96% 100%, 92% 90%, 88% 100%, 12% 98%, 8% 90%, 4% 100%, 0 92%);
+}
+.kisaca__h {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-stretch: 68%;
+  font-size: clamp(1.5rem, 2vw, 1.9rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.kisaca__intro { margin: 6px 0 14px; font-style: italic; font-size: var(--t-small); color: var(--ink-3); }
+.kisaca__list li {
+  position: relative;
+  padding: 11px 0 11px 30px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-weight: 620;
+  font-stretch: 84%;
+  font-size: clamp(1.02rem, 0.96rem + 0.25vw, 1.16rem);
+  line-height: 1.3;
+}
+.kisaca__list li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.95em;
+  width: 15px;
+  height: 13px;
+  background: var(--pen);
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 18%, 86% 4%, 38% 72%);
+  transform: rotate(-6deg);
+}
+.kisaca__list a { color: inherit; }
+
+/* ---------- metin + madde listesi ---------- */
+
+.lg { padding-bottom: clamp(64px, 8vw, 120px); }
+.lg__grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+  gap: clamp(32px, 6vw, 110px);
+  align-items: start;
+}
+
+.lg__toc { position: sticky; top: calc(var(--hdr-h) + 24px); }
+.lg__toc-h {
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid var(--fg);
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-stretch: 68%;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.lg__toc-list a {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+  font-family: var(--font-sans);
+  font-weight: 560;
+  font-stretch: 86%;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  color: var(--ink-2);
+  transition: color 0.2s;
+}
+.lg__toc-no { font-family: var(--font-serif); font-style: italic; font-weight: 400; color: var(--ink-3); transition: color 0.2s; }
+.lg__toc-t { justify-self: start; background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 0% 48%; transition: background-size 0.45s var(--ease-out); }
+.lg__toc-list a:hover { color: var(--fg); }
+.lg__toc-list a:hover .lg__toc-t,
+.lg__toc-list a.is-cur .lg__toc-t { background-size: 100% 48%; }
+.lg__toc-list a.is-cur { color: var(--fg); }
+.lg__toc-list a.is-cur .lg__toc-no { color: var(--red); }
+
+.lg__all {
+  margin-top: 18px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--font-sans);
+  font-weight: 650;
+  font-stretch: 84%;
+  font-size: 0.95rem;
+  color: var(--pen);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+.lg__all:hover { text-decoration-color: transparent; background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 85% / 100% 50%; }
+html:not(.js) .lg__all { display: none; }
+
+.lg__doc { max-width: 74ch; }
+.madde {
+  padding: 34px 0 32px;
+  border-top: 1px solid var(--rule);
+  scroll-margin-top: calc(var(--hdr-h) + 24px);
+}
+.madde:first-child { padding-top: 26px; border-top: 1.5px solid var(--fg); }
+.madde__h {
+  margin-bottom: 14px;
+  font-family: var(--font-sans);
+  font-weight: 760;
+  font-stretch: 80%;
+  font-size: clamp(1.35rem, 1.75vw, 1.7rem);
+  line-height: 1.1;
+}
+.madde p { font-size: clamp(1.02rem, 0.98rem + 0.15vw, 1.1rem); line-height: 1.68; text-wrap: pretty; }
+.madde p + p { margin-top: 0.75em; }
+.madde__no {
+  font-family: var(--font-sans);
+  font-weight: 780;
+  font-stretch: 76%;
+  font-size: 0.86em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.madde__f { color: var(--ink-3); }
+.madde__list { display: grid; gap: 6px; margin: 12px 0 0; }
+.madde__list li { display: grid; grid-template-columns: 2em minmax(0, 1fr); font-size: clamp(1.02rem, 0.98rem + 0.15vw, 1.1rem); line-height: 1.55; }
+.madde__bent { font-style: italic; color: var(--ink-3); }
+
+/* Sade Türkçesi */
+.sade { margin-top: 18px; }
+.sade summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  list-style: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 650;
+  font-stretch: 84%;
+  font-size: 0.92rem;
+  color: var(--pen);
+}
+.sade summary::-webkit-details-marker { display: none; }
+.sade summary span { text-decoration: underline dotted; text-underline-offset: 0.25em; }
+.sade summary:hover span { text-decoration-style: solid; }
+.sade__i { width: 17px; height: 17px; overflow: visible; transition: transform 0.35s var(--ease-out); }
+.sade__i circle, .sade__i path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.sade[open] .sade__i { transform: rotate(-20deg) scale(1.1); }
+.sade__body {
+  margin-top: 12px;
+  padding: 4px 0 4px 18px;
+  border-left: 2px solid var(--pen);
+  font-family: var(--font-sans);
+  font-weight: 620;
+  font-stretch: 84%;
+  font-size: clamp(1.08rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.32;
+  color: var(--fg);
+}
+.sade[open] .sade__body { animation: sade-in 0.5s var(--ease-out); }
+@keyframes sade-in { from { opacity: 0; transform: translateY(-6px); } }
+
+.lg__end {
+  margin-top: 8px;
+  padding-top: 22px;
+  border-top: 1.5px solid var(--fg);
+  font-style: italic;
+  font-size: var(--t-small);
+  color: var(--ink-3);
+}
+
+.lg-next { padding-top: 0; }
+
+/* ---------- dar ekran ---------- */
+
+@media (max-width: 960px) {
+  .lg-head__in { grid-template-columns: 1fr; }
+  .kisaca { transform: rotate(0.5deg); margin-top: 14px; }
+  .lg__grid { grid-template-columns: 1fr; gap: 28px; }
+  .lg__toc { position: static; }
+  .lg__toc-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
+  .lg__toc-list a { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 520px) {
+  .lg-head__h { font-size: clamp(2.4rem, 11.5vw, 3.6rem); }
+  .lg__toc-list { grid-template-columns: 1fr; }
+  .lg__toc-list a { grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
+}
+
+/* ---------- yazdırma ---------- */
+
+@media print {
+  .hdr, .fih, .ftr, .wa, .toast, .lg__toc, .lg-next, .sade summary { display: none !important; }
+  body::before { display: none; }
+  .lg__grid { display: block; }
+  .kisaca { transform: none; box-shadow: none; border: 1px solid #999; }
+  .kisaca::before { display: none; }
+}

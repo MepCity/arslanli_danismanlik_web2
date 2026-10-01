@@ -10,7 +10,7 @@
   padding-bottom: clamp(36px, 5vw, 70px);
 }
 .dk-head .label { grid-column: 1 / -1; }
-.dk-head__h { font-size: var(--t-h1); text-transform: uppercase; max-width: 12ch; }
+.dk-head__h { font-size: clamp(2.7rem, 6vw, 6.4rem); text-transform: uppercase; max-width: 15ch; }
 .dk-head__lead { max-width: 44ch; }
 
 .dk {
@@ -43,7 +43,7 @@
   left: clamp(8px, 1.4vw, 22px);
   top: 50%;
   width: 12px;
-  height: 92px;
+  height: 172px;
   transform: translateY(-50%);
   background: radial-gradient(circle, var(--paper-2) 5.5px, transparent 6.5px) 0 0 / 12px 80px repeat-y;
   box-shadow: none;
@@ -189,10 +189,10 @@
 /* ALINDI kaşesi */
 .alindi {
   position: absolute;
-  right: clamp(20px, 7%, 80px);
-  bottom: clamp(110px, 16%, 170px);
+  left: clamp(14px, 9%, 96px);
+  bottom: clamp(96px, 11%, 150px);
   z-index: 3;
-  width: clamp(180px, 34%, 270px);
+  width: clamp(170px, 32%, 260px);
   color: var(--red);
   mix-blend-mode: multiply;
   filter: url(#ink);
@@ -292,7 +292,9 @@
   -webkit-backface-visibility: hidden;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 26px 50px -28px rgba(0, 0, 0, 0.5), 0 6px 14px -8px rgba(0, 0, 0, 0.2);
 }
+.kv__front { border-bottom: 6px solid var(--navy); }
 .kv__back { transform: rotateY(180deg); background: var(--navy); color: var(--sheet); }
+.kv__id { display: grid; gap: 8px; }
 .kv__logo { display: block; width: 46%; color: var(--navy); }
 .kv__name { font-family: var(--font-sans); font-weight: 700; font-stretch: 80%; font-size: clamp(0.9rem, 1.1vw, 1.02rem); }
 .kv__rows { display: grid; gap: 2px; font-family: var(--font-sans); font-weight: 560; font-stretch: 85%; font-size: clamp(0.88rem, 1.1vw, 1rem); }
@@ -311,7 +313,7 @@
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-@media (hover: hover) and (pointer: fine) { .kv__flip { visibility: hidden; } .kv__flip:focus-visible { visibility: visible; } }
+@media (hover: hover) and (pointer: fine) { .kv__flip { opacity: 0; } .kv__flip:focus-visible { opacity: 1; } }
 /* JS yoksa iki yüz alt alta */
 html:not(.js) .kv__in { aspect-ratio: auto; display: grid; gap: 14px; transform: none !important; }
 html:not(.js) .kv__face { position: relative; aspect-ratio: 85 / 55; transform: none; backface-visibility: visible; }
@@ -336,5 +338,5 @@ html:not(.js) .kv__flip { display: none; }
   .letter__body p { text-indent: 0; }
   .letter__msg label { text-indent: 0; }
   .letter::before { display: none; }
-  .alindi { right: 14px; bottom: 120px; width: 170px; }
+  .alindi { left: 10px; bottom: 150px; width: 160px; }
 }
