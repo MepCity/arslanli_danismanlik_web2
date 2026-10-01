@@ -27,10 +27,10 @@ $menu = [
     ['iletisim', 'İletişim', '06'],
 ];
 $corp = [
+    ['haberdarol', 'Haberdar Ol', '07'],
     ['kurumsal/misyonumuz', 'Misyonumuz', '08'],
     ['kurumsal/vizyonumuz', 'Vizyonumuz', '09'],
     ['kurumsal/mihenk-taslarimiz', 'Mihenk Taşlarımız', '10'],
-    ['haberdarol', 'Haberdar Ol', '07'],
     ['hesap-numaralarimiz', 'Hesap Numaralarımız', '11'],
 ];
 ?><!doctype html>
@@ -50,6 +50,7 @@ $corp = [
 <meta property="og:url" content="<?= e($canon) ?>">
 <meta property="og:image" content="<?= e($image) ?>">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="<?= asset('img/favicon.svg') ?>">
 <link rel="icon" type="image/png" href="<?= asset('img/favicon.png') ?>">
 <link rel="apple-touch-icon" href="<?= asset('img/apple-touch-icon.png') ?>">
 <link rel="preload" href="<?= url('assets/fonts/archivo.woff2') ?>" as="font" type="font/woff2" crossorigin>

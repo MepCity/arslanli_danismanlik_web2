@@ -47,8 +47,8 @@ function mercek(gsap, reduced, fine) {
       .filter((b) => b.offsetParent !== null)
       .map((b) => {
         const p = b.querySelector('.mb__plain').getBoundingClientRect();
-        const x = p.left - s.left + Math.min(r * 0.92, p.width / 2);
-        const y = p.top - s.top + Math.min(r * 0.62, p.height / 2);
+        const x = p.left - s.left + p.width / 2;
+        const y = p.top - s.top + p.height / 2;
         return { x, y, abs: { x: x + s.left, y: y + s.top } };
       })
       .filter((pt) => {
@@ -105,8 +105,11 @@ function mercek(gsap, reduced, fine) {
     }
     if (mode === 'wander' && now > stopUntil) nextStop(now);
     const k = mode === 'follow' ? 0.16 : 0.055;
-    pos.x += (target.x - pos.x) * k;
-    pos.y += (target.y - pos.y) * k;
+    const dx = (target.x - pos.x) * k;
+    const dy = (target.y - pos.y) * k;
+    if (Math.abs(dx) < 0.05 && Math.abs(dy) < 0.05) return; // yerinde: boyama yapma
+    pos.x += dx;
+    pos.y += dy;
     set();
   });
 

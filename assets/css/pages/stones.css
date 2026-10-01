@@ -1,0 +1,179 @@
+/* ==========================================================================
+   Mihenk Taşlarımız: siyah taşa sürülen altın, ilkeleri ortaya çıkarır
+   ========================================================================== */
+
+.tas-head { padding-bottom: clamp(36px, 5vw, 64px); }
+.tas-head__in {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 18px clamp(32px, 6vw, 110px);
+  align-items: end;
+}
+.tas-head .docmeta { grid-column: 1 / -1; }
+.tas-head__h {
+  font-size: var(--t-h1);
+  text-transform: uppercase;
+  line-height: 0.95;
+}
+.tas-head__txt { display: grid; gap: 16px; padding-bottom: 0.4em; }
+.tas-head__txt .lead { color: var(--fg); }
+.tas-head__note { max-width: 46ch; font-style: italic; font-size: var(--t-small); color: var(--ink-3); }
+
+/* ---------- taş ---------- */
+
+.tas { padding-bottom: clamp(48px, 6vw, 96px); }
+
+.tas__stone {
+  --gold: #e7c66f;
+  position: relative;
+  isolation: isolate;
+  padding: clamp(36px, 4.6vw, 72px) clamp(26px, 4.6vw, 72px) clamp(84px, 8vw, 110px);
+  border-radius: 6px;
+  background:
+    radial-gradient(120% 90% at 18% 0%, rgba(255, 255, 255, 0.06), transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, rgba(0, 0, 0, 0.55), transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .55  0 0 0 0 .58  0 0 0 .16 0'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='600'><filter id='v'><feTurbulence type='fractalNoise' baseFrequency='.006 .02' numOctaves='3' seed='11'/><feColorMatrix values='0 0 0 0 .3  0 0 0 0 .3  0 0 0 0 .32  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23v)'/></svg>"),
+    #19191c;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.6),
+    inset 0 0 80px rgba(0, 0, 0, 0.55),
+    0 50px 90px -50px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  /* taşın kenarı tam düz değil */
+  clip-path: polygon(0 1.2%, 4% 0, 37% 0.6%, 61% 0, 96% 0.4%, 100% 2%, 99.6% 48%, 100% 97%, 97% 100%, 58% 99.4%, 22% 100%, 1.4% 99.2%, 0 95%, 0.5% 52%);
+  touch-action: pan-y;
+}
+.js .tas__stone {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff2c4'/><stop offset='.45' stop-color='%23e3bd52'/><stop offset='1' stop-color='%23946d1e'/></linearGradient></defs><path d='M6 13 15 5l12 4 2 11-9 9-12-3z' fill='url(%23g)' stroke='%23412f0b' stroke-width='1.2'/></svg>") 8 8, crosshair;
+}
+.js .tas__stone.is-rubbing { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff2c4'/><stop offset='.45' stop-color='%23e3bd52'/><stop offset='1' stop-color='%23946d1e'/></linearGradient></defs><path d='M8 14 16 7l10 4 1 9-8 7-10-3z' fill='url(%23g)' stroke='%23412f0b' stroke-width='1.2'/></svg>") 8 8, crosshair; }
+
+.tas__cv {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+html:not(.js) .tas__cv { display: none; }
+
+.tas__list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(40px, 5vw, 76px) clamp(28px, 4vw, 64px);
+  pointer-events: none;
+}
+.tas__p { display: grid; align-content: start; gap: 12px; }
+.tas__no {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+}
+.tas__t {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 2.7vw, 2.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.tas__x { max-width: 34ch; font-size: clamp(1rem, 0.95rem + 0.15vw, 1.08rem); line-height: 1.5; }
+
+/* JS yoksa ya da hareket azaltıldıysa: okunur liste */
+.tas__p { color: #f0e2b8; }
+.tas__x { color: #cfc6ae; }
+.tas__no { color: #c9a24a; }
+
+/* JS varsa: ilke taşa kazınmış gibi, sürülene kadar soluk */
+.js .tas__p:not(.is-gold) .tas__no,
+.js .tas__p:not(.is-gold) .tas__t,
+.js .tas__p:not(.is-gold) .tas__x {
+  color: #34343a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 -1px 0 rgba(0, 0, 0, 0.75);
+}
+.js .tas__p.is-gold .tas__t {
+  color: transparent;
+  background: linear-gradient(100deg, #9b7526 0%, #e9c870 28%, #fff3c9 42%, #e2bd5e 56%, #a57d2c 78%, #e7c66f 100%) 100% 0 / 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));
+  animation: tas-sheen 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.js .tas__p.is-gold .tas__x {
+  color: #efe6cc;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 14px rgba(0, 0, 0, 0.7);
+  animation: tas-fade 1s ease-out both;
+}
+.js .tas__p.is-gold .tas__no { color: #e2bd5e; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9); }
+@keyframes tas-sheen { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@keyframes tas-fade { from { opacity: 0.25; } to { opacity: 1; } }
+
+/* karşılaştırma iğnelerinin izleri */
+.tas__needles {
+  position: absolute;
+  right: clamp(20px, 3vw, 44px);
+  bottom: clamp(20px, 2.6vw, 34px);
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  pointer-events: none;
+}
+.tas__needle { display: grid; justify-items: center; gap: 6px; }
+.tas__needle i {
+  display: block;
+  width: 9px;
+  height: 46px;
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.35) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, transparent, var(--c) 18%, var(--c) 82%, transparent);
+  opacity: 0.85;
+  transform: rotate(8deg);
+}
+.tas__needle b { font-family: var(--font-sans); font-weight: 600; font-stretch: 85%; font-size: 0.72rem; color: #8c887f; }
+.tas__needles em { align-self: flex-end; padding-bottom: 1px; font-size: 0.78rem; color: #8c887f; }
+
+/* alt çubuk */
+.tas__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 28px;
+  margin-top: 26px;
+}
+.tas__hint { flex: 1 1 320px; font-style: italic; font-size: var(--t-small); color: var(--ink-3); }
+.tas__count { font-family: var(--font-sans); font-stretch: 86%; font-size: var(--t-small); color: var(--ink-2); }
+.tas__count b { font-weight: 700; color: #e2bd5e; }
+.tas__all[disabled] { opacity: 0.4; pointer-events: none; }
+html:not(.js) .tas__bar { display: none; }
+
+.only-touch { display: none; }
+@media (hover: none) {
+  .only-fine { display: none; }
+  .only-touch { display: inline; }
+}
+
+.tas-next { padding-top: 0; }
+
+@media (max-width: 980px) {
+  .tas__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .tas-head__in { grid-template-columns: 1fr; }
+  .tas-head__h { font-size: clamp(2.6rem, 12.5vw, 4rem); }
+  .tas__list { grid-template-columns: 1fr; gap: 44px; }
+  .tas__stone { clip-path: polygon(0 0.6%, 6% 0, 52% 0.3%, 95% 0, 100% 0.8%, 99.4% 50%, 100% 99%, 94% 100%, 40% 99.7%, 2% 100%, 0 99%, 0.6% 50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .tas__p.is-gold .tas__t { animation: none; background-position: 40% 0; }
+}

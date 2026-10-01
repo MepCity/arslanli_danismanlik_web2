@@ -10,7 +10,8 @@
   overflow: hidden;
   --x: -400px;
   --y: -400px;
-  --r: clamp(118px, 11vw, 168px);
+  --r0: clamp(124px, 11.5vw, 176px); /* büyütecin olağan yarıçapı */
+  --r: var(--r0);                    /* "Tümünü sadeleştir" yalnızca bunu büyütür */
 }
 .stage { position: absolute; inset: 0; }
 
@@ -56,6 +57,8 @@
   letter-spacing: -0.005em;
   color: var(--ink);
   text-wrap: pretty;
+  max-width: calc(var(--r0) * 1.6); /* cümlenin tamamı merceğin içine sığsın */
+  align-self: start;
 }
 .mb__plain mark { padding: 0 0.08em; }
 
@@ -151,8 +154,8 @@
 }
 .ustyazi__h {
   margin: 16px 0 18px;
-  font-size: clamp(3.4rem, 7.4vw, 8.6rem);
-  line-height: 0.94;
+  font-size: clamp(3.4rem, 7.2vw, 8.4rem);
+  line-height: 1;
   text-transform: uppercase;
 }
 .ustyazi__h .ln { display: block; }
@@ -174,7 +177,7 @@
 }
 
 @media (max-width: 760px) {
-  .mercek { min-height: 0; display: flex; flex-direction: column; padding-top: calc(var(--hdr-h) + 8px); --r: 88px; }
+  .mercek { min-height: 0; display: flex; flex-direction: column; padding-top: calc(var(--hdr-h) + 8px); --r0: 116px; }
   .ustyazi { position: relative; order: -1; bottom: auto; }
   .ustyazi__sheet { width: auto; transform: rotate(-0.6deg); margin-top: 18px; }
   .ustyazi__h { font-size: clamp(2.7rem, 13.2vw, 5.4rem); }
@@ -183,10 +186,10 @@
   .wall { padding-top: 0; }
   .wall--law { position: relative; }
   .wall__meta span:not(:first-child) { display: none; }
-  .wall__grid { grid-template-columns: 1fr; gap: 20px; padding-bottom: 28px; }
+  .wall__grid { grid-template-columns: 1fr; gap: 20px; padding-bottom: 110px; }
   .wall__grid .mb:nth-child(n + 4) { display: none; }
   .mb__law { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
-  .mb__plain { font-size: 1.22rem; }
+  .mb__plain { font-size: 1.06rem; }
 }
 
 /* ---------- 2 · Takvim ---------- */
@@ -306,6 +309,8 @@ html:not(.js) .pad, .takvim.is-static .pad { aspect-ratio: auto; perspective: no
 html:not(.js) .pad__stack, .takvim.is-static .pad__stack { position: relative; inset: auto; display: grid; gap: 14px; padding-top: 40px; box-shadow: none; }
 html:not(.js) .leaf, .takvim.is-static .leaf { position: relative; inset: auto; min-height: 0; }
 html:not(.js) .leaf__no, .takvim.is-static .leaf__no { font-size: 5rem; }
+html:not(.js) .takvim__in, .takvim.is-static .takvim__in { align-items: start; }
+html:not(.js) .takvim__text, .takvim.is-static .takvim__text { position: sticky; top: calc(var(--hdr-h) + 40px); }
 
 @media (max-width: 860px) {
   .takvim__in { grid-template-columns: 1fr; align-content: center; gap: 26px; padding-top: calc(var(--hdr-h) + 8px); }
