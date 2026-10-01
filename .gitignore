@@ -1,0 +1,4 @@
+# Form kayıtları ve geçici dosyalar depoya girmesin
+storage/*
+!storage/.htaccess
+.DS_Store
