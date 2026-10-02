@@ -15,7 +15,7 @@ require_once APP . '/pages/_legal.php';
 page([
     'id'          => 'legal',
     'title'       => 'KVKK Aydınlatma Metni',
-    'description' => 'Arslanlı Yatırım & Danışmanlık web sitesindeki dilekçe ve Haberdar Ol formlarıyla işlenen kişisel verilere ilişkin aydınlatma metni.',
+    'description' => 'Arslanlı Yatırım & Danışmanlık web sitesindeki dilekçe, Haberdar Ol ve bülten kayıt formlarıyla işlenen kişisel verilere ilişkin aydınlatma metni.',
     'folio'       => 'Evrak 13 · <b>KVKK Aydınlatma Metni</b>',
 ]);
 
@@ -36,7 +36,8 @@ $maddeler = [
         'paras' => [
             '<b>İletişim sayfasındaki dilekçe formu:</b> ad soyad, firma adı, konu, mesajınızın içeriği, telefon numarası ve e-posta adresi.',
             '<b>Haberdar Ol formu:</b> ad, soyad, e-posta adresi, telefon numarası, firma adı, ilgilendiğiniz konular ile aydınlatma metnini okuduğunuza ve ticari elektronik ileti almaya ilişkin onay kayıtlarınız (onayın tarihi ve saati dahil).',
-            '<b>Her iki formda:</b> gönderim tarihi ve saati ile IP adresiniz (işlem güvenliği).',
+            '<b>Bülten kayıt formu (sayfa kenarındaki “Bültene kayıt ol” sekmesi):</b> ad, soyad, e-posta adresi, telefon numarası, bulunduğunuz il, sektörünüz, ilgilendiğiniz konular ile aynı onay kayıtları.',
+            '<b>Tüm formlarda:</b> gönderim tarihi ve saati ile IP adresiniz (işlem güvenliği).',
             '<b>Bize doğrudan ulaştığınızda:</b> telefon, e-posta ya da WhatsApp üzerinden bizimle paylaştığınız bilgiler.',
             'Formlarda özel nitelikli kişisel veri (sağlık, din, mezhep, siyasi düşünce, biyometrik veri gibi) istemiyoruz; mesajlarınızda bu tür bilgilere yer vermemenizi rica ederiz.',
         ],
@@ -55,7 +56,7 @@ $maddeler = [
         'paras' => [
             'Kişisel verileriniz, internet sitemizdeki formlar aracılığıyla elektronik ortamda ve bize doğrudan ulaştığınız telefon, e-posta ve mesajlaşma kanalları üzerinden toplanır.',
             'Dilekçe formuyla ve doğrudan iletişimle toplanan veriler; KVKK m. 5/2-c (bir sözleşmenin kurulması veya ifasıyla doğrudan doğruya ilgili olması), m. 5/2-ç (hukuki yükümlülüğümüzü yerine getirebilmemiz için zorunlu olması) ve m. 5/2-f (temel hak ve özgürlüklerinize zarar vermemek kaydıyla meşru menfaatimiz için zorunlu olması) hukuki sebeplerine dayanılarak işlenir. IP adresi ve gönderim zamanı, bilgi güvenliğine ilişkin meşru menfaatimiz kapsamında işlenir.',
-            'Haberdar Ol formuyla toplanan iletişim bilgileriniz, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca verdiğiniz ticari elektronik ileti onayına dayanılarak bilgilendirme gönderimi için işlenir. Bu onayı dilediğiniz zaman, gerekçe göstermeden ve ücretsiz olarak geri alabilirsiniz; geri aldığınızda size yeni bilgilendirme gönderilmez.',
+            'Haberdar Ol ve bülten kayıt formlarıyla toplanan iletişim bilgileriniz, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca verdiğiniz ticari elektronik ileti onayına dayanılarak bilgilendirme gönderimi için işlenir. Bu onayı dilediğiniz zaman, gerekçe göstermeden ve ücretsiz olarak geri alabilirsiniz; geri aldığınızda size yeni bilgilendirme gönderilmez.',
         ],
         'sade' => 'Size dönebilmek için bu bilgilere ihtiyacımız var. Bülten ise yalnızca izin verdiyseniz gelir ve izni tek e-postayla geri alırsınız.',
     ],
@@ -71,7 +72,7 @@ $maddeler = [
         'title' => 'Saklama süresi',
         'paras' => [
             'Dilekçe formuyla ilettiğiniz bilgiler, talebiniz sonuçlanana kadar ve sonrasında olası uyuşmazlıklara karşı ilgili mevzuatta öngörülen süreler boyunca saklanır.',
-            'Haberdar Ol kaydınız, onayınızı geri alana kadar saklanır. Onay kayıtları, mevzuatın öngördüğü süre boyunca ayrıca tutulur.',
+            'Haberdar Ol ve bülten kaydınız, onayınızı geri alana kadar saklanır. Onay kayıtları, mevzuatın öngördüğü süre boyunca ayrıca tutulur.',
             'Form gönderimlerinde kullanılan IP adresi özetleri yalnızca kısa süreli gönderim sınırlaması için kullanılır. Saklama süresi dolan veriler silinir, yok edilir ya da anonim hâle getirilir.',
         ],
         'sade' => 'İşimiz bittiğinde ve kanunun saymamızı istediği süre dolduğunda verilerinizi sileriz.',

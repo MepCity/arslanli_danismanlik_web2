@@ -37,6 +37,21 @@ $forms = [
             'email'       => ['E-posta', 'required|email'],
         ],
     ],
+    // Her sayfadaki "Bültene kayıt ol" sekmesinin açtığı form
+    'bulten' => [
+        'subject' => 'Web sitesi: bülten kaydı',
+        'fields'  => [
+            'ad'      => ['Ad', 'required|max:80'],
+            'soyad'   => ['Soyad', 'required|max:80'],
+            'email'   => ['E-posta', 'required|email'],
+            'telefon' => ['Telefon', 'required|phone'],
+            'il'      => ['İl', 'required|in:iller'],
+            'sektor'  => ['Sektör', 'max:120'],
+            'mesaj'   => ['İlgilendiği konular', 'max:3000'],
+            'kvkk'    => ['Aydınlatma metni', 'accepted'],
+            'etk'     => ['Ticari elektronik ileti onayı', 'accepted'],
+        ],
+    ],
     // Haberdar Ol sayfasındaki kupon
     'haberdarol' => [
         'subject' => 'Web sitesi: Haberdar Ol kaydı',
@@ -157,6 +172,6 @@ if (!$sent && !cfg('store_submissions')) {
     respond(false, 'Mesajınız şu anda iletilemedi. Lütfen telefonla ya da e-posta ile ulaşın.', [], 500);
 }
 
-respond(true, $type === 'haberdarol'
+respond(true, in_array($type, ['haberdarol', 'bulten'], true)
     ? 'Kaydınız alındı. Sizi ilgilendiren bir çağrı açıldığında haber vereceğiz.'
     : 'Dilekçeniz bize ulaştı. En kısa sürede dönüş yapacağız.');

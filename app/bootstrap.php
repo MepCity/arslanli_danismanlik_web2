@@ -165,6 +165,8 @@ function page(array $values = []): array
 
 function render(string $view, array $vars = []): void
 {
+    // index.php'de çözülen geçerli yol: canonical, og:url, fihristteki işaret ve form dönüşleri bunu kullanır
+    $path = (string) ($GLOBALS['path'] ?? '');
     extract($vars, EXTR_SKIP);
     ob_start();
     require APP . '/pages/' . $view . '.php';

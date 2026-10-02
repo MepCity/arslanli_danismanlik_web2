@@ -40,7 +40,7 @@ $corp = [
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title><?= e($title) ?></title>
 <meta name="description" content="<?= e($desc) ?>">
-<link rel="canonical" href="<?= e($canon) ?>">
+<?php if ($id === 'notfound'): ?><meta name="robots" content="noindex"><?php else: ?><link rel="canonical" href="<?= e($canon) ?>"><?php endif; ?>
 <meta name="theme-color" content="<?= $p['theme'] === 'dark' ? '#121214' : '#eeeae1' ?>">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="tr_TR">
@@ -184,7 +184,7 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
         <a href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>">KVKK Aydınlatma Metni</a>
         <a href="<?= url('kurumsal/cerez-politikasi') ?>">Çerez Politikası</a>
         <a href="<?= url('hesap-numaralarimiz') ?>">Hesap Numaralarımız</a>
-        <a href="<?= url('haberdarol') ?>">Haberdar Ol</a>
+        <a href="<?= url('haberdarol') ?>" data-nl-open>Bültene kayıt ol</a>
       </nav>
     </div>
   </div>
@@ -193,6 +193,8 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 <a class="wa" href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank" aria-label="WhatsApp ile yazın">
   <?= icon('whatsapp-logo') ?><span>WhatsApp</span>
 </a>
+
+<?php require APP . '/partials/bulten.php'; ?>
 
 <div class="toast" role="status" aria-live="polite" data-toast></div>
 

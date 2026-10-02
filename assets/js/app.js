@@ -95,6 +95,57 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+/* ---------- Bülten kaydı: kenardaki ayraç formu açar ---------- */
+
+const nl = document.getElementById('bulten');
+if (nl && typeof nl.showModal === 'function') {
+  const body = nl.querySelector('[data-nl-body]');
+  const done = nl.querySelector('[data-nl-done]');
+  const form = nl.querySelector('[data-nl-form]');
+  let opener = null;
+
+  const openNl = (e) => {
+    e?.preventDefault();
+    if (nl.open) return;
+    opener = document.activeElement;
+    if (menuOpen) setMenu(false);
+    nl.classList.remove('is-closing');
+    nl.showModal();
+    lenis?.stop();
+    html.style.overflow = 'hidden';
+    if (!done || done.hidden) setTimeout(() => nl.querySelector('input:not([type="hidden"]):not([tabindex="-1"])')?.focus({ preventScroll: true }), 80);
+  };
+  const closeNl = () => {
+    if (!nl.open || nl.classList.contains('is-closing')) return;
+    if (reduced) { nl.close(); return; }
+    nl.classList.add('is-closing');
+    setTimeout(() => { nl.close(); nl.classList.remove('is-closing'); }, 320);
+  };
+
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-nl-open]');
+    if (trigger) openNl(e);
+  });
+  nl.addEventListener('click', (e) => {
+    if (e.target.closest('[data-nl-close]') || e.target === nl) closeNl();
+  });
+  nl.addEventListener('cancel', (e) => { e.preventDefault(); closeNl(); });
+  nl.addEventListener('close', () => {
+    lenis?.start();
+    html.style.overflow = '';
+    opener?.focus?.({ preventScroll: true });
+  });
+  form?.addEventListener('form:ok', () => {
+    nl.classList.add('is-done');
+    setTimeout(() => {
+      nl.classList.add('is-swapped');
+      if (body) body.hidden = true;
+      if (done) { done.hidden = false; done.focus(); }
+      nl.scrollTo({ top: 0 });
+    }, reduced ? 0 : 750);
+  });
+}
+
 /* ---------- Canlı logo: arkadaki ses dalgası kaydırma hızına göre titrer ---------- */
 
 if (gsap && !reduced) {

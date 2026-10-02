@@ -673,6 +673,226 @@ body[data-theme="dark"] .logo__wave rect { fill: var(--salmon); opacity: 0.9; }
 .form-status.is-error { color: var(--red); }
 .form-status.is-ok { color: #1c7a43; }
 
+/* ---------- Bülten kaydı: kenardaki ayraç ve resmi form ---------- */
+
+.nl-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  z-index: 54;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 10px 15px 11px;
+  writing-mode: vertical-rl;
+  background: var(--hl);
+  color: var(--ink);
+  border-radius: 8px 0 0 8px;
+  box-shadow: -1px 1px 0 rgba(0, 0, 0, 0.06), -8px 12px 22px -14px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-stretch: 82%;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transform: translate(7px, -50%);
+  transition: transform 0.45s var(--ease-out), opacity 0.3s;
+}
+/* yapışkan ayracın sayfaya yapışan, biraz daha koyu ucu */
+.nl-tab::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: 9px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0));
+}
+.nl-tab svg { width: 18px; height: 18px; flex: none; }
+.nl-tab:hover, .nl-tab:focus-visible { transform: translate(0, -50%); }
+.fih.is-open ~ .nl-tab { opacity: 0; pointer-events: none; }
+body[data-theme="dark"] .nl-tab { box-shadow: -8px 12px 22px -14px rgba(0, 0, 0, 0.9); }
+
+/* hizmet sayfasında sağ kenar "Ek" sekmelerine ait; ayraç sola geçer */
+@media (min-width: 861px) {
+  body[data-page="service"] .nl-tab {
+    right: auto;
+    left: 0;
+    border-radius: 0 8px 8px 0;
+    transform: translate(-7px, -50%) rotate(180deg);
+  }
+  body[data-page="service"] .nl-tab::after { right: auto; left: 0; transform: scaleX(-1); }
+  body[data-page="service"] .nl-tab:hover, body[data-page="service"] .nl-tab:focus-visible { transform: translate(0, -50%) rotate(180deg); }
+}
+
+@media (max-width: 760px) {
+  .nl-tab {
+    top: auto;
+    bottom: 0;
+    left: 16px;
+    right: auto;
+    writing-mode: horizontal-tb;
+    padding: 11px 14px 12px;
+    border-radius: 8px 8px 0 0;
+    font-size: 0.86rem;
+    transform: translateY(5px);
+  }
+  .nl-tab::after { top: auto; left: 0; width: auto; height: 7px; bottom: 0; background: linear-gradient(0deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0)); }
+  .nl-tab:hover, .nl-tab:focus-visible { transform: none; }
+  .ftr { padding-bottom: 86px; }
+}
+
+dialog.nl {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+dialog.nl[open] { display: flex; justify-content: flex-end; align-items: flex-start; }
+dialog.nl::backdrop { background: rgba(26, 26, 29, 0.46); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.nl[open]::backdrop { animation: nl-fade 0.4s ease both; }
+.nl.is-closing::backdrop { animation: nl-fade 0.3s ease reverse both; }
+
+.nl__sheet {
+  position: relative;
+  width: min(780px, calc(100% - 32px));
+  margin: 16px 16px 16px auto;
+  padding: clamp(22px, 3vw, 40px) clamp(22px, 3.4vw, 46px) clamp(26px, 3vw, 42px) clamp(46px, 5vw, 76px);
+  background: var(--sheet);
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.55), 0 12px 24px -16px rgba(0, 0, 0, 0.35);
+  transform-origin: 100% 50%;
+}
+/* delgeçle açılmış iki delik: formun dosyaya takılacak kenarı */
+.nl__sheet::before, .nl__sheet::after {
+  content: "";
+  position: absolute;
+  left: clamp(16px, 2vw, 28px);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  box-shadow: inset 1px 2px 3px rgba(0, 0, 0, 0.28);
+}
+.nl__sheet::before { top: 24%; }
+.nl__sheet::after { top: 70%; }
+.nl[open] .nl__sheet { animation: nl-in 0.65s var(--ease-out) both; }
+.nl.is-closing .nl__sheet { animation: nl-out 0.32s var(--ease-in) both; }
+@keyframes nl-in { from { opacity: 0; transform: translateX(70px) rotate(2.2deg); } to { opacity: 1; transform: none; } }
+@keyframes nl-out { to { opacity: 0; transform: translateX(60px) rotate(1.5deg); } }
+@keyframes nl-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.nl__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 12px;
+  margin-bottom: 26px;
+  border-bottom: 1.5px solid var(--ink);
+}
+.nl__close {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 2px 8px 8px;
+  background: none; border: 0;
+  font-family: var(--font-sans); font-weight: 650; font-stretch: 82%; font-size: 0.95rem;
+}
+.nl__close svg { width: 17px; height: 17px; }
+.nl__title { margin: 8px 0 14px; font-size: clamp(2.6rem, 5.4vw, 4.4rem); text-transform: uppercase; }
+.nl__lead { max-width: 58ch; margin-bottom: 26px; color: var(--ink-2); font-size: clamp(1rem, 0.96rem + 0.2vw, 1.1rem); line-height: 1.5; }
+
+.nlf__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1.5px solid var(--ink);
+  border-left: 1px solid var(--rule-2);
+}
+.nlf__cell {
+  gap: 1px;
+  padding: 9px 14px 6px;
+  border-right: 1px solid var(--rule-2);
+  border-bottom: 1px solid var(--rule-2);
+  transition: background-color 0.2s;
+}
+.nlf__cell--wide { grid-column: 1 / -1; }
+.nlf__cell label { font-size: 0.84rem; color: var(--ink-3); }
+.nlf__cell label b {
+  display: inline-grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  margin-right: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-family: var(--font-sans); font-style: normal; font-weight: 700; font-size: 0.7rem;
+  color: var(--ink-2);
+}
+.nl .req { color: var(--red); font-style: normal; }
+.field.nlf__cell input, .field.nlf__cell select, .field.nlf__cell textarea {
+  padding: 5px 0 3px;
+  border: 0;
+  font-size: 1.02rem;
+}
+.field.nlf__cell textarea { min-height: 76px; resize: vertical; }
+.field.nlf__cell select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 26px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%231a1a1d' stroke-width='1.6' stroke-linecap='round'/></svg>") no-repeat right 4px center / 12px 8px;
+  cursor: pointer;
+}
+.nlf__cell:focus-within { background: rgba(242, 223, 79, 0.28); }
+.nlf__cell:focus-within label { color: var(--ink); }
+.field.nlf__cell.has-error { background: rgba(207, 65, 47, 0.06); }
+.field.nlf__cell.has-error label { color: var(--red); }
+.nlf__cell .field__err:empty { display: none; }
+.nlf__checks { display: grid; gap: 12px; margin-top: 22px; }
+.nlf__checks .check { color: var(--ink-2); }
+.nlf__foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+  margin-top: 24px; padding-top: 20px;
+  border-top: 1px dashed var(--rule-2);
+}
+.nlf.is-busy button[type="submit"] { opacity: 0.6; pointer-events: none; }
+
+.nl__done { padding: 6px 0 4px; }
+.nl__done:focus { outline: none; }
+.nl__done .btn { margin-top: 6px; }
+
+.nl__stamp {
+  position: absolute;
+  right: 9%;
+  top: 30%;
+  width: min(300px, 62%);
+  color: var(--red);
+  mix-blend-mode: multiply;
+  filter: url(#ink);
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(-9deg);
+}
+.nl__stamp svg { width: 100%; height: auto; overflow: visible; }
+.nl__stamp text { font-family: var(--font-sans); fill: currentColor; }
+.nl.is-done .nl__stamp { animation: nl-stamp 0.5s var(--ease-out) both; }
+/* teşekkür notuna geçince kaşe başlığın üstünden çekilir, notun sağ altında kalır */
+.nl.is-swapped .nl__stamp { top: auto; bottom: 22px; right: 26px; width: min(210px, 46%); opacity: 1; animation: none; transform: rotate(-7deg); }
+.nl.is-swapped .nl__sheet { padding-bottom: 96px; }
+@keyframes nl-stamp {
+  0% { opacity: 0; transform: rotate(-15deg) scale(1.7); }
+  55% { opacity: 1; transform: rotate(-9deg) scale(0.96); }
+  100% { opacity: 1; transform: rotate(-9deg) scale(1); }
+}
+
+@media (max-width: 760px) {
+  .nl__sheet { width: auto; margin: 10px; padding: 18px 18px 24px 40px; }
+  .nl__sheet::before, .nl__sheet::after { left: 13px; width: 11px; height: 11px; }
+  .nlf__grid { grid-template-columns: 1fr; }
+  .nl__top .docmeta span:last-child { display: none; }
+}
+
 /* ---------- Bildirim ---------- */
 
 .toast {
