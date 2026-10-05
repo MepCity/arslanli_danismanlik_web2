@@ -18,7 +18,7 @@ $now   = time();
 <section class="bank-head pagehead wrap" aria-labelledby="bank-title">
   <p class="label" data-rise><?= e(pg_label('hesap')) ?></p>
   <h1 class="display bank-head__h" id="bank-title" data-rise style="--delay:.05s"><?= e(t('hesap.hero.baslik')) ?></h1>
-  <p class="lead bank-head__lead" data-rise style="--delay:.12s"><?= th('hesap.hero.giris') ?></p>
+  <p class="lead bank-head__lead" data-rise style="--delay:.12s"><?= th(count($banks) === 1 ? 'hesap.hero.giris_tek' : 'hesap.hero.giris') ?></p>
 </section>
 
 <section class="pos wrap" aria-label="<?= e(t('hesap.fis.liste_etiket')) ?>">

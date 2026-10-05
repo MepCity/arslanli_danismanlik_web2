@@ -40,9 +40,12 @@ AddDefaultCharset UTF-8
   RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
-# Kurulum notları, kayıt dosyaları, sunucu ayarı ve betikler dışarıdan okunamasın
-# (sunucunun PHP hata günlüğü error_log ve .user.ini dahil). storage/ ve app/ ayrıca yukarıdaki kural ve kendi .htaccess dosyalarıyla kapalıdır.
-<FilesMatch "^(\.user\.ini|error_log)$|\.(md|log|jsonl|json|lock|sh|ini)$">
+# Kurulum notları ve kayıt dosyaları dışarıdan okunamasın.
+# Not: Apache erişim denetimi mod_rewrite'tan ÖNCE çalışır. Eskiden tüm .md ve .json dosyaları yasaktı; bu yüzden /index.md, /hizmetler.md
+# (sayfaların Markdown sürümü) ve /feed.json gibi PHP ile üretilen adresler 403 veriyordu. Artık yalnızca gerçekten hassas olanlar kapalı:
+# diskteki kurulum notu (KURULUM.md; yeni bir .md dosyası eklenirse adı buraya yazılır), .user.ini, günlük/kayıt dosyaları (sunucunun PHP hata
+# günlüğü error_log dahil) ve betikler. storage/ ve app/ zaten yukarıdaki RewriteRule ile ve kendi .htaccess dosyalarıyla kapalıdır.
+<FilesMatch "^(KURULUM\.md|\.user\.ini|error_log)$|\.(log|jsonl|sh|lock)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>
@@ -80,7 +83,7 @@ AddDefaultCharset UTF-8
 </IfModule>
 
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript image/svg+xml application/xml text/xml
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript image/svg+xml application/xml text/xml text/markdown text/plain application/json application/feed+json application/rss+xml text/calendar
 </IfModule>
 
 <IfModule mod_expires.c>

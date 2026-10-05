@@ -26,3 +26,23 @@
 }
 .list__main:has(> .svc-chip) { display: flex; align-items: center; gap: 14px; }
 .svc-main { display: grid; gap: 4px; min-width: 0; }
+
+/* Çoklu seçim alanı (tekrarlanan grup içinde): hedef eşleştirici */
+.rp__checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.rp__check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; min-width: 0; cursor: pointer; }
+.rp__check input { flex: none; width: 16px; height: 16px; accent-color: var(--navy, #1f3a6f); }
+.rp__check span { min-width: 0; overflow-wrap: anywhere; }
+.goal-warn { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; margin: 0 0 14px; border-radius: 10px; background: #fff7e0; border: 1px solid #ecd9a0; color: #5b4510; font-size: 13.5px; }
+.goal-warn .i { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+
+/* Yasal metinler */
+.rp__field--hidden { display: none; }
+.ysl__rules { margin: 8px 0 12px; padding-left: 18px; display: grid; gap: 5px; font-size: 13.5px; color: var(--text-2); }
+.ysl__cond { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; margin-top: 10px; border-radius: 10px; background: #eef3fb; border: 1px solid #cfdcf0; color: #23365c; font-size: 13.5px; }
+.ysl__cond .i { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.ysl__cond p { margin: 0 0 8px; }
+.ysl__chips, .ysl__vars { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ysl__vars { margin-top: 14px; }
+.ysl__big textarea { min-height: 170px; }
+.ysl__help p { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.ysl__help b { color: var(--text); }

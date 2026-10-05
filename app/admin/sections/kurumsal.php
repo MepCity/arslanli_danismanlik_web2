@@ -91,11 +91,11 @@ else: ?>
             ['key' => 'us', 'label' => 'Biz ne yaparız?', 'type' => 'textarea', 'rows' => 2, 'maxlength' => $P['us'][1], 'class' => 'span-2'],
             ['key' => 'you', 'label' => 'Siz ne yaparsınız? (kısa)', 'maxlength' => $P['you'][1], 'class' => 'span-2'],
         ], ['add' => 'Adım ekle']), [
-            'desc'    => 'Ana sayfadaki "Sekiz yaprak" takviminde her adım bir yaprak olur; sağdaki kırmızı yaprak sonuncudur. Başlıkta ve sayfada "sekiz" yazdığı için adım sayısı tam 8 olmalıdır; sırayı ve metinleri değiştirebilirsiniz. Aşama adı yaprağın üstünde büyük harfle basılır; ayrı aşama adları kullanmak zorunda değilsiniz.',
+            'desc'    => 'Ana sayfadaki "Sekiz yaprak" takviminde her adım bir yaprak olur; sağdaki kırmızı yaprak sonuncudur. Takvim tam 8 yaprağa göre tasarlandığı için adım sayısı 8 olmalıdır (başlıktaki "sekiz" sayıdan kendiliğinden yazılır); sırayı ve metinleri değiştirebilirsiniz. Aşama adı yaprağın üstünde büyük harfle basılır; ayrı aşama adları kullanmak zorunda değilsiniz.',
             'actions' => ui_view_link(url('#takvim-title')),
         ]);
         echo ui_card('İlkeler (Mihenk taşlarımız)', ui_repeater('principles', '', $pairs($val('principles')), $pairFields('Başlık', 'Açıklama', $LM['principles']['title'][1], $LM['principles']['text'][1]), ['add' => 'İlke ekle']), [
-            'desc'    => 'Mihenk taşlarımız sayfasında taş üzerinde silinen altı ilke. Sayfa metinleri "altı ilke" dediği için sayı tam 6 olmalıdır.',
+            'desc'    => 'Mihenk taşlarımız sayfasında taş üzerinde silinen altı ilke. Taşlar tam 6 ilkeye göre tasarlandığı için sayı 6 olmalıdır (sayfadaki "altı" sayıdan kendiliğinden yazılır).',
             'actions' => ui_view_link(url('kurumsal/mihenk-taslarimiz')),
         ]);
     } elseif ($tab === 'tarihce') {
@@ -107,7 +107,7 @@ else: ?>
             ['key' => 'src', 'label' => 'Kaynak (örn. R.G. 12/3/2008)', 'maxlength' => $T['src'][1], 'class' => 'span-2'],
             ['key' => 'text', 'label' => 'Metin', 'type' => 'textarea', 'rows' => 3, 'maxlength' => $T['text'][1], 'class' => 'span-2'],
         ], ['add' => 'Kayıt ekle']), [
-            'desc'    => 'Hakkımızda sayfasındaki arşiv rafı: her kayıt raftan çekilen bir klasördür. ' . $T['count'][0] . ' ile ' . $T['count'][1] . ' kayıt; her yıl en çok bir kez yer alır ve kayıtlar kaydederken yıla göre sıralanır. "Biz" türündeki ilk kayıt sayfa açılınca açık klasördür. Sayfadaki "ilk üçü bizden önce gelen düzenlemeler" cümlesi mevcut sıraya göredir; kayıt eklerseniz ya da çıkarırsanız Sayfa metinleri bölümünden güncelleyin. Mevzuat kaynaklarını resmî metinden kontrol edin.',
+            'desc'    => 'Hakkımızda sayfasındaki arşiv rafı: her kayıt raftan çekilen bir klasördür. ' . $T['count'][0] . ' ile ' . $T['count'][1] . ' kayıt; her yıl en çok bir kez yer alır ve kayıtlar kaydederken yıla göre sıralanır. "Biz" türündeki ilk kayıt sayfa açılınca açık klasördür. Raf notundaki "ilk üçü bizden önce gelen düzenlemeler" cümlesi, kuruluş yılından önceki kayıtların sayısına göre kendiliğinden uyar. Mevzuat kaynaklarını resmî metinden kontrol edin.',
             'actions' => ui_view_link(url('hakkimizda#raf-title')),
         ]);
     } elseif ($tab === 'misyon') {
@@ -116,12 +116,13 @@ else: ?>
         $mi = (array) $val('mission');
         $vi = (array) $val('vision');
         $founded = (int) cfg('founded');
-        echo ui_card('Misyon', ui_textarea('mission_statement', 'Misyon cümlesi', (string) ($mi['statement'] ?? ''), ['required' => true, 'rows' => 2, 'maxlength' => $M['statement'][1], 'counter' => true, 'help' => 'Defterin üstündeki ana cümle. "kâğıt işine boğulmadan" ifadesi yazıda kalırsa sayfada kırmızı kalemle altı çizilir.'])
+        $stmtBar = '<div class="txf__bar" role="group" aria-label="Biçim"><span class="txf__barl">Biçim</span><button type="button" class="txf__fmt txf__fmt--red" data-stmt-fmt title="Seçili ifadeyi sayfada kırmızı kalemle çizdirir">Kırmızı çizgi</button></div>';
+        echo ui_card('Misyon', $stmtBar . ui_textarea('mission_statement', 'Misyon cümlesi', (string) ($mi['statement'] ?? ''), ['required' => true, 'rows' => 2, 'maxlength' => $M['statement'][1] + 40, 'help' => 'Defterin üstündeki ana cümle (' . $M['statement'][0] . ' ile ' . $M['statement'][1] . ' karakter). Sayfada kırmızı kalemle altı çizilecek ifadeyi seçip “Kırmızı çizgi” düğmesine basın; cümle değişse bile işaret ifadeyle birlikte kalır. Yalnızca bir ifade çizilebilir; işaret [kırmızı-çizgi]…[/kırmızı-çizgi] biçiminde görünür.'])
             . ui_repeater('mission_items', 'Yapılacaklar (iş listesi)', (array) ($mi['items'] ?? []), [['key' => '', 'type' => 'textarea', 'rows' => 2, 'maxlength' => $M['item'][1]]], ['add' => 'Madde ekle']), [
-            'desc'    => 'Misyonumuz sayfasında kalemle işaretlenen iş listesi. Sayfa ve Hakkımızda kartı "beş iş" dediği için madde sayısı tam 5 olmalıdır.',
+            'desc'    => 'Misyonumuz sayfasında kalemle işaretlenen iş listesi. Sayfa ve Hakkımızda kartı madde sayısını yazıyla söyler ("beş iş"); sayı ' . $M['count'][0] . ($M['count'][0] === $M['count'][1] ? ' ile sabittir (tasarım bu kadar maddeye göre kurulu).' : ' ile ' . $M['count'][1] . ' arasındadır.'),
             'actions' => ui_view_link(url('kurumsal/misyonumuz')),
         ]);
-        echo ui_card('Vizyon mektubu', ui_text('vision_open_year', 'Açılış yılı', (string) ($vi['open_year'] ?? ''), ['required' => true, 'maxlength' => 4, 'inputmode' => 'numeric', 'help' => 'Mektubun açılacağı yıl (' . ((int) date('Y') + 1) . ' ile 2100 arası). Sitede "kuruluşumuzun otuzuncu yılı" ifadesi var; ' . $founded . ' + 30 = ' . ($founded + 30) . '. Başka bir yıl yazarsanız bu ifadeyi Sayfa metinleri bölümünden güncelleyin.'])
+        echo ui_card('Vizyon mektubu', ui_text('vision_open_year', 'Açılış yılı', (string) ($vi['open_year'] ?? ''), ['required' => true, 'maxlength' => 4, 'inputmode' => 'numeric', 'help' => 'Mektubun açılacağı yıl (' . ((int) date('Y') + 1) . ' ile 2100 arası). Sitedeki "kuruluşumuzun otuzuncu yılı" ifadesi bu yıldan kendiliğinden hesaplanır (kuruluş ' . $founded . '; ' . ($founded + 30) . ' yazarsanız "otuzuncu", başka bir yıl yazarsanız o sayının sırası yazılır).'])
             . ui_text('vision_greeting', 'Selamlama', (string) ($vi['greeting'] ?? ''), ['required' => true, 'maxlength' => $V['greeting'][1], 'help' => 'Örn: "Sevgili 2037,"'])
             . ui_textarea('vision_intro', 'Giriş paragrafı', (string) ($vi['intro'] ?? ''), ['required' => true, 'rows' => 3, 'maxlength' => $V['intro'][1], 'counter' => true])
             . ui_repeater('vision_items', 'Maddeler', (array) ($vi['items'] ?? []), [['key' => '', 'type' => 'textarea', 'rows' => 2, 'maxlength' => $V['item'][1]]], ['add' => 'Madde ekle'])
@@ -156,6 +157,21 @@ else: ?>
   </form>
 <?php endif; ?>
 </div>
+<script>
+(function () {
+  var b = document.querySelector("[data-stmt-fmt]"), t = document.querySelector('[name="mission_statement"]');
+  if (!b || !t) return;
+  b.addEventListener("click", function () {
+    var a = t.selectionStart, z = t.selectionEnd, v = t.value;
+    if (a === z) { t.focus(); return; }
+    var open = "[kırmızı-çizgi]", close = "[/kırmızı-çizgi]";
+    v = v.split(open).join("").split(close).join("");   // yalnızca bir ifade çizilir: öncekini kaldır
+    var cut = t.value.slice(0, a).split(open).join("").split(close).join("").length;
+    t.value = v.slice(0, cut) + open + v.slice(cut, cut + (z - a)) + close + v.slice(cut + (z - a));
+    t.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+})();
+</script>
 <?php
 adm_layout('Kurumsal içerik', (string) ob_get_clean(), [
     'section'  => 'kurumsal',
@@ -163,3 +179,4 @@ adm_layout('Kurumsal içerik', (string) ob_get_clean(), [
     'actions'  => ui_history_link('lists'),
     'form'     => $tab === 'kanun' ? null : 'list-form',
 ]);
+

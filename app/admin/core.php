@@ -391,13 +391,21 @@ function ui_repeater(string $name, string $label, array $items, array $fields, a
         foreach ($fields as $f) {
             $key   = $f['key'] ?? '';
             $nm    = $single ? $name . '[' . $idx . ']' : $name . '[' . $idx . '][' . $key . ']';
-            $val   = $single ? (is_array($item) ? '' : (string) $item) : (string) ($item[$key] ?? '');
+            $val   = $single ? (is_array($item) ? '' : (string) $item) : (is_array($item[$key] ?? null) ? '' : (string) ($item[$key] ?? ''));
             $type  = $f['type'] ?? 'text';
             $ph    = isset($f['placeholder']) ? ' placeholder="' . e($f['placeholder']) . '"' : '';
             $ml    = isset($f['maxlength']) ? ' maxlength="' . (int) $f['maxlength'] . '"' : '';
             $lab   = !empty($f['label']) ? '<span class="rp__label">' . e($f['label']) . '</span>' : '';
             if ($type === 'textarea') {
                 $ctl = '<textarea class="inp inp--area" rows="' . (int) ($f['rows'] ?? 3) . '" name="' . e($nm) . '"' . $ph . $ml . '>' . e($val) . '</textarea>';
+            } elseif ($type === 'checks') {
+                // Çoklu seçim: seçenekler anahtar => ad; işaretliler $item[$key] dizisinde. İşaretsiz kutu hiçbir şey göndermez.
+                $sel = is_array($item) && is_array($item[$key] ?? null) ? array_map('strval', $item[$key]) : [];
+                $boxes = '';
+                foreach ($f['options'] ?? [] as $k => $v) {
+                    $boxes .= '<label class="rp__check"><input type="checkbox" name="' . e($nm) . '[]" value="' . e((string) $k) . '"' . (in_array((string) $k, $sel, true) ? ' checked' : '') . '><span>' . e((string) $v) . '</span></label>';
+                }
+                $ctl = '<span class="rp__checks">' . $boxes . '</span>';
             } elseif ($type === 'select') {
                 $opts = '';
                 foreach ($f['options'] ?? [] as $k => $v) $opts .= '<option value="' . e((string) $k) . '"' . ((string) $k === $val ? ' selected' : '') . '>' . e((string) $v) . '</option>';
@@ -405,7 +413,8 @@ function ui_repeater(string $name, string $label, array $items, array $fields, a
             } else {
                 $ctl = '<input class="inp" type="' . e($type) . '" name="' . e($nm) . '" value="' . e($val) . '"' . $ph . $ml . '>';
             }
-            $html .= '<label class="rp__field' . (!empty($f['class']) ? ' ' . e($f['class']) : '') . '">' . $lab . $ctl . '</label>';
+            $tag = $type === 'checks' ? 'div' : 'label';
+            $html .= '<' . $tag . ' class="rp__field' . (!empty($f['class']) ? ' ' . e($f['class']) : '') . '">' . $lab . $ctl . '</' . $tag . '>';
         }
         return '<div class="rp__item" data-rp-item>'
             . '<button class="rp__handle" type="button" data-rp-handle aria-label="Sürükleyerek sırala" title="Sürükleyerek sırala">' . ui_icon('dots-six-vertical') . '</button>'

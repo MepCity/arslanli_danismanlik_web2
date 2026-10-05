@@ -27,4 +27,8 @@ return [
     'misyon_sayisi'  => ['misyon maddelerinin sayısı', fn() => count((array) (site('mission')['items'] ?? [])), false],
     'hesap_sayisi'   => ['banka hesabı sayısı', fn() => count((array) site('banks')), false],
     'eposta_baglanti' => ['e-posta adresi, tıklanabilir bağlantı olarak', fn() => '<a class="link" href="mailto:' . e(cfg('email')) . '">' . e(cfg('email')) . '</a>', true],
+    'acilis_yili'    => ['vizyon mektubunun açılış yılı (Kurumsal içerik > Misyon ve vizyon)', fn() => (string) (site('vision')['open_year'] ?? ''), false],
+    'acilis_yil_sayisi' => ['açılış yılının kuruluştan sayılan sırası (30)', fn() => (int) (site('vision')['open_year'] ?? 0) - (int) cfg('founded'), false],
+    'onceki_sayi'    => ['zaman çizelgesinde kuruluştan önceki klasör sayısı (3)', fn() => count(array_filter((array) site('timeline'), fn($t) => (int) ($t['year'] ?? 0) < (int) cfg('founded'))), false],
+    'banka_adlari'   => ['banka hesaplarındaki banka adları (“A ve B”, “A, B ve C”)', fn() => text_join_list(array_map(fn($b) => (string) ($b['bank'] ?? ''), (array) site('banks'))), false],
 ];

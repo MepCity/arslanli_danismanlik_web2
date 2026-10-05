@@ -30,6 +30,7 @@ function changelog_sections(): array
         'refs'       => ['Referanslar', 'referanslar', true],
         'texts'      => ['Sayfa metinleri', 'metinler', true],
         'lists'      => ['Kurumsal içerik', 'kurumsal', true],
+        'legal'      => ['Yasal metinler', 'yasal', true],
         'features'   => ['Görünürlük', 'gorunurluk', true],
         'settings'   => ['İletişim ve şirket', 'ayarlar', true],
         'seo'        => ['SEO ve yapay zekâ', 'seo', true],
@@ -368,7 +369,7 @@ function changelog_diff(string $key, $before, $after): array
         case 'duyurular':
             $types = ann_types();
             $byId = fn(array $l) => array_column(array_filter($l, fn($x) => is_array($x) && isset($x['id'])), null, 'id');
-            $ev = fn($x) => implode("\n", array_map(fn($e) => ($e['date'] ?? '') . ' · ' . ($types[$e['type'] ?? ''] ?? 'Bilgilendirme') . (($e['note'] ?? '') !== '' ? ' (' . $e['note'] . ')' : ''), (array) ($x['events'] ?? [])));
+            $ev = fn($x) => implode("\n", array_map(fn($e) => ($e['date'] ?? '') . ' · ' . ($types[$e['type'] ?? ''] ?? ann_type_name('diger')) . (($e['note'] ?? '') !== '' ? ' (' . $e['note'] . ')' : ''), (array) ($x['events'] ?? [])));
             $flag = fn(string $k) => fn($x) => $x ? cl_bool($x[$k] ?? false) : '';
             return cl_map_diff($byId($b), $byId($a), [
                 'Başlık' => $s('title'), 'Kurum' => $s('kurum'), 'Özet' => $s('summary'), 'Resmî bağlantı' => $s('link'), 'Tarihler' => $ev,
@@ -470,6 +471,40 @@ function changelog_diff(string $key, $before, $after): array
             }
             return $items;
 
+        case 'legal':
+            // Madde madde: sıradaki her madde için başlığı ve metni önce/sonra olarak gösterir; eklenen ve çıkarılan maddeler de görünür
+            $items = [];
+            $one = function (array $a): string {
+                $parts = [];
+                $cond = legal_conditions();
+                foreach ((array) ($a['paras'] ?? []) as $i => $p) {
+                    $parts[] = '(' . ($i + 1) . ') ' . (($p['when'] ?? '') !== '' ? '[koşul: ' . ($cond[$p['when']] ?? $p['when']) . '] ' : '') . ($p['t'] ?? '');
+                }
+                foreach ((array) ($a['items'] ?? []) as $i => $p) {
+                    $parts[] = chr(97 + $i % 26) . ') ' . ($p['t'] ?? '');
+                }
+                foreach ((array) ($a['plain'] ?? []) as $p) {
+                    $parts[] = 'Sade Türkçesi: ' . (($p['when'] ?? '') !== '' ? '[koşul: ' . ($cond[$p['when']] ?? $p['when']) . '] ' : '') . ($p['t'] ?? '');
+                }
+                return implode("\n", $parts);
+            };
+            foreach (legal_docs() as $doc => $d) {
+                $x = array_values((array) ($b[$doc] ?? legal_default($doc)));
+                $y = array_values((array) ($a[$doc] ?? legal_default($doc)));
+                $rows = [];
+                for ($i = 0; $i < max(count($x), count($y)); $i++) {
+                    $lx = isset($x[$i]) ? ($x[$i]['title'] ?? '') . "\n" . $one($x[$i]) : '';
+                    $ly = isset($y[$i]) ? ($y[$i]['title'] ?? '') . "\n" . $one($y[$i]) : '';
+                    if ($lx !== $ly) {
+                        $rows[] = [($i + 1) . '. madde' . (isset($y[$i]) ? ': ' . ($y[$i]['title'] ?? '') : ''), $lx === '' ? '(madde yoktu)' : $lx, $ly === '' ? '(madde kaldırıldı)' : $ly];
+                    }
+                }
+                if ($rows) {
+                    $items[] = ['title' => 'Yasal metin değişti: ' . $d[0], 'rows' => $rows];
+                }
+            }
+            return $items;
+
         case 'lists':
             $lines = fn(callable $f) => fn($v) => implode("\n", array_map($f, array_values((array) $v)));
             $kinds = ['law' => 'Mevzuat', 'us' => 'Biz'];
@@ -480,6 +515,7 @@ function changelog_diff(string $key, $before, $after): array
                 'banks'      => ['Banka hesapları', $lines(fn($x) => ($x['bank'] ?? '') . ' · ' . ($x['holder'] ?? '') . ' · ' . ($x['account'] ?? '') . ' · ' . ($x['iban'] ?? ''))],
                 'sektorler'  => ['Bülten formu sektör seçenekleri', $lines(fn($x) => (string) $x)],
                 'deneyim'    => ['Kariyer formu deneyim seçenekleri', $lines(fn($x) => (string) $x)],
+                'goals'      => ['Hizmetler sayfasındaki hedef eşleştirici', $lines(fn($x) => ($x['label'] ?? '') . ' → ' . implode(', ', array_map('strval', (array) ($x['services'] ?? []))))],
             ];
             $def = (array) require APP . '/data/site.php';
             $items = [];

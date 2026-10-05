@@ -15,6 +15,7 @@ declare(strict_types=1);
  *   refs      referans logoları ve kaşe maskeleri (liste)
  *   lists     süreç adımları, ilkeler, misyon/vizyon maddeleri, banka hesapları vb.
  *   texts     sayfa metinleri (t() ve th() işlevleri; bkz. app/texts.php)
+ *   legal     yasal metinlerin (KVKK, çerez politikası) maddeleri (bkz. app/legal.php)
  *   features  sitede açık ve kapalı bölümler
  *   seo       arama motoru ve yapay zekâ ayarları
  *
@@ -138,6 +139,9 @@ function content_restore(string $key, string $rev): bool
         return false;
     }
     $data = json_decode((string) file_get_contents($f), true);
+    if ($key === 'legal' && is_array($data)) {
+        $data = legal_sanitize_all($data);   // eski sürüm bugünkü kurallara uymuyorsa (ör. zorunlu madde yoksa) o belge varsayılana döner
+    }
     if ($key === 'texts' && is_array($data)) {
         $data = texts_sanitize_all($data);   // eski sürüm bugünkü kurallara uymuyorsa (kayıt defteri değişmiş olabilir) uymayan metinler alınmaz
     }
@@ -297,6 +301,47 @@ function number_word(int $n): string
 {
     $w = [1 => 'Bir', 'İki', 'Üç', 'Dört', 'Beş', 'Altı', 'Yedi', 'Sekiz', 'Dokuz', 'On', 'On bir', 'On iki', 'On üç', 'On dört', 'On beş', 'On altı', 'On yedi', 'On sekiz', 'On dokuz', 'Yirmi'];
     return $w[$n] ?? (string) $n;
+}
+
+/* ---------- Misyon cümlesi ---------- */
+
+/**
+ * Misyon cümlesinde yalnızca altı kırmızı kalemle çizilecek ifade işaretlenebilir: [kırmızı-çizgi]…[/kırmızı-çizgi] (en çok bir kez).
+ * Başka işaret, süslü parantez ve HTML yazılamaz. Sorun varsa Türkçe açıklama, yoksa null.
+ */
+function mission_statement_error(string $s): ?string
+{
+    if (preg_match('/<\s*\/?\s*[a-zA-Z!?]/', $s)) {
+        return 'Misyon cümlesine HTML yazılamaz (“<” işaretinden sonra harf gelmemeli).';
+    }
+    if (preg_match('/[{}]/', $s)) {
+        return 'Misyon cümlesinde süslü parantez kullanılamaz.';
+    }
+    if (($err = text_marks_check($s)) !== null) {
+        return 'Misyon cümlesi: ' . $err;
+    }
+    preg_match_all('/\[\/?([^\]]+)\]/u', $s, $m);
+    foreach ($m[1] as $name) {
+        if (isset(TEXT_MARKS[$name]) && $name !== 'kırmızı-çizgi') {
+            return 'Misyon cümlesinde yalnızca kırmızı çizgi kullanılabilir: [kırmızı-çizgi]…[/kırmızı-çizgi]; “[' . $name . ']” işareti burada geçmez.';
+        }
+    }
+    if (substr_count($s, '[kırmızı-çizgi]') > 1) {
+        return 'Misyon cümlesinde kırmızı çizgi ile en çok bir ifade işaretlenebilir.';
+    }
+    return null;
+}
+
+/** Misyon cümlesi, sayfada gösterilecek güvenli HTML (işaretli ifade kırmızı kalemle çizilir). */
+function mission_statement_html(string $raw): string
+{
+    return text_rich_html($raw, []);
+}
+
+/** Misyon cümlesi düz yazı olarak (işaretsiz): arama motoru açıklaması, yapısal veri, yapay zekâ özetleri bunu kullanır. */
+function mission_statement_plain(string $raw): string
+{
+    return text_strip_marks($raw);
 }
 
 /* ---------- Hizmetler ---------- */
@@ -672,7 +717,7 @@ function refs_save(array $list): bool
 /** Kurum adından benzersiz kod: "Örnek Havacılık A.Ş." → "ornek-havacilik-a-s" */
 function ref_unique_id(string $name, array $list): string
 {
-    $taken = array_merge(array_column($list, 'id'), ['yeni', 'sirala']);   // panel adresleriyle çakışmasın
+    $taken = array_merge(array_column($list, 'id'), ['yeni', 'sirala', 'hedefler']);   // panel adresleriyle çakışmasın
     $base = mb_substr(slugify($name) ?: 'kurum', 0, 40);
     $id = $base;
     for ($i = 2; in_array($id, $taken, true); $i++) {
@@ -967,6 +1012,7 @@ function lists_keys(): array
         'banks'      => 'Banka hesapları',
         'sektorler'  => 'Bülten formu sektör seçenekleri',
         'deneyim'    => 'Kariyer formu deneyim seçenekleri',
+        'goals'      => 'Hizmetler sayfasındaki hedef eşleştirici',
     ];
 }
 
@@ -982,6 +1028,7 @@ function lists_limits(): array
         'banks'      => ['count' => [1, 6], 'bank' => [2, 40], 'holder' => [2, 50], 'account' => [3, 24]],
         'sektorler'  => ['count' => [3, 60], 'item' => [2, 80]],
         'deneyim'    => ['count' => [2, 20], 'item' => [2, 60]],
+        'goals'      => ['count' => [2, 12], 'label' => [3, 50], 'services' => [1, 12]],   // etiket 50: düğme satırına sığar; en çok 12 hizmet var
     ];
 }
 
@@ -1018,6 +1065,25 @@ function list_clean(string $key, $raw)
     switch ($key) {
         case 'process':
             return $rows($raw, ['phase', 'title', 'us', 'you']);
+        case 'goals':
+            $out = [];
+            foreach ($raw as $g) {
+                if (!is_array($g)) {
+                    continue;
+                }
+                $label = val_line($g['label'] ?? '', 400);
+                $slugs = [];
+                foreach (is_array($g['services'] ?? null) ? $g['services'] : [] as $sl) {
+                    $sl = is_scalar($sl) ? trim((string) $sl) : '';
+                    if ($sl !== '' && !in_array($sl, $slugs, true)) {
+                        $slugs[] = mb_substr($sl, 0, 120);
+                    }
+                }
+                if ($label !== '' || $slugs) {
+                    $out[] = ['label' => $label, 'services' => $slugs];
+                }
+            }
+            return $out;
         case 'timeline':
             $t = $rows($raw, ['year', 'kind', 'title', 'text', 'src']);
             foreach ($t as &$x) {
@@ -1102,6 +1168,26 @@ function list_errors(string $key, $c): array
                 $add(val_len($w, 'kaynak', $x['src'], ...$L['src']));
             }
             break;
+        case 'goals':
+            $add(val_count('Hedef eşleştirici', count($c), ...$L['count']));
+            $known = services();
+            $labels = [];
+            foreach ($c as $i => $g) {
+                $w = ($i + 1) . '. hedef';
+                $add(val_len($w, 'adı', $g['label'], ...$L['label']));
+                $lk = text_lower($g['label']);
+                if ($lk !== '' && isset($labels[$lk])) {
+                    $e[] = $w . ': "' . $g['label'] . '" adı iki kez yazılmış; her hedefin adı farklı olmalı.';
+                }
+                $labels[$lk] = true;
+                $add(val_count($w . ' için hizmet', count($g['services']), ...$L['services']));
+                foreach ($g['services'] as $sl) {
+                    if (!isset($known[$sl])) {
+                        $e[] = $w . ': "' . mb_substr($sl, 0, 60) . '" adında bir hizmet yok. Hizmetler bölümündeki adreslerden birini seçin.';
+                    }
+                }
+            }
+            break;
         case 'principles':
             $add(val_count('İlkeler', count($c), ...$L['count']));
             foreach ($c as $i => [$t, $x]) {
@@ -1110,7 +1196,8 @@ function list_errors(string $key, $c): array
             }
             break;
         case 'mission':
-            $add(val_len('Misyon', 'cümlesi', $c['statement'], ...$L['statement']));
+            $add(val_len('Misyon', 'cümlesi', text_strip_marks($c['statement']), ...$L['statement']));
+            $add(mission_statement_error($c['statement']));
             $add(val_count('Misyon maddeleri', count($c['items']), ...$L['count']));
             foreach ($c['items'] as $i => $x) {
                 $add(val_len(($i + 1) . '. misyon maddesi', 'metni', $x, ...$L['item']));
@@ -1326,6 +1413,18 @@ function upload_image(array $file, string $dir, int $maxW = 1600): string
 }
 
 /**
+ * Klasöre göre görsel kuralları (tasarımın bağlı olduğu ölçüler); kural yoksa boş. Biçim (JPG/PNG/WebP), en çok 8 MB ve 40 megapiksel her görselde denetlenir.
+ * blog: yazı kapağı; listede 3:2, yazı başında 21:9 kutuya kırpılır.
+ */
+function image_rules(string $dir): array
+{
+    return match ($dir) {
+        'blog' => ['name' => 'Kapak görseli', 'min_w' => 800, 'min_h' => 450, 'ratio' => [1.2, 2.4]],
+        default => [],
+    };
+}
+
+/**
  * Sunucudaki bir görsel dosyasını doğrular, küçültür, WebP'ye çevirir ve uploads/{klasör} altına alır.
  * $uploaded: dosya tarayıcıdan mı yüklendi (panel) yoksa sunucuda mı hazırlandı (yapay zekâ erişimi: adresten indirilen görsel).
  */
@@ -1349,6 +1448,18 @@ function image_store(string $path, string $dir, int $maxW = 1600, bool $uploaded
     }
     if (!preg_match('/^[a-z0-9_-]+$/', $dir)) {
         throw new RuntimeException('Geçersiz klasör.');
+    }
+    // Yerleşimi koruyan sınırlar (klasöre göre): en küçük boyut ve en/boy oranı aralığı
+    $rule = image_rules($dir);
+    if ($rule) {
+        [$iw, $ih] = [(int) $info[0], (int) $info[1]];
+        if ($iw < $rule['min_w'] || $ih < $rule['min_h']) {
+            throw new RuntimeException($rule['name'] . ' çok küçük: en az ' . $rule['min_w'] . '×' . $rule['min_h'] . ' piksel olmalı (şu an ' . $iw . '×' . $ih . '); daha küçüğü sayfada bulanık görünür.');
+        }
+        $ratio = $iw / max(1, $ih);
+        if ($ratio < $rule['ratio'][0] || $ratio > $rule['ratio'][1]) {
+            throw new RuntimeException($rule['name'] . ' oranı uygun değil (şu an ' . $iw . '×' . $ih . '): genişlik/yükseklik oranı ' . $rule['ratio'][0] . ' ile ' . $rule['ratio'][1] . ' arasında olmalı; sayfa görseli 3:2 ve 21:9 kutulara göre kırpar, daha uç oranlarda konu kesilir.');
+        }
     }
     $target = ROOT . '/uploads/' . $dir;
     if (!is_dir($target) && !@mkdir($target, 0755, true)) {

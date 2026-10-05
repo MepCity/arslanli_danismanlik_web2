@@ -12,7 +12,7 @@
  *  - Saklama süreleri (özellikle iş başvurularının saklama süresi: kodda otomatik silme yoktur, süre belirtilmemiştir),
  *  - Barındırma ve e-posta hizmet sağlayıcılarının adları ve sunucularının yurt dışında olup olmadığı,
  *  - İYS kaydı yükümlülüğünün sizin için geçerli olup olmadığı.
- * Metnin yazıları kayıt defterindedir (app/data/texts/52-kvkk.php; panelde Sayfa metinleri > KVKK Aydınlatma Metni): her madde, fıkra ve sade Türkçesi ayrı kayıttır.
+ * Başlık, kısaca kutusu ve sayfa sonu yazıları kayıt defterindedir (app/data/texts/52-kvkk.php); maddeler panelde Yasal metinler bölümündedir (app/data/legal.php varsayılanı).
  * Teknik not: form.php gönderimleri storage/submissions.jsonl dosyasına IP adresiyle birlikte yazar;
  * hız sınırı kayıtları (storage/rate-*.json) kendiliğinden silinmez, sunucuda dönemsel temizlik önerilir.
  */
@@ -31,19 +31,8 @@ $vars = [
     'cerez_baglanti' => ['html' => '<a class="link" href="' . url('kurumsal/cerez-politikasi') . '">' . e(pg_name('cerez')) . '</a>'],
 ];
 
-// id: kayıt anahtarının ikinci parçası, f: fıkra sayısı, bent: harfli liste maddesi sayısı. Kariyer sayfası #basvuru-adaylari bağlantısına gider: 'anchor' değerini değiştirmeyin.
-$maddeler = legal_maddeler('kvkk', [
-    ['id' => 'm1', 'f' => 2, 'sade' => true],
-    ['id' => 'm2', 'f' => 6, 'sade' => true],
-    ['id' => 'm3', 'f' => 2, 'sade' => true],
-    ['id' => 'm4', 'f' => 3, 'sade' => true],
-    ['id' => 'm5', 'f' => 4, 'sade' => true, 'anchor' => 'basvuru-adaylari'],
-    ['id' => 'm6', 'f' => 2, 'sade' => true],
-    ['id' => 'm7', 'f' => 4, 'sade' => true],
-    ['id' => 'm8', 'f' => 1, 'bent' => 9, 'sade' => true],
-    ['id' => 'm9', 'f' => 2, 'sade' => true],
-    ['id' => 'm10', 'f' => 1],
-], $vars);
+// Maddeler Yasal metinler bölümünden gelir (app/legal.php); kariyer sayfası #basvuru-adaylari bağlantısına gider: o maddenin kimliği sabittir.
+$maddeler = legal_maddeler('kvkk', $vars);
 
 legal_doc([
     'no'       => t('kvkk.baslik.sayi'),

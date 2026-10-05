@@ -66,7 +66,8 @@ function txt_field(string $key, array $item, string $current, string $context = 
             . '<button type="button" class="txf__fmt" data-fmt="eğik"><span><em>E</em>ğik</span></button>'
             . '<button type="button" class="txf__fmt" data-fmt="çizgi">Alt çizgi</button>'
             . '<button type="button" class="txf__fmt txf__fmt--red" data-fmt="kırmızı-çizgi">Kırmızı çizgi</button>'
-            . '<button type="button" class="txf__fmt" data-fmt="halka">Halka</button></div>';
+            . '<button type="button" class="txf__fmt" data-fmt="halka">Halka</button>'
+            . '<button type="button" class="txf__fmt txf__fmt--mark" data-fmt="vurgu" title="Fosforlu kalem gibi vurgu">Vurgu</button></div>';
     }
     $chips = '';
     foreach ($opts['vars'] as $v => $desc) {
@@ -250,7 +251,7 @@ $html = $searchBox . $note
   if (nav) { var on = nav.querySelector(".is-on"); if (on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, on.offsetLeft - 16); }
   var norm = function (s) { return String(s).replace(/\r\n?/g, "\n").trim(); };
   var field = function (box) { return box.querySelector("textarea, input.inp"); };
-  var plainLen = function (s) { return s.replace(/\[\/?(?:kalın|eğik|çizgi|kırmızı-çizgi|halka|kırmızı-halka)\]/g, "").length; };
+  var plainLen = function (s) { return s.replace(/\[\/?(?:kalın|eğik|çizgi|kırmızı-çizgi|halka|kırmızı-halka|vurgu)\]/g, "").length; };
   d.querySelectorAll("[data-txf]").forEach(function (box) {
     var def = box.getAttribute("data-default");
     var f = field(box);

@@ -107,6 +107,15 @@ if (preg_match('#^duyurular/([a-z0-9]+)\.ics$#', $path, $m)) {
     ann_serve_ics($m[1]);
 }
 
+// Arama motorları ve yapay zekâ ajanları için makine okunur adresler (robots.txt, llms.txt, llms-full.txt, .md sürümleri, akışlar, IndexNow anahtarı)
+require APP . '/agents/routes.php';
+
+// Sayfa paylaşım kartları: /og/{tür}/{ad}.png
+if (preg_match('#^og/([a-z]+)/([a-z0-9\-]+)\.png$#', $path, $m)) {
+    require APP . '/og.php';
+    exit;
+}
+
 if (isset($static[$path])) {
     if (!is_file(APP . '/pages/' . $static[$path] . '.php')) {
         not_found();

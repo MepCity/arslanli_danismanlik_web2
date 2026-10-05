@@ -5,10 +5,7 @@
  * @var string $path     Geçerli yol (index.php)
  */
 $p     = page();
-$title = $p['title'] ? t('genel.seo.title_pattern', ['sayfa' => $p['title']]) : t('genel.seo.title_home');
-$desc  = $p['description'] ?: t('genel.seo.description');
-$canon = $p['canonical'] ?: absolute_url($path ?? '');
-$image = $p['image'] ?: absolute_url('assets/img/og.jpg');
+$seo   = seo_meta($p, $path ?? '');   // başlık, açıklama, canonical, robots, paylaşım görseli: tek yerden (app/seo.php)
 $id    = $p['id'];
 
 $pageCss = is_file(ROOT . '/assets/css/pages/' . $id . '.css') ? asset('css/pages/' . $id . '.css') : null;
@@ -29,25 +26,12 @@ $folioHtml = preg_match('/^' . preg_quote(e(folio_word()), '/') . '\s+(\S+)\s*·
     : $folio;
 // Açılışta öne çıkan duyuru (varsa): pencere, çip ve kendi dosyaları yalnızca o zaman yüklenir
 $spot = function_exists('ann_featured') ? ann_featured() : null;
-// Yapısal verideki ilçe ve il, ayarlardaki kısa adresten ("Pendik, İstanbul") gelir
-[$loc, $reg] = array_map('trim', array_pad(explode(',', (string) cfg('address_short'), 2), 2, ''));
 ?><!doctype html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title><?= e($title) ?></title>
-<meta name="description" content="<?= e($desc) ?>">
-<?php if ($id === 'notfound'): ?><meta name="robots" content="noindex"><?php else: ?><link rel="canonical" href="<?= e($canon) ?>"><?php endif; ?>
-<meta name="theme-color" content="<?= $p['theme'] === 'dark' ? '#121214' : '#eeeae1' ?>">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="tr_TR">
-<meta property="og:site_name" content="<?= e(cfg('name')) ?>">
-<meta property="og:title" content="<?= e($p['title'] ?: cfg('name')) ?>">
-<meta property="og:description" content="<?= e($desc) ?>">
-<meta property="og:url" content="<?= e($canon) ?>">
-<meta property="og:image" content="<?= e($image) ?>">
-<meta name="twitter:card" content="summary_large_image">
+<?= seo_head($p, $path ?? '', $seo) ?><meta name="theme-color" content="<?= $p['theme'] === 'dark' ? '#121214' : '#eeeae1' ?>">
 <link rel="icon" type="image/svg+xml" href="<?= asset('img/favicon.svg') ?>">
 <link rel="icon" type="image/png" href="<?= asset('img/favicon.png') ?>">
 <link rel="apple-touch-icon" href="<?= asset('img/apple-touch-icon.png') ?>">
@@ -65,18 +49,7 @@ window.__revealFallback=setTimeout(function(){h.classList.add('reveal-fallback')
 window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||null});})();
 </script>
 <script type="application/json" id="js-metin"><?= json_encode(texts_js(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-<script type="application/ld+json"><?= json_encode(array_merge([
-    '@context' => 'https://schema.org',
-    '@type'    => 'ProfessionalService',
-    'name'     => cfg('name'),
-    'url'      => cfg('url'),
-    'telephone' => cfg('phone'),
-    'email'    => cfg('email'),
-    'foundingDate' => (string) cfg('founded'),
-    'address'  => ['@type' => 'PostalAddress', 'streetAddress' => cfg('address'), 'addressLocality' => $loc, 'addressRegion' => $reg, 'addressCountry' => 'TR'],
-    'sameAs'   => array_values(cfg('social')),
-], $p['schema']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
-</head>
+<?= seo_jsonld($p, $path ?? '', $seo) ?></head>
 <body data-page="<?= e($id) ?>" data-theme="<?= e($p['theme']) ?>" data-base="<?= e(base_path()) ?>">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">

@@ -8,7 +8,8 @@ return [
         'sections' => [
             '1. Başlık' => [
                 'hesap.hero.baslik' => ['Büyük başlık', 'Hesap numaralarımız.', 'line', 'Sayfanın adı Sayfa adları listesinden, bu başlık buradan değişir.', ['max' => 50]],
-                'hesap.hero.giris' => ['Başlığın altındaki açıklama', 'Ödemenizi aşağıdaki {hesap_sayisi|yazı} hesaptan birine yapabilirsiniz. Açıklama satırına firmanızın adını yazmanız, ödemeyi doğru dosyayla eşleştirmemizi kolaylaştırır.', 'text', '{hesap_sayisi|yazı} yerine hesap sayısı yazıyla gelir (iki, üç…); silmeyin.', ['vars' => ['hesap_sayisi'], 'need' => ['hesap_sayisi']]],
+                'hesap.hero.giris' => ['Başlığın altındaki açıklama', 'Ödemenizi aşağıdaki {hesap_sayisi|yazı} hesaptan birine yapabilirsiniz. Açıklama satırına firmanızın adını yazmanız, ödemeyi doğru dosyayla eşleştirmemizi kolaylaştırır.', 'text', 'İki ya da daha çok hesap varsa görünür. {hesap_sayisi|yazı} yerine hesap sayısı yazıyla gelir (iki, üç…); silmeyin.', ['vars' => ['hesap_sayisi'], 'need' => ['hesap_sayisi']]],
+                'hesap.hero.giris_tek' => ['Başlığın altındaki açıklama (tek hesap varsa)', 'Ödemenizi aşağıdaki hesaba yapabilirsiniz. Açıklama satırına firmanızın adını yazmanız, ödemeyi doğru dosyayla eşleştirmemizi kolaylaştırır.', 'text', 'Yalnızca Kurumsal içerikte tek banka hesabı kalırsa görünür.'],
             ],
             '2. Fişler' => [
                 'hesap.fis.liste_etiket' => ['Fişlerin erişilebilirlik adı', 'Banka hesapları', 'line', 'Görünmez; ekran okuyucular içindir.'],
@@ -40,7 +41,7 @@ return [
                 'hesap.sonraki.etiket' => ['İletişim bağlantısının küçük yazısı', 'Bir sorunuz mu var? · {no}', 'line', '{no} yerine İletişim sayfasının evrak numarası gelir. Bağlantının büyük yazısı İletişim sayfasının adıdır (Sayfa adları).', ['vars' => ['no' => 'İletişim sayfasının numarası'], 'need' => ['no'], 'max' => 50]],
             ],
             '6. Arama motorları' => [
-                'hesap.seo.description' => ['Arama motoru açıklaması', '{firma} banka hesap bilgileri: Ziraat Katılım Bankası ve Halk Bankası IBAN numaraları.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. Banka adlarını hesaplar değişirse güncelleyin. 150-160 karakter önerilir.', ['vars' => ['firma'], 'max' => 320]],
+                'hesap.seo.description' => ['Arama motoru açıklaması', '{firma} banka hesap bilgileri: {banka_adlari} IBAN numaraları.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. {banka_adlari} yerine Kurumsal içerikteki banka adları gelir. 150-160 karakter önerilir.', ['vars' => ['firma', 'banka_adlari'], 'max' => 320]],
             ],
         ],
     ],

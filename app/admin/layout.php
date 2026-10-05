@@ -16,7 +16,6 @@ if (!function_exists('adm_pending_sections')) {
     function adm_pending_sections(): array
     {
         return [
-            'seo'         => '3A',   // SEO ve yapay zekâ
         ];
     }
 }
@@ -48,6 +47,7 @@ $nav = [
         ['referanslar', 'referanslar', 'Referanslar', 'images'],
         ['metinler', 'metinler', 'Sayfa metinleri', 'text-aa'],
         ['kurumsal', 'kurumsal', 'Kurumsal içerik', 'buildings'],
+        ['yasal', 'yasal', 'Yasal metinler', 'shield-check'],
     ]],
     ['Gelen kutusu', [
         ['kayitlar', 'kayitlar', 'Form kayıtları', 'tray'],

@@ -3,7 +3,7 @@ $m = site('mission');
 page([
     'id'          => 'mission',
     'title'       => pg_name('misyon'),
-    'description' => t('misyon.seo.description', ['misyon' => $m['statement']]),
+    'description' => t('misyon.seo.description', ['misyon' => mission_statement_plain($m['statement'])]),
     'folio'       => pg_folio('misyon'),
 ]);
 
@@ -35,8 +35,7 @@ $ticks = [
       <div class="defter__page">
         <p class="defter__meta"><span><?= th('misyon.defter.tarih') ?></span><span><?= th('misyon.defter.konu') ?></span></p>
 
-        <?php $vurgu = e(t('misyon.defter.vurgu')); ?>
-        <p class="defter__statement"><?= $vurgu !== '' ? str_replace($vurgu, annot($vurgu, 'under', 'red'), e($m['statement'])) : e($m['statement']) ?></p>
+        <p class="defter__statement"><?= mission_statement_html($m['statement']) ?></p>
 
         <h2 class="defter__h"><?= e(t('misyon.defter.baslik')) ?></h2>
         <ol class="todo" role="list">

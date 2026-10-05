@@ -3,8 +3,8 @@
  * Yasal metinler için ortak şablon: cerez.php ve kvkk.php kullanır.
  * Doğrudan adresi yoktur (index.php yalnızca tanımlı sayfaları açar).
  *
- * Sayfanın bütün yazıları kayıt defterindedir: çerçevenin sabit yazıları "yasal" grubunda, metnin kendisi (başlık, maddeler, fıkralar, sade Türkçesi)
- * sayfanın kendi grubunda ("kvkk", "cerez"). Madde numaraları, içindekiler ve bağlantı kimlikleri burada üretilir.
+ * Çerçevenin sabit yazıları kayıt defterinde ("yasal" grubu); maddeler (başlık, fıkralar, liste, sade Türkçesi) Yasal metinler bölümünden gelir
+ * (app/legal.php: legal_maddeler). Madde numaraları, içindekiler ve bağlantı kimlikleri burada sıradan üretilir.
  *
  * $doc = [
  *   'no'       => 'ARS-2026/012',                  (düz metin)
@@ -12,49 +12,19 @@
  *   'h1'       => 'Sayfa başlığı',                 (düz metin)
  *   'updated'  => '5 Ekim 2026',                   (düz metin)
  *   'lead'     => 'Başlığın altındaki tek cümle (isteğe bağlı)',
- *   'summary'  => ['güvenli HTML (<mark> içerebilir)', ...],
+ *   'summary'  => ['güvenli HTML (<mark> içerebilir; kayıt defterinde [vurgu]…[/vurgu])', ...],
  *   'maddeler' => [['title' => 'Başlık', 'paras' => ['güvenli HTML', ...], 'list' => [['a', 'güvenli HTML'], ...] (isteğe bağlı), 'sade' => 'sade Türkçesi (güvenli HTML)', 'anchor' => 'dışarıdan bağlantı verilecek kısa kimlik (isteğe bağlı)'], ...],
  *   'next'     => ['label' => 'KVKK Aydınlatma Metni', 'href' => url(...), 'no' => '13'],
  * ]
  * Metinler th() ile gelen güvenli HTML'dir (kayıt defterinden); HTML olarak basılır.
  */
 
-/**
- * Kayıt defterindeki madde yazılarından $doc['maddeler'] satırlarını kurar.
- * @param string $grup  Kayıt defteri grubu ("kvkk")
- * @param array  $spec  madde => ['id' => 'm1', 'f' => fıkra sayısı, 'bent' => liste maddesi sayısı (isteğe bağlı), 'sade' => bool, 'anchor' => '…']
- * @param array  $vars  th() için yerel yer tutucular (hepsine verilir; kullanılmayan yok sayılır)
- */
-function legal_maddeler(string $grup, array $spec, array $vars = []): array
-{
-    $letters = ['a', 'b', 'c', 'ç', 'd', 'e', 'f', 'g', 'ğ', 'h', 'ı', 'i', 'j', 'k'];
-    $out = [];
-    foreach ($spec as $s) {
-        $k = $grup . '.' . $s['id'];
-        $m = ['title' => t($k . '.baslik'), 'paras' => []];
-        for ($n = 1; $n <= (int) $s['f']; $n++) {
-            $m['paras'][] = th($k . '.f' . $n, $vars);
-        }
-        for ($n = 1; $n <= (int) ($s['bent'] ?? 0); $n++) {
-            $m['list'][] = [$letters[$n - 1], th($k . '.b' . $n, $vars)];
-        }
-        if (!empty($s['sade'])) {
-            $m['sade'] = th($k . '.sade', $vars);
-        }
-        if (!empty($s['anchor'])) {
-            $m['anchor'] = $s['anchor'];
-        }
-        $out[] = $m;
-    }
-    return $out;
-}
-
-/** Kısaca kutusunun cümleleri: kayıt defterinde vurgu [kalın] ile yazılır, sayfada <mark> olur. */
+/** Kısaca kutusunun cümleleri: kayıt defterinde vurgu [vurgu]…[/vurgu] ile yazılır, sayfada <mark> olur. */
 function legal_ozet(string $grup, int $adet, array $vars = []): array
 {
     $out = [];
     for ($n = 1; $n <= $adet; $n++) {
-        $out[] = str_replace(['<b>', '</b>'], ['<mark>', '</mark>'], th($grup . '.kisaca.m' . $n, $vars));
+        $out[] = th($grup . '.kisaca.m' . $n, $vars);
     }
     return $out;
 }

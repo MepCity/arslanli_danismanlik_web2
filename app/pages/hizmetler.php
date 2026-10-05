@@ -7,17 +7,14 @@ page([
     'folio'       => pg_folio('hizmetler'),
 ]);
 
-// "Ne yapmak istiyorsunuz?" → ilgili dosyalar (seçenek yazısı: hizmetler.eleme.hedef_{anahtar})
-$goals = [
-    'arge'    => ['tubitak-1989', 'kosgeb-1659', 'sanayi-ve-teknoloji-bakanligi-1329', 'avrupa-birligi-projeleri-2319'],
-    'merkez'  => ['sanayi-ve-teknoloji-bakanligi-1329'],
-    'yatirim' => ['sanayi-ve-teknoloji-bakanligi-1329', 'kosgeb-1659', 'yatirim-danismanligi-2649', 'yatirima-yonelik-krediler-2979'],
-    'ihracat' => ['ticaret-bakanligi-destekleri-999'],
-    'marka'   => ['sinai-mulkiyet-haklari-tescilleri-669', 'tubitak-1989'],
-    'kalite'  => ['kalite-belgelendirme-339'],
-    'kredi'   => ['yatirima-yonelik-krediler-2979', 'yatirim-danismanligi-2649'],
-    'ab'      => ['avrupa-birligi-projeleri-2319'],
-];
+// "Ne yapmak istiyorsunuz?" → ilgili dosyalar: seçenekler ve eşleştirmeleri panelden (Hizmetler > Hedef eşleştirici); silinmiş hizmetler atlanır
+$goals = [];
+foreach ((array) site('goals') as $g) {
+    $slugs = array_values(array_filter((array) ($g['services'] ?? []), fn($sl) => isset($all[$sl])));
+    if ($slugs && trim((string) ($g['label'] ?? '')) !== '') {
+        $goals[] = ['label' => (string) $g['label'], 'slugs' => $slugs];
+    }
+}
 // Dosya sırtındaki etiketlerin yatay konumları (gerçek askılı dosyalardaki gibi kademeli)
 $tabs = [4, 22, 40, 58, 74, 13, 31, 49, 66];
 ?>
@@ -37,10 +34,10 @@ $tabs = [4, 22, 40, 58, 74, 13, 31, 49, 66];
       <h2 class="eleme__h" id="eleme-h"><?= e(t('hizmetler.eleme.baslik')) ?></h2>
       <p class="eleme__hint"><?= e(t('hizmetler.eleme.ipucu')) ?></p>
       <ul class="eleme__list" role="list">
-        <?php foreach ($goals as $key => $slugs): ?>
+        <?php foreach ($goals as $gi => $g): ?>
           <li>
-            <button class="eleme__opt" type="button" aria-pressed="false" data-goal="<?= e($key) ?>" data-slugs="<?= e(implode(',', $slugs)) ?>">
-              <span class="eleme__box" aria-hidden="true"></span><span><?= e(t('hizmetler.eleme.hedef_' . $key)) ?></span>
+            <button class="eleme__opt" type="button" aria-pressed="false" data-goal="<?= $gi + 1 ?>" data-slugs="<?= e(implode(',', $g['slugs'])) ?>">
+              <span class="eleme__box" aria-hidden="true"></span><span><?= e($g['label']) ?></span>
             </button>
           </li>
         <?php endforeach; ?>

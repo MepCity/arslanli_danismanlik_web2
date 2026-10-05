@@ -270,6 +270,20 @@ function mcp_list_input(string $liste, $ic): array
             $val = ['open_year' => (string) ($ic['acilis_yili'] ?? ''), 'greeting' => mcp_line((string) ($ic['selamlama'] ?? '')), 'intro' => mcp_line((string) ($ic['giris'] ?? '')),
                 'items' => $strs('Vizyon maddeleri', $ic['maddeler'] ?? null), 'closing' => mcp_line((string) ($ic['kapanis'] ?? ''))];
             break;
+        case 'goals':
+            $val = [];
+            if (!is_array($ic) || !mcp_is_list($ic)) {
+                $err[] = 'Hedef eşleştirici: icerik bir liste (dizi) olmalı: [{secenek, hizmetler: [adres]}].';
+                break;
+            }
+            foreach ($ic as $i => $g) {
+                if (!$isObj($g) || array_diff(array_keys($g), ['secenek', 'hizmetler']) || !isset($g['secenek']) || !is_scalar($g['secenek'])) {
+                    $err[] = 'Hedef eşleştirici: ' . ($i + 1) . '. öğe {secenek: metin, hizmetler: [hizmet adresi, ...]} nesnesi olmalı.';
+                    continue;
+                }
+                $val[] = ['label' => mcp_line((string) $g['secenek']), 'services' => $strs('Hedef eşleştirici ' . ($i + 1) . '. öğenin hizmetleri', $g['hizmetler'] ?? null)];
+            }
+            break;
         case 'sektorler':
         case 'deneyim':
             $val = $strs(lists_keys()[$liste], $ic);
@@ -292,7 +306,9 @@ function mcp_list_help(): string
         . 'vision = Vizyonumuz mektubu, bir NESNE: {acilis_yili (gelecekte bir yıl), selamlama, giris, maddeler: [metin] (' . $n('vision') . ' madde), kapanis}; '
         . 'banks = Hesap Numaralarımız, ' . $n('banks') . ' hesap: [{banka, hesap_sahibi, hesap_no, iban}], IBAN geçerli olmalı (TR + 24 rakam, mod-97 sağlaması) ve tekrarlanmaz; '
         . 'sektorler = bülten formundaki sektör seçenekleri, metin listesi, ' . $n('sektorler') . ' madde (adı "İmalat" ile başlayanlar bülten süzgecinde "İmalat (tümü)" kısayoluna girer; bir adı değiştirirseniz eski adla kaydolmuş aboneler yeni adın süzgecine girmez); '
-        . 'deneyim = kariyer formu deneyim seçenekleri, metin listesi, ' . $n('deneyim') . ' madde. ';
+        . 'deneyim = kariyer formu deneyim seçenekleri, metin listesi, ' . $n('deneyim') . ' madde; '
+        . 'goals = Hizmetler sayfasındaki "Ne yapmak istiyorsunuz?" eşleştiricisi, ' . $n('goals') . ' hedef: [{secenek (ziyaretçinin gördüğü yazı), hizmetler: [hizmet adresi, ...] (seçilince öne çıkacak hizmet dosyaları; adresler hizmetleri_listele sonucundadır)}]. '
+        . 'mission.cumle içinde [kırmızı-çizgi]…[/kırmızı-çizgi] işareti sayfada kırmızı kalemle altı çizilecek ifadeyi gösterir (en çok bir; başka işaret yazılamaz). ';
 }
 
 /* =========================================================================

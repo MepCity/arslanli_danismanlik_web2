@@ -65,6 +65,22 @@ $refBroken = refs_problems();
 $health[] = $refBroken
     ? [false, count($refBroken) . ' referansın logo ya da kaşe dosyası eksik', implode(', ', array_slice(array_keys($refBroken), 0, 4)) . ': sitede kaşe görünmez. Logoyu yeniden yükleyin.', adm_url('referanslar')]
     : [true, 'Referans logoları ve kaşeleri tamam', count(refs_list()) . ' referansın dosyaları yerinde.', ''];
+// Arama motorları ve yapay zekâ (SEO ve yapay zekâ bölümü): doğrulama kodu, IndexNow ve son tarama (tarama burada çalıştırılmaz; yalnızca kayıtlı sonuç okunur)
+$seoSet = seo_settings();
+$seoVerified = array_filter($seoSet['verify']);
+$health[] = $seoVerified
+    ? [true, 'Arama motoru sahipliği doğrulama kodu girildi', 'Kod sitenin her sayfasında; Search Console, Bing ve Yandex tarafında "Doğrula" demeyi unutmayın.', '']
+    : [false, 'Arama motoru doğrulama kodu girilmedi', 'Google Search Console ve Bing Webmaster için sitenin sahibi olduğunuzu doğrulayın.', adm_url('seo/ayarlar')];
+$health[] = !empty($seoSet['indexnow'])
+    ? [true, 'IndexNow açık', 'İçerik değişince Bing ve Yandex hemen haberdar edilir.', '']
+    : [false, 'IndexNow kapalı', 'Açarsanız yeni içerik arama motorlarına günler yerine dakikalar içinde bildirilir.', adm_url('seo/ayarlar')];
+$seoScanFile = ROOT . '/storage/seo-scan.json';
+$seoScan = is_file($seoScanFile) ? json_decode((string) file_get_contents($seoScanFile), true) : null;
+$health[] = is_array($seoScan) && isset($seoScan['err'])
+    ? ($seoScan['err'] + $seoScan['warn'] === 0
+        ? [true, 'Arama motoru taraması temiz', 'Son tarama: ' . $seoScan['pass'] . ' kontrolün hepsi tamam.', '']
+        : [false, $seoScan['err'] . ' sorun, ' . $seoScan['warn'] . ' uyarı (arama motoru taraması)', 'Sorunlu sayfaları ve düzeltileceği yeri SEO ve yapay zekâ bölümü gösterir.', adm_url('seo/genel-bakis')])
+    : [false, 'Arama motoru taraması henüz yapılmadı', 'Her sayfanın başlık, açıklama ve yapısal verisini denetler.', adm_url('seo/genel-bakis')];
 $okCount = count(array_filter($health, fn($h) => $h[0]));
 
 ob_start(); ?>

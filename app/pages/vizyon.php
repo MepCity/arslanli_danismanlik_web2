@@ -1,23 +1,14 @@
 <?php
 $v = site('vision');
-// Kuruluştan açılış yılına kaç yıl geçtiği; sıra sayısı olarak yazıyla ("otuzuncu") ve rakamla (30)
-$yilNo = (int) $v['open_year'] - (int) cfg('founded');
-$ones  = [1 => 'birinci', 'ikinci', 'üçüncü', 'dördüncü', 'beşinci', 'altıncı', 'yedinci', 'sekizinci', 'dokuzuncu'];
-$tens  = [10 => 'onuncu', 20 => 'yirminci', 30 => 'otuzuncu', 40 => 'kırkıncı', 50 => 'ellinci', 60 => 'altmışıncı', 70 => 'yetmişinci', 80 => 'sekseninci', 90 => 'doksanıncı'];
-$tenw  = [10 => 'on', 20 => 'yirmi', 30 => 'otuz', 40 => 'kırk', 50 => 'elli', 60 => 'altmış', 70 => 'yetmiş', 80 => 'seksen', 90 => 'doksan'];
-$yilSira = $yilNo % 10 === 0 && isset($tens[$yilNo]) ? $tens[$yilNo]
-    : (($yilNo > 10 && $yilNo < 100 && isset($ones[$yilNo % 10])) ? $tenw[$yilNo - $yilNo % 10] . ' ' . $ones[$yilNo % 10]
-    : ($ones[$yilNo] ?? $yilNo . '.'));
-$vp = ['acilis_yili' => $v['open_year'], 'mektup_yili_sirasi' => $yilSira, 'acilis_yil_sayisi' => $yilNo];
 page([
     'id'          => 'vision',
     'title'       => pg_name('vizyon'),
-    'description' => t('vizyon.seo.description', $vp),
+    'description' => t('vizyon.seo.description'),
     'folio'       => pg_folio('vizyon'),
 ]);
 $seal = 'M93.2 46.3Q94.0 50.0 93.9 53.9Q93.8 57.7 93.6 61.8Q93.4 65.8 90.8 68.9Q88.1 72.0 86.0 75.2Q83.9 78.4 82.3 82.5Q80.7 86.6 76.8 88.2Q72.9 89.7 69.0 90.7Q65.1 91.6 61.5 92.9Q57.8 94.1 53.9 94.9Q50.0 95.6 46.3 93.6Q42.7 91.6 38.9 91.1Q35.2 90.6 32.0 88.6Q28.9 86.6 24.8 85.8Q20.6 85.0 18.0 82.0Q15.4 79.0 14.5 75.0Q13.6 71.0 10.0 68.5Q6.3 65.9 5.3 62.0Q4.3 58.1 4.7 54.0Q5.1 50.0 3.9 45.8Q2.8 41.7 6.4 38.6Q10.0 35.4 11.9 32.3Q13.7 29.1 14.9 25.3Q16.0 21.5 19.5 19.6Q22.9 17.8 25.8 15.4Q28.6 13.0 32.0 11.3Q35.3 9.6 39.0 9.2Q42.7 8.7 46.4 5.7Q50.0 2.8 54.1 3.2Q58.2 3.6 61.9 5.3Q65.7 6.9 68.9 9.3Q72.1 11.6 75.5 13.6Q78.8 15.6 81.4 18.6Q83.9 21.6 86.4 24.5Q89.0 27.5 90.1 31.2Q91.3 35.0 91.9 38.7Q92.5 42.5 93.2 46.3Z';
-$openNote = tr_upper(t('vizyon.zarf.kase_ust', $vp));
-$openSub  = tr_upper(t('vizyon.zarf.kase_alt', $vp));
+$openNote = tr_upper(t('vizyon.zarf.kase_ust'));
+$openSub  = tr_upper(t('vizyon.zarf.kase_alt'));
 ?>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -43,9 +34,9 @@ $openSub  = tr_upper(t('vizyon.zarf.kase_alt', $vp));
 <section class="vz pagehead" data-vz data-year="<?= $v['open_year'] ?>" aria-labelledby="vz-title">
   <div class="wrap vz__wrap">
     <header class="vz__head">
-      <p class="docmeta"><span><?= th('vizyon.hero.sayi') ?></span><span><?= th('vizyon.hero.konu') ?></span><span><?= th('vizyon.hero.acilis', $vp) ?></span></p>
+      <p class="docmeta"><span><?= th('vizyon.hero.sayi') ?></span><span><?= th('vizyon.hero.konu') ?></span><span><?= th('vizyon.hero.acilis') ?></span></p>
       <h1 class="display vz__h" id="vz-title"><?= e(t('vizyon.hero.baslik')) ?></h1>
-      <p class="lead vz__lead"><?= e(t('vizyon.hero.giris', $vp)) ?></p>
+      <p class="lead vz__lead"><?= e(t('vizyon.hero.giris')) ?></p>
     </header>
 
     <div class="vz__stage" data-stage>
@@ -60,7 +51,7 @@ $openSub  = tr_upper(t('vizyon.zarf.kase_alt', $vp));
         </svg>
         <p class="env__to" aria-hidden="true">
           <span><?= e(t('vizyon.zarf.alici')) ?></span> <em><?= e(cfg('name')) ?></em><br>
-          <span><?= e(t('vizyon.zarf.adres')) ?></span> <em><?= e(t('vizyon.zarf.adres_deger', $vp)) ?></em>
+          <span><?= e(t('vizyon.zarf.adres')) ?></span> <em><?= e(t('vizyon.zarf.adres_deger')) ?></em>
         </p>
         <div class="env__flap" data-flap aria-hidden="true">
           <i class="env__flap-out"></i>
@@ -88,7 +79,7 @@ $openSub  = tr_upper(t('vizyon.zarf.kase_alt', $vp));
           <span class="letter__logo"><?php require APP . '/partials/logo.php'; ?></span>
           <span class="letter__date"><?= e(t('vizyon.mektup.tarih')) ?></span>
         </header>
-        <p class="letter__subj"><?= th('vizyon.mektup.konu', $vp) ?></p>
+        <p class="letter__subj"><?= th('vizyon.mektup.konu') ?></p>
         <p class="letter__greet"><?= e($v['greeting']) ?></p>
         <p class="letter__p"><?= e($v['intro']) ?></p>
         <ol class="letter__list" role="list">

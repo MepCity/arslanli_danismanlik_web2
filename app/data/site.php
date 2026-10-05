@@ -139,9 +139,22 @@ return [
         ['Mevzuatı biz izleriz.', 'Karar ve tebliğleri takip ederiz. Sizi ilgilendiren bir değişiklik olduğunda haberi bizden alırsınız.'],
     ],
 
+    // Hizmetler sayfasındaki "Ne yapmak istiyorsunuz?" eşleştiricisi: her seçenek işaretlenince hangi hizmet dosyalarının öne çıkacağı
+    // (services içindeki adresler). Panel: Hizmetler > Hedef eşleştirici.
+    'goals' => [
+        ['label' => 'Ar-Ge projesi yapmak', 'services' => ['tubitak-1989', 'kosgeb-1659', 'sanayi-ve-teknoloji-bakanligi-1329', 'avrupa-birligi-projeleri-2319']],
+        ['label' => 'Ar-Ge ya da tasarım merkezi kurmak', 'services' => ['sanayi-ve-teknoloji-bakanligi-1329']],
+        ['label' => 'Makine ya da tesis yatırımı', 'services' => ['sanayi-ve-teknoloji-bakanligi-1329', 'kosgeb-1659', 'yatirim-danismanligi-2649', 'yatirima-yonelik-krediler-2979']],
+        ['label' => 'İhracat, fuar ve tanıtım', 'services' => ['ticaret-bakanligi-destekleri-999']],
+        ['label' => 'Marka ya da patent', 'services' => ['sinai-mulkiyet-haklari-tescilleri-669', 'tubitak-1989']],
+        ['label' => 'ISO belgesi almak', 'services' => ['kalite-belgelendirme-339']],
+        ['label' => 'Uygun maliyetli kredi', 'services' => ['yatirima-yonelik-krediler-2979', 'yatirim-danismanligi-2649']],
+        ['label' => 'Avrupa’dan ortak bulmak', 'services' => ['avrupa-birligi-projeleri-2319']],
+    ],
+
     // Misyonumuz: iş listesi
     'mission' => [
-        'statement' => 'İşletmelerin hak ettiği kamu desteğine, kâğıt işine boğulmadan ulaşmasını sağlamak.',
+        'statement' => 'İşletmelerin hak ettiği kamu desteğine, [kırmızı-çizgi]kâğıt işine boğulmadan[/kırmızı-çizgi] ulaşmasını sağlamak.',   // [kırmızı-çizgi]…[/kırmızı-çizgi]: sayfada kırmızı kalemle altı çizilir
         'items' => [
             'İşletmeye uyan programı bulmak; uymayanı baştan elemek.',
             'Başvuru dosyasını, programın değerlendirme formunu bilerek yazmak.',

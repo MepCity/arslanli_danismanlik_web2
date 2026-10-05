@@ -15,23 +15,13 @@ foreach ($timeline as $i => $t) {
     if ($t['kind'] === 'us') { $initial = $i; break; }
 }
 
-// Kuruluştan önce gelen klasör sayısı ve "ilk üçü" gibi ek almış biçimi (sayfa metninde {onceki_sayi})
-$onceki = count(array_filter($timeline, fn($t) => (int) $t['year'] < (int) cfg('founded')));
-$iyelik = [1 => 'biri', 'ikisi', 'üçü', 'dördü', 'beşi', 'altısı', 'yedisi', 'sekizi', 'dokuzu', 'onu'];
-$onceki_sayi = $iyelik[$onceki] ?? $onceki . '’i';
-
-// Kuruluştan açılış yılına kaç yıl geçtiği, sıra sayısı olarak yazıyla ("otuzuncu")
-$sira_yil = (int) site('vision')['open_year'] - (int) cfg('founded');
-$ones = [1 => 'birinci', 'ikinci', 'üçüncü', 'dördüncü', 'beşinci', 'altıncı', 'yedinci', 'sekizinci', 'dokuzuncu'];
-$tens = [10 => 'onuncu', 20 => 'yirminci', 30 => 'otuzuncu', 40 => 'kırkıncı', 50 => 'ellinci', 60 => 'altmışıncı', 70 => 'yetmişinci', 80 => 'sekseninci', 90 => 'doksanıncı'];
-$tenw = [10 => 'on', 20 => 'yirmi', 30 => 'otuz', 40 => 'kırk', 50 => 'elli', 60 => 'altmış', 70 => 'yetmiş', 80 => 'seksen', 90 => 'doksan'];
-$sira_yazi = $sira_yil % 10 === 0 && isset($tens[$sira_yil]) ? $tens[$sira_yil]
-    : (($sira_yil > 10 && $sira_yil < 100 && isset($ones[$sira_yil % 10])) ? $tenw[$sira_yil - $sira_yil % 10] . ' ' . $ones[$sira_yil % 10]
-    : ($ones[$sira_yil] ?? $sira_yil . '.'));
+// Kuruluştan önce gelen klasör sayısı ({onceki_sayi}); notun cümlesi sayıya göre seçilir (hiç yok / tek / birkaç)
+$onceki   = count(array_filter($timeline, fn($t) => (int) $t['year'] < (int) cfg('founded')));
+$notAnahtar = $onceki === 0 ? 'hakkimizda.raf.not_yok' : ($onceki === 1 ? 'hakkimizda.raf.not_tek' : 'hakkimizda.raf.not');
 
 $cards = [
     ['kurumsal/misyonumuz', t('hakkimizda.kartlar.misyon_no'), pg_name('misyon'), t('hakkimizda.kartlar.misyon')],
-    ['kurumsal/vizyonumuz', t('hakkimizda.kartlar.vizyon_no'), pg_name('vizyon'), t('hakkimizda.kartlar.vizyon', ['mektup_yili_sirasi' => $sira_yazi, 'acilis_yili' => site('vision')['open_year']])],
+    ['kurumsal/vizyonumuz', t('hakkimizda.kartlar.vizyon_no'), pg_name('vizyon'), t('hakkimizda.kartlar.vizyon')],
     ['kurumsal/mihenk-taslarimiz', t('hakkimizda.kartlar.mihenk_no'), pg_name('mihenk'), t('hakkimizda.kartlar.mihenk')],
 ];
 ?>
@@ -54,7 +44,7 @@ $cards = [
     <header class="raf__head">
       <p class="label"><?= e(t('hakkimizda.raf.etiket', ['ilk_yil' => $timeline[0]['year'], 'son_yil' => end($timeline)['year']])) ?></p>
       <h2 class="display h2" id="raf-title"><?= e(t('hakkimizda.raf.baslik')) ?></h2>
-      <p class="raf__note"><?= e(t('hakkimizda.raf.not', ['onceki_sayi' => $onceki_sayi])) ?> <span class="only-fine-ab"><?= e(t('hakkimizda.raf.ipucu_fare')) ?></span><span class="only-touch-ab"><?= e(t('hakkimizda.raf.ipucu_dokunma')) ?></span></p>
+      <p class="raf__note"><?= e(t($notAnahtar)) ?> <span class="only-fine-ab"><?= e(t('hakkimizda.raf.ipucu_fare')) ?></span><span class="only-touch-ab"><?= e(t('hakkimizda.raf.ipucu_dokunma')) ?></span></p>
     </header>
 
     <div class="shelf" data-shelf>

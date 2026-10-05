@@ -15,7 +15,6 @@ return [
             '2. Defter sayfası' => [
                 'misyon.defter.tarih' => ['Defterin üst satırı: tarih', 'Tarih: [eğik]{tarih}[/eğik]', 'rich', '{tarih} yerine bugünün tarihi gelir.', ['vars' => ['tarih'], 'need' => ['tarih'], 'max' => 40]],
                 'misyon.defter.konu' => ['Defterin üst satırı: konu', 'Konu: [eğik]Misyon[/eğik]', 'rich', '', ['max' => 40]],
-                'misyon.defter.vurgu' => ['Misyon cümlesinde kırmızı çizilecek ifade', 'kâğıt işine boğulmadan', 'line', 'Defterin başındaki misyon cümlesi Kurumsal içerik bölümünden gelir. Bu ifade o cümlenin içinde aynen geçiyorsa altı kırmızı kalemle çizilir; cümleyi değiştirdiyseniz buraya da yeni ifadeyi yazın.', ['max' => 80]],
                 'misyon.defter.baslik' => ['Listenin başlığı', 'Yapılacaklar', 'line', '', ['max' => 40]],
                 'misyon.defter.okuyucu' => ['Her maddenin ekran okuyucu notu', '(her dosyada yapılır)', 'line', 'Görünmez; ekran okuyucular içindir.', ['max' => 60]],
                 'misyon.defter.imza' => ['İmzanın altındaki şehir', 'İstanbul', 'line', 'Firma adının altında görünür.', ['max' => 30]],

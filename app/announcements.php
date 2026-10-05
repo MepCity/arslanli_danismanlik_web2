@@ -18,14 +18,21 @@ declare(strict_types=1);
 
 const ANN_FILE = ROOT . '/storage/duyurular.json';
 
+/** Tarih türleri ve adları; adlar panelde Sayfa metinleri > Duyurular > "Tarih türlerinin adları" bölümündedir. */
 function ann_types(): array
 {
     return [
-        'baslangic' => 'Başvuru başlangıcı',
-        'son'       => 'Son başvuru günü',
-        'sonuc'     => 'Sonuç açıklanması',
-        'diger'     => 'Bilgilendirme',
+        'baslangic' => t('duyurular.tur.baslangic'),
+        'son'       => t('duyurular.tur.son'),
+        'sonuc'     => t('duyurular.tur.sonuc'),
+        'diger'     => t('duyurular.tur.diger'),
     ];
+}
+
+/** Bir tarih türünün adı; tür bilinmiyorsa "Bilgilendirme" adı. */
+function ann_type_name(string $type): string
+{
+    return ann_types()[$type] ?? t('duyurular.kagit.tur_yok');
 }
 
 /** Dosya yokken kullanılan varsayılan duyurular (app/data/duyurular.php); hepsi yayındadır. */
@@ -150,7 +157,7 @@ function ann_events(array $items): array
                 'id'    => $a['id'],
                 'date'  => $ev['date'],
                 'type'  => $ev['type'],
-                'label' => $types[$ev['type']] ?? 'Bilgilendirme',
+                'label' => $types[$ev['type']] ?? ann_type_name('diger'),
                 'note'  => $ev['note'] ?? '',
                 'title' => $a['title'],
                 'kurum' => $a['kurum'] ?? '',
@@ -265,10 +272,11 @@ function ann_days_left(string $ymd): int
     return (int) round((strtotime($ymd) - strtotime(date('Y-m-d'))) / 86400);
 }
 
+/** Tarihe kalan süre ("Bugün", "Yarın", "5 gün kaldı", geçmişse "Geçti"); sözcükler Sayfa metinleri > Duyurular > "Kalan süre" bölümündedir. */
 function ann_left_text(string $ymd): string
 {
     $n = ann_days_left($ymd);
-    return $n < 0 ? 'Geçti' : ($n === 0 ? 'Bugün' : ($n === 1 ? 'Yarın' : $n . ' gün kaldı'));
+    return $n < 0 ? t('duyurular.kalan.gecti') : ($n === 0 ? t('duyurular.kalan.bugun') : ($n === 1 ? t('duyurular.kalan.yarin') : t('duyurular.kalan.gun', ['n' => $n])));
 }
 
 /** "12 Ekim" */
@@ -341,8 +349,8 @@ function ann_ics_calendar(array $anns, string $name): string
     foreach ($anns as $a) {
         $stamp = gmdate('Ymd\THis\Z', (int) strtotime((string) $a['updated']));
         foreach ($a['events'] as $ev) {
-            $label = $types[$ev['type']] ?? 'Bilgilendirme';
-            $desc  = array_filter([$a['summary'], $ev['note'], 'Resmi bağlantı: ' . $a['link'], 'Duyuru: ' . absolute_url('duyurular') . '#duyuru-' . $a['id']]);
+            $label = $types[$ev['type']] ?? ann_type_name('diger');
+            $desc  = array_filter([$a['summary'], $ev['note'], t('duyurular.takvim.resmi') . ': ' . $a['link'], t('duyurular.takvim.duyuru') . ': ' . absolute_url('duyurular') . '#duyuru-' . $a['id']]);
             array_push($lines,
                 'BEGIN:VEVENT',
                 'UID:' . preg_replace('/[^A-Za-z0-9._-]/', '', $a['id'] . '-' . $ev['date'] . '-' . $ev['type']) . '@' . $host,
@@ -376,13 +384,13 @@ function ann_serve_ics(?string $id): void
         if (!$a) {
             http_response_code(404);
             header('Content-Type: text/plain; charset=utf-8');
-            echo "Duyuru bulunamadı.\n";
+            echo t('duyurular.takvim.yok') . "\n";
             exit;
         }
         $body = ann_ics_calendar([$a], $a['title']);
         $file = 'duyuru-' . $id . '.ics';
     } else {
-        $body = ann_ics_calendar($pub, cfg('name') . ': Duyurular');
+        $body = ann_ics_calendar($pub, t('duyurular.takvim.ad'));
         $file = 'duyurular.ics';
     }
     header('Content-Type: text/calendar; charset=utf-8');

@@ -27,6 +27,9 @@ function mcp_tools_seo(): array
 {
     $RO = [true, false, true];
     $T = [];
+    $noArgs = sc_obj();
+    // Doğrulama kodu alanı: yalnızca kod ya da arama motorunun verdiği <meta> etiketinin tamamı; boş dize kodu siler
+    $VERIFY = fn(string $label) => sc_str($label . ' doğrulama kodu (yalnızca kod ya da etiketin tamamı). Boş dize kodu siler.');
 
     if (mcp_has_seo('tarama')) {
         $T[] = mcp_def('seo_tara', 'okuma', 'Arama motoru taraması',

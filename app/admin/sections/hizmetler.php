@@ -19,6 +19,62 @@ if ($slug === 'sirala' && $method === 'POST') {
     adm_go('hizmetler');
 }
 
+/* ---------- Hedef eşleştirici: Hizmetler sayfasındaki "Ne yapmak istiyorsunuz?" seçenekleri ---------- */
+if ($slug === 'hedefler') {
+    $LM = lists_limits()['goals'];
+    $errors = [];
+    $rows = null;
+    if ($method === 'POST') {
+        $rows = [];
+        foreach ((array) ($_POST['goals'] ?? []) as $g) {
+            if (!is_array($g)) {
+                continue;
+            }
+            $rows[] = ['label' => (is_string($g['label'] ?? null) ? mb_substr(trim($g['label']), 0, 400) : ''), 'services' => array_values(array_filter((array) ($g['services'] ?? []), 'is_string'))];
+        }
+        $r = lists_save(['goals' => $rows]);
+        if ($r['ok']) {
+            adm_flash($r['changed'] ? 'Hedef eşleştirici kaydedildi.' : 'Değişiklik yok; kayıt oluşturulmadı.');
+            adm_go('hizmetler/hedefler');
+        }
+        $errors = $r['errors'];
+        $rows = list_clean('goals', $rows);
+    }
+    $rows = $rows ?? (array) site('goals');
+    $opts = [];
+    foreach ($all as $s => $v) {
+        $opts[$s] = $v['title'];
+    }
+    $missing = [];
+    foreach ($rows as $i => $g) {
+        foreach ((array) ($g['services'] ?? []) as $sl) {
+            if (!isset($all[$sl])) {
+                $missing[] = '"' . ($g['label'] ?? '') . '" hedefinde silinmiş bir hizmet var (' . $sl . ')';
+            }
+        }
+    }
+    ob_start();
+    if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong><ul class="errs"><li>' . implode('</li><li>', array_map('e', $errors)) . '</li></ul>');
+    if ($missing && !$errors) echo '<p class="goal-warn">' . ui_icon('warning-circle') . '<span>' . e(implode('; ', $missing)) . '. Sitede bu hizmet atlanır; kaydederken listeden çıkarılması istenir.</span></p>';
+    ?>
+<form id="goal-form" method="post" action="<?= adm_url('hizmetler/hedefler') ?>" novalidate>
+  <?= adm_csrf_field() ?>
+  <?= ui_card('Hedefler ve öne çıkan dosyalar', ui_repeater('goals', '', array_map(fn($g) => ['label' => (string) ($g['label'] ?? ''), 'services' => (array) ($g['services'] ?? [])], $rows), [
+      ['key' => 'label', 'label' => 'Seçeneğin yazısı', 'maxlength' => $LM['label'][1], 'placeholder' => 'Örn: Ar-Ge projesi yapmak', 'class' => 'span-2'],
+      ['key' => 'services', 'label' => 'Seçilince öne çıkan hizmet dosyaları', 'type' => 'checks', 'options' => $opts, 'class' => 'span-2'],
+  ], ['add' => 'Hedef ekle', 'min' => $LM['count'][0]]), [
+      'desc'    => 'Hizmetler sayfasında ziyaretçiye "Ne yapmak istiyorsunuz?" diye sorulur; bir seçenek işaretlenince burada seçtiğiniz dosyalar öne çıkar, diğerleri soluklaşır. ' . $LM['count'][0] . ' ile ' . $LM['count'][1] . ' hedef; her hedef için en az bir dosya. Sıra sayfadaki sıradır. Sorunun başlığı, ipucu ve durum cümleleri Sayfa metinleri > Hizmetler bölümündedir.',
+      'actions' => ui_view_link(url('hizmetler#eleme-h')) . ui_history_link('lists'),
+  ]) ?>
+</form>
+<?php
+    adm_layout('Hedef eşleştirici', (string) ob_get_clean(), [
+        'section' => 'hizmetler',
+        'crumbs'  => [['Hizmetler', adm_url('hizmetler')]],
+        'form'    => 'goal-form',
+    ]);
+}
+
 /* ---------- Liste ---------- */
 if ($slug === null) {
     $rows = '';
@@ -40,7 +96,7 @@ if ($slug === null) {
     ]), [
         'section'  => 'hizmetler',
         'subtitle' => count($all) . ' hizmet dosyası (en az ' . $L['services'][0] . ', en çok ' . $L['services'][1] . '). Menü, ana sayfa, Hizmetler sayfası ve iletişim formu bu listeden beslenir.',
-        'actions'  => ui_view_link(url('hizmetler')) . ui_history_link('services') . '<a class="btn btn--sm" href="' . adm_url('hizmetler/yeni') . '">' . ui_icon('plus') . 'Yeni hizmet</a>',
+        'actions'  => ui_view_link(url('hizmetler')) . ui_history_link('services') . '<a class="btn btn--ghost btn--sm" href="' . adm_url('hizmetler/hedefler') . '">' . ui_icon('sparkle') . 'Hedef eşleştirici</a><a class="btn btn--sm" href="' . adm_url('hizmetler/yeni') . '">' . ui_icon('plus') . 'Yeni hizmet</a>',
         'form'     => 'order-form',
     ]);
 }

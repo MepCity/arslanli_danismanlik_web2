@@ -466,7 +466,7 @@ function mcp_tools_write(): array
     $T[] = mcp_def('geri_al', 'icerik', 'Değişikliği geri al',
         'Bir içerik bölümünü önceki bir sürümüne döndürür. Sürüm kimliğini degisiklik_gecmisi ile öğrenin (her sürüm, bir değişiklikten ÖNCEKİ halin kopyasıdır; "ilk_hal" sitenin kurulumdaki özgün halidir). Geri almadan önceki şu anki hal de geçmişe eklenir, yani geri almayı da geri alabilirsiniz. Önemli: seçilen sürümdeki TÜM içerik döner (yalnızca son değişiklik değil); önce degisiklik_gecmisi özetine bakın. Sürüm kimliği son_degisiklikler sonucundaki "surum" değeri de olabilir. settings, features ve seo bölümleri için ayrıca "ayarlar", duyurular bölümü için ayrıca "duyurular" izni gerekir (iş ilanları, ilanlar bölümü, "Sayfa içerikleri" iznidir); settings geri alındığında e-posta gönderim ayarları olduğu gibi korunur.',
         sc_obj([
-            'bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü (degisiklik_gecmisi ile aynı): services, posts, refs, lists, texts, settings, duyurular, ilanlar, features, seo.'),
+            'bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü (degisiklik_gecmisi ile aynı): services, posts, refs, lists, legal, texts, settings, duyurular, ilanlar, features, seo.'),
             'surum' => sc_str('Sürüm kimliği, örneğin "20261002-153012-a1b2".', ['pattern' => '^\d{8}-\d{6}-[a-f0-9]{4}$', 'x-ipucu' => 'degisiklik_gecmisi sonucundaki "surum" değeri']),
         ], ['bolum', 'surum']), [false, true, false], function (array $a, array $ctx): array {
             $key = $a['bolum'];

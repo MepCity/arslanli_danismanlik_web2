@@ -50,7 +50,9 @@ $GLOBALS['services'] = content_get('services') ?? require APP . '/data/services.
 $GLOBALS['posts']    = content_get('posts') ?? require APP . '/data/posts.php';
 $GLOBALS['site']     = array_merge(require APP . '/data/site.php', (array) content_get('lists', []));
 require APP . '/announcements.php';   // duyurular: storage/duyurular.json, yoksa app/data/duyurular.php
+require APP . '/legal.php';           // yasal metinlerin maddeleri (KVKK, çerez politikası; panel: Yasal metinler)
 require APP . '/ilanlar.php';         // iş ilanları (veri katmanı; ilan sayfası ve panel ekranı Aşama 2D)
+require APP . '/seo.php';             // arama motoru ve yapay zekâ katmanı: sayfa başlığı, yapısal veri, paylaşım etiketleri, seo_changed() (Aşama 3A)
 
 function cfg(string $key, $default = null)
 {
@@ -411,7 +413,9 @@ $GLOBALS['page'] = [
     'canonical'   => '',
     'image'       => '',
     'schema'      => [],
+    'noindex'     => false,      // true: arama motorlarına kapalı sayfa (asıl adres etiketi basılmaz; bkz. app/seo.php)
 ];
+$GLOBALS['page_defaults'] = $GLOBALS['page'];   // seo_render_page() bir sayfayı gerçek istekten bağımsız üretirken bu değerlerden başlar
 
 function page(array $values = []): array
 {

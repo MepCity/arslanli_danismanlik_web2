@@ -163,6 +163,7 @@ if ($method === 'POST') {
         if (!$errors) {
             if (seoa_save($new)) {
                 if ($do === 'bildir') {
+                    indexnow_changed_only(indexnow_all_urls());   // bildirilen sayfaların şu anki hali "görüldü" sayılır; sonraki bildirimler yalnızca değişenleri taşır
                     $r = indexnow_submit(indexnow_all_urls(), true);
                     $msg = ['gonderildi' => 'Tüm sayfalar (' . $r['sent'] . ') Bing, Yandex ve diğer arama motorlarına bildirildi.', 'yerel' => 'Bu bir yerel ortam olduğu için hiçbir şey gönderilmedi. Canlı sitede çalışır.', 'sirada' => 'Az önce bir bildirim yapıldı; adresler sıraya alındı. Bir dakika sonra panelde yaptığınız ilk işlemde otomatik gönderilir.', 'kapali' => 'Önce IndexNow anahtarını açıp kaydedin.', 'hata' => 'Bildirim gönderilemedi: ' . ($r['message'] ?: 'bağlantı kurulamadı') . '. Günlükte ayrıntı var.'];
                     adm_flash($msg[$r['status']] ?? 'Tamamlandı.', in_array($r['status'], ['hata', 'kapali'], true) ? 'err' : 'ok');
@@ -281,11 +282,15 @@ if ($tab === 'genel-bakis') {
         usort($ordered, fn($a, $b) => ['err' => 0, 'warn' => 1, 'ok' => 2][$a['st']] <=> ['err' => 0, 'warn' => 1, 'ok' => 2][$b['st']]);
         $isText = in_array($pg['d']['title'], [''], true);
         foreach ($ordered as $c) {
-            $fixable = $c['st'] !== 'ok' && $pg['fix'] !== '' && in_array($c['id'], ['title', 'desc', 'dup_title', 'dup_desc', 'h1', 'alt', 'words'], true);
+            // Başlık sorunları sayfa adının, açıklama ve yazı miktarı sorunları sayfanın kendi metinlerinin düzenlendiği yere bağlanır
+            $isTitle = in_array($c['id'], ['title', 'dup_title'], true);
+            $fixUrl   = $isTitle ? $pg['fix_title'] : $pg['fix'];
+            $fixWhere = $isTitle ? $pg['where_title'] : $pg['where'];
+            $fixable = $c['st'] !== 'ok' && $fixUrl !== '' && in_array($c['id'], ['title', 'desc', 'dup_title', 'dup_desc', 'words'], true);
             $list .= '<li class="ck ck--' . $c['st'] . '">' . ui_icon($c['st'] === 'ok' ? 'check-circle' : 'warning-circle')
-                . '<div class="ck__main"><p class="ck__t"><strong>' . e($c['label']) . '</strong>' . ($c['val'] !== '' && $c['st'] !== 'ok' ? '<span class="ck__v">' . e(mb_strimwidth($c['val'], 0, 70, '…')) . '</span>' : ($c['val'] !== '' ? '<span class="ck__v">' . e(mb_strimwidth($c['val'], 0, 70, '…')) . '</span>' : '')) . '</p>'
-                . '<p class="ck__h">' . e($c['hint']) . ($fixable && $pg['where'] ? ' <span class="ck__where">Düzenleneceği yer: ' . e($pg['where']) . '.</span>' : '') . '</p></div>'
-                . ($fixable ? '<a class="btn btn--soft btn--sm" href="' . e($pg['fix']) . '">Düzelt</a>' : '') . '</li>';
+                . '<div class="ck__main"><p class="ck__t"><strong>' . e($c['label']) . '</strong>' . ($c['val'] !== '' ? '<span class="ck__v">' . e(mb_strimwidth($c['val'], 0, 70, '…')) . '</span>' : '') . '</p>'
+                . '<p class="ck__h">' . e($c['hint']) . ($fixable && $fixWhere ? ' <span class="ck__where">Düzenleneceği yer: ' . e($fixWhere) . '.</span>' : '') . '</p></div>'
+                . ($fixable ? '<a class="btn btn--soft btn--sm" href="' . e($fixUrl) . '">Düzelt</a>' : '') . '</li>';
         }
 
         $desc = seoa_trunc($d['desc'], 160);

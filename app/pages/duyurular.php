@@ -19,7 +19,7 @@ $closed   = array_values(array_filter($all, fn($a) => ann_is_past($a)));
 $featured = ann_featured();
 $stampLbl = ['son' => t('duyurular.damga.son'), 'baslangic' => t('duyurular.damga.baslangic'), 'sonuc' => t('duyurular.damga.sonuc'), 'diger' => t('duyurular.damga.siradaki')];
 /** Tarihe kalan süre ("Bugün", "Yarın", "5 gün kaldı", geçmişse "Geçti"). */
-$leftText = fn(string $ymd): string => ($n = ann_days_left($ymd)) < 0 ? t('duyurular.kalan.gecti') : ($n === 0 ? t('duyurular.kalan.bugun') : ($n === 1 ? t('duyurular.kalan.yarin') : t('duyurular.kalan.gun', ['n' => $n])));
+$leftText = fn(string $ymd): string => ann_left_text($ymd);
 $rots     = [-0.7, 0.5, -0.3, 0.8, -0.5, 0.4, -0.2, 0.6];
 $no       = 0;
 

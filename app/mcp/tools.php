@@ -25,6 +25,12 @@ if (is_file(APP . '/seo_scan.php')) {
 if (is_file(APP . '/indexnow.php')) {
     require_once APP . '/indexnow.php';
 }
+// Makine okunur katman (Aşama 3A): sayfa_oku ve arslanli://llms kaynağı Markdown ve llms.txt üreticilerini buradan alır
+if (is_file(APP . '/agents/lib.php')) {
+    require_once APP . '/agents/lib.php';
+    require_once APP . '/agents/markdown.php';
+    require_once APP . '/agents/text.php';
+}
 
 /** Sayfa metni kayıt defteri (Aşama 2B) yüklü mü? */
 function mcp_has_texts(): bool
@@ -109,6 +115,10 @@ function mcp_tools(): array
         if (mcp_has_texts()) {
             require_once __DIR__ . '/tools_texts.php';
             $tools = array_merge($tools, mcp_tools_texts());
+        }
+        if (function_exists('legal_save')) {   // yasal metin maddeleri (app/legal.php)
+            require_once __DIR__ . '/tools_yasal.php';
+            $tools = array_merge($tools, mcp_tools_yasal());
         }
         if (mcp_has_seo('ayar') || mcp_has_seo('tarama')) {
             require_once __DIR__ . '/tools_seo.php';
@@ -387,7 +397,7 @@ function mcp_ann_public(array $a): array
     $dates = [];
     $next = null;
     foreach ((array) ($a['events'] ?? []) as $ev) {
-        $dates[] = ['tarih' => (string) $ev['date'], 'tur' => (string) $ev['type'], 'tur_adi' => $types[$ev['type']] ?? 'Bilgilendirme', 'not' => (string) ($ev['note'] ?? '')];
+        $dates[] = ['tarih' => (string) $ev['date'], 'tur' => (string) $ev['type'], 'tur_adi' => $types[$ev['type']] ?? ann_type_name('diger'), 'not' => (string) ($ev['note'] ?? '')];
         if ($next === null && $ev['date'] >= $today) {
             $next = (string) $ev['date'];
         }
@@ -522,6 +532,7 @@ function mcp_history_sections(): array
         'posts'     => 'Yazılar',
         'refs'      => 'Referanslar',
         'lists'     => 'Kurumsal listeler',
+        'legal'     => 'Yasal metinler (KVKK, çerez politikası)',
         'texts'     => 'Sayfa metinleri',
         'settings'  => 'İletişim ve şirket ayarları',
         'duyurular' => 'Duyurular',
@@ -875,12 +886,13 @@ function mcp_lists_public(): array
         'process'    => array_values(array_map(fn($x) => ['asama' => (string) ($x['phase'] ?? ''), 'baslik' => (string) ($x['title'] ?? ''), 'biz' => (string) ($x['us'] ?? ''), 'siz' => (string) ($x['you'] ?? '')], (array) ($s['process'] ?? []))),
         'timeline'   => array_values(array_map(fn($x) => ['yil' => (int) ($x['year'] ?? 0), 'tur' => $kind[$x['kind'] ?? ''] ?? (string) ($x['kind'] ?? ''), 'baslik' => (string) ($x['title'] ?? ''), 'metin' => (string) ($x['text'] ?? ''), 'kaynak' => (string) ($x['src'] ?? '')], (array) ($s['timeline'] ?? []))),
         'principles' => mcp_pairs((array) ($s['principles'] ?? []), 'baslik', 'aciklama'),
-        'mission'    => ['cumle' => (string) ($s['mission']['statement'] ?? ''), 'maddeler' => array_values(array_map('strval', (array) ($s['mission']['items'] ?? [])))],
+        'mission'    => ['cumle' => (string) ($s['mission']['statement'] ?? ''), 'cumle_duz' => mission_statement_plain((string) ($s['mission']['statement'] ?? '')), 'maddeler' => array_values(array_map('strval', (array) ($s['mission']['items'] ?? [])))],
         'vision'     => ['acilis_yili' => (int) ($s['vision']['open_year'] ?? 0), 'selamlama' => (string) ($s['vision']['greeting'] ?? ''), 'giris' => (string) ($s['vision']['intro'] ?? ''),
             'maddeler' => array_values(array_map('strval', (array) ($s['vision']['items'] ?? []))), 'kapanis' => (string) ($s['vision']['closing'] ?? '')],
         'banks'      => array_values(array_map(fn($b) => ['banka' => (string) ($b['bank'] ?? ''), 'hesap_sahibi' => (string) ($b['holder'] ?? ''), 'hesap_no' => (string) ($b['account'] ?? ''), 'iban' => (string) ($b['iban'] ?? '')], (array) ($s['banks'] ?? []))),
         'sektorler'  => array_values(array_map('strval', (array) ($s['sektorler'] ?? []))),
         'deneyim'    => array_values(array_map('strval', (array) ($s['deneyim'] ?? []))),
+        'goals'      => array_values(array_map(fn($g) => ['secenek' => (string) ($g['label'] ?? ''), 'hizmetler' => array_values(array_map('strval', (array) ($g['services'] ?? [])))], (array) ($s['goals'] ?? []))),
         'hero_law'   => ['salt_okunur' => true, 'baslik' => (string) ($law['title'] ?? ''), 'kunye' => array_values(array_map('strval', (array) ($law['meta'] ?? []))),
             'bloklar' => array_values(array_map(fn($b) => ['madde' => (string) ($b['ref'] ?? ''), 'kanun_metni' => (string) ($b['law'] ?? ''), 'sade_turkce' => (string) ($b['plain'] ?? '')], (array) ($law['blocks'] ?? [])))],
         'iller'      => ['salt_okunur' => true, 'liste' => array_values(array_map('strval', (array) ($s['iller'] ?? [])))],
@@ -938,7 +950,7 @@ function mcp_tools_read(): array
             foreach ($pub as $x) {
                 foreach ((array) ($x['events'] ?? []) as $ev) {
                     if ($ev['date'] >= $today) {
-                        $upcoming[] = ['tarih' => $ev['date'], 'tur' => $ev['type'], 'tur_adi' => ann_types()[$ev['type']] ?? 'Bilgilendirme', 'not' => (string) ($ev['note'] ?? ''), 'duyuru_id' => $x['id'], 'duyuru' => $x['title']];
+                        $upcoming[] = ['tarih' => $ev['date'], 'tur' => $ev['type'], 'tur_adi' => ann_types()[$ev['type']] ?? ann_type_name('diger'), 'not' => (string) ($ev['note'] ?? ''), 'duyuru_id' => $x['id'], 'duyuru' => $x['title']];
                     }
                 }
             }
@@ -1164,7 +1176,7 @@ function mcp_tools_read(): array
 
     $T[] = mcp_def('degisiklik_gecmisi', 'okuma', 'Değişiklik geçmişi',
         'Bir içerik bölümünün önceki sürümlerini listeler (en yeni önce). Her sürüm, o değişiklikten ÖNCEKİ halin kopyasıdır ("sonraki_degisiklik" o değişikliği kimin yaptığını ve ne olduğunu söyler); "ilk_hal" işaretlisi sitenin kurulumdaki özgün halidir ve hiç silinmez. Sürüm kimliğini geri_al aracına vererek o hale dönebilirsiniz. Son 25 değişiklik ve ilk hal saklanır. Tüm bölümleri birlikte, zaman sırasıyla görmek için son_degisiklikler kullanın.',
-        sc_obj(['bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü: services (hizmetler), posts (yazılar), refs (referanslar), lists (kurumsal listeler), texts (sayfa metinleri), settings (iletişim ve e-posta ayarları), duyurular, ilanlar (iş ilanları), features (görünürlük), seo (arama motoru ayarları).')], ['bolum']),
+        sc_obj(['bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü: services (hizmetler), posts (yazılar), refs (referanslar), lists (kurumsal listeler), legal (yasal metinler), texts (sayfa metinleri), settings (iletişim ve e-posta ayarları), duyurular, ilanlar (iş ilanları), features (görünürlük), seo (arama motoru ayarları).')], ['bolum']),
         $RO, function (array $a, array $ctx): array {
             $key = $a['bolum'];
             if ($key === 'ilanlar' && !in_array('icerik', $ctx['principal']['scopes'], true)) {
@@ -1380,6 +1392,8 @@ function mcp_rev_summary(string $key, string $file): string
             return $first . count($d) . ' referans logosu';
         case 'texts':
             return $first . count($d) . ' değiştirilmiş metin';
+        case 'legal':
+            return $first . ($d ? 'Değiştirilmiş belgeler: ' . implode(', ', array_keys($d)) : 'Varsayılan yasal metinler');
         case 'lists':
             return $first . ($d ? 'Değiştirilmiş listeler: ' . implode(', ', array_keys($d)) : 'Hiç liste değiştirilmemiş');
         case 'settings':

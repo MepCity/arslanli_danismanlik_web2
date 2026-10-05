@@ -27,10 +27,7 @@ return [
                 'cagri.tur.sonuc' => ['Tarih türü: sonuç', 'Sonuç', 'line', 'Satırda büyük harfle basılır.', ['max' => 24]],
                 'cagri.tur.on_kayit' => ['Tarih türü: ön kayıt', 'Ön kayıt', 'line', 'Notunda “ön kayıt” geçen bilgilendirme tarihleri için.', ['max' => 24]],
                 'cagri.tur.onemli' => ['Tarih türü: diğer önemli tarih', 'Önemli tarih', 'line', 'Satırda büyük harfle basılır.', ['max' => 24]],
-                'cagri.kalan.bugun' => ['Kalan süre: bugün', 'Bugün', 'line', 'Tarih bugünse satırın sağında görünür.', ['max' => 16]],
-                'cagri.kalan.yarin' => ['Kalan süre: yarın', 'Yarın', 'line', 'Tarih yarınsa satırın sağında görünür.', ['max' => 16]],
-                'cagri.kalan.gun' => ['Kalan süre: ekran okuyucu için (gün sayısıyla)', '{n} gün kaldı', 'line', 'Görünmez; satırın erişilebilirlik açıklamasında okunur.', ['vars' => ['n' => 'kalan gün sayısı'], 'need' => ['n']]],
-                'cagri.kalan.birim' => ['Kalan süre: sayının yanındaki yazı', 'gün kaldı', 'line', 'Satırın sağında büyük gün sayısının altında görünür.', ['max' => 24]],
+                'cagri.kalan.birim' => ['Kalan süre: sayının yanındaki yazı', 'gün kaldı', 'line', 'Satırın sağında büyük gün sayısının altında görünür. “Bugün”, “Yarın” ve “5 gün kaldı” kalıpları Duyurular > Kalan süre bölümünden gelir; burada yalnızca sayının altındaki yazıyı değiştirirsiniz, ikisini uyumlu tutun.', ['max' => 24]],
                 'cagri.satir.aria' => ['Satırın erişilebilirlik açıklaması', '{tarih_uzun}, {haftagunu}: {tur}. {kurum}, {baslik}. {kalan}', 'line', 'Görünmez; ekran okuyucular bir satıra gelince bunu okur.', ['vars' => ['tarih_uzun' => 'tarih', 'haftagunu' => 'haftanın günü', 'tur' => 'tarih türü', 'kurum' => 'kurum adı', 'baslik' => 'çağrının başlığı', 'kalan' => 'kalan süre']]],
             ],
             '4. Çizelgenin sonu' => [

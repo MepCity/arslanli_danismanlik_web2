@@ -70,7 +70,7 @@ $i = 0;
                   $n    = ann_days_left($e['date']);
                   $t    = strtotime($e['date']);
                   $soon = $n <= 7;
-                  $left = $n === 0 ? t('cagri.kalan.bugun') : ($n === 1 ? t('cagri.kalan.yarin') : t('cagri.kalan.gun', ['n' => $n]));
+                  $left = ann_left_text($e['date']);   // "Bugün", "Yarın", "5 gün kaldı": Duyurular > Kalan süre metinleri
                   $i++; ?>
                 <li class="cg__row cg__row--<?= $kClass ?><?= $soon ? ' is-soon' : '' ?>" data-on style="--delay:<?= round(0.05 * (($i - 1) % 4), 2) ?>s">
                   <a class="cg__a" href="<?= e(ann_url($e)) ?>" aria-label="<?= e(t('cagri.satir.aria', ['tarih_uzun' => tr_date($e['date']), 'haftagunu' => $wdays[(int) date('w', $t)], 'tur' => $kLabel, 'kurum' => $e['kurum'], 'baslik' => $e['title'], 'kalan' => $left])) ?>">

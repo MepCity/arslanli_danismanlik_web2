@@ -178,7 +178,7 @@ if ($errors) echo ui_alert(e(implode(' ', $errors)));
         (!$isNew && !$isDraft) ? ui_view_link(post_url($slug), 'Sitede gör') : '',
         ui_history_link('posts'),
     ]), ['class' => 'blg-pub']) ?>
-    <?= ui_card('Kapak görseli', ui_image('image', '', $imgCur, ['help' => 'Yazı listesinde ve yazının başında görünür. Yatay görseller en iyi sonucu verir.'])) ?>
+    <?= ui_card('Kapak görseli', ui_image('image', '', $imgCur, ['help' => 'Yazı listesinde ve yazının başında görünür. Yatay görseller en iyi sonucu verir: en az 800×450 piksel, genişlik/yükseklik oranı 1,2 ile 2,4 arasında (liste 3:2, yazı başı 21:9 kutuya kırpılır); en çok 8 MB.'])) ?>
   </aside>
 </form>
 <?php if (!$isNew): ?>

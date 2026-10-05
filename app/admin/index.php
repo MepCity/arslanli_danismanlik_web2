@@ -99,6 +99,7 @@ $map = [
     'referanslar' => 'referanslar',
     'metinler'    => 'metinler',
     'kurumsal'    => 'kurumsal',
+    'yasal'       => 'yasal',
     'kayitlar'    => 'kayitlar',
     'bulten'      => 'bulten',
     'basvurular'  => 'basvurular',

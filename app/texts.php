@@ -25,9 +25,14 @@ declare(strict_types=1);
  * Biçim işaretleri (yalnızca rich türünde; HTML yazılamaz):
  *   [kalın]…[/kalın]  [eğik]…[/eğik]  [çizgi]…[/çizgi] (el çizimi alt çizgi)  [kırmızı-çizgi]…[/kırmızı-çizgi]
  *   [halka]…[/halka] (el çizimi halka)  [kırmızı-halka]…[/kırmızı-halka]
- *   Çizgi ve halka birbirinin içine girmez; kalın ve eğik her birinin içinde olabilir.
+ *   [vurgu]…[/vurgu] (fosforlu kalem gibi vurgu: <mark>; yasal metinlerin "Kısaca" kutusunda kullanılır)
+ *   Çizgi ve halka birbirinin içine girmez; kalın, eğik ve vurgu her birinin içinde olabilir.
  *
- * Yer tutucular: {ad} ya da {ad|yazı} / {ad|Yazı} (sayıyı yazıyla: "sekiz" / "Sekiz") / {ad|büyük} (BÜYÜK HARF). Değeri sayfa basılırken doldurulur.
+ * Yer tutucular: {ad} ya da {ad|süzgeç}. Değeri sayfa basılırken doldurulur. Süzgeçler (sayı değerlerinde):
+ *   |yazı / |Yazı  sayıyı yazıyla söyler: 8 → "sekiz" / "Sekiz" (20'den büyük sayı rakamla kalır)
+ *   |sıra / |Sıra  sıra sözcüğü: 30 → "otuzuncu" / "Otuzuncu" (99'dan büyükte "100.")
+ *   |iyelik        ek almış sözcük: 3 → "üçü", 6 → "altısı" ("ilk {n|iyelik}", "{n|yazı} ilkenin {n|iyelik}"; 99'dan büyükte "100’ü")
+ *   |büyük         BÜYÜK HARF (her değerde)
  *   Genel olanlar app/data/text-vars.php içindedir; yerel olanları şablon t('anahtar', ['n' => 3]) ile verir.
  */
 
@@ -41,7 +46,11 @@ const TEXT_MARKS = [
     'kırmızı-çizgi' => ['annot', 'under', 'red'],
     'halka'         => ['annot', 'circle', ''],
     'kırmızı-halka' => ['annot', 'circle', 'red'],
+    'vurgu'         => ['mark'],
 ];
+
+/** Yer tutucu süzgeçleri (bkz. text_var). */
+const TEXT_FILTERS = ['yazı', 'Yazı', 'sıra', 'Sıra', 'iyelik', 'büyük'];
 
 /** Yer tutucu: {ad} ya da {ad|süzgeç}. */
 const TEXT_PH = '/\{([a-z][a-z0-9_]*)(?:\|([^{}|\s]{1,12}))?\}/u';
@@ -88,16 +97,87 @@ function text_var(string $name, ?string $filter, array $local): ?array
     }
     $v = (string) $v;
     if ($filter !== null && !$html && preg_match('/^\d+$/', $v)) {
+        $n = (int) $v;
         if ($filter === 'Yazı') {
-            $v = number_word((int) $v);
+            $v = number_word($n);
         } elseif ($filter === 'yazı') {
-            $v = text_lower(number_word((int) $v));
+            $v = text_lower(number_word($n));
+        } elseif ($filter === 'sıra' || $filter === 'Sıra') {
+            $v = text_number_ordinal($n);
+            $v = $filter === 'Sıra' ? text_upper_first($v) : $v;
+        } elseif ($filter === 'iyelik') {
+            $v = text_number_possessive($n);
         }
     }
     if ($filter === 'büyük' && !$html) {
         $v = tr_upper($v);
     }
     return [$v, $html];
+}
+
+/** İlk harfi Türkçe büyük harfe çevirir ("otuzuncu" → "Otuzuncu", "ikinci" → "İkinci"). */
+function text_upper_first(string $s): string
+{
+    return $s === '' ? $s : mb_strtoupper(strtr(mb_substr($s, 0, 1), ['i' => 'İ', 'ı' => 'I'])) . mb_substr($s, 1);
+}
+
+/**
+ * 0-99 arası sayının sözcükleri (soldan sağa: ["yirmi", "beş"]); aralık dışında null.
+ * Sıra ve iyelik ekleri son sözcüğe gelir.
+ */
+function text_number_parts(int $n): ?array
+{
+    $ones = [0 => 'sıfır', 1 => 'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz'];
+    $tens = [10 => 'on', 20 => 'yirmi', 30 => 'otuz', 40 => 'kırk', 50 => 'elli', 60 => 'altmış', 70 => 'yetmiş', 80 => 'seksen', 90 => 'doksan'];
+    if ($n < 0 || $n > 99) {
+        return null;
+    }
+    if ($n < 10) {
+        return [$ones[$n]];
+    }
+    $t = $n - $n % 10;
+    return $n % 10 === 0 ? [$tens[$t]] : [$tens[$t], $ones[$n % 10]];
+}
+
+/** Sıra sözcüğü: 1 → "birinci", 30 → "otuzuncu", 25 → "yirmi beşinci"; 99'dan büyükte "100.". */
+function text_number_ordinal(int $n): string
+{
+    $parts = text_number_parts($n);
+    if ($parts === null) {
+        return $n . '.';
+    }
+    $ord = ['sıfır' => 'sıfırıncı', 'bir' => 'birinci', 'iki' => 'ikinci', 'üç' => 'üçüncü', 'dört' => 'dördüncü', 'beş' => 'beşinci', 'altı' => 'altıncı', 'yedi' => 'yedinci',
+        'sekiz' => 'sekizinci', 'dokuz' => 'dokuzuncu', 'on' => 'onuncu', 'yirmi' => 'yirminci', 'otuz' => 'otuzuncu', 'kırk' => 'kırkıncı', 'elli' => 'ellinci',
+        'altmış' => 'altmışıncı', 'yetmiş' => 'yetmişinci', 'seksen' => 'sekseninci', 'doksan' => 'doksanıncı'];
+    $last = array_pop($parts);
+    $parts[] = $ord[$last];
+    return implode(' ', $parts);
+}
+
+/** Ek almış sayı sözcüğü (üçüncü tekil iyelik): 3 → "üçü", 6 → "altısı", 12 → "on ikisi"; 99'dan büyükte "100’ü". */
+function text_number_possessive(int $n): string
+{
+    $parts = text_number_parts($n);
+    if ($parts === null) {
+        return $n . '’ü';
+    }
+    $pos = ['sıfır' => 'sıfırı', 'bir' => 'biri', 'iki' => 'ikisi', 'üç' => 'üçü', 'dört' => 'dördü', 'beş' => 'beşi', 'altı' => 'altısı', 'yedi' => 'yedisi', 'sekiz' => 'sekizi',
+        'dokuz' => 'dokuzu', 'on' => 'onu', 'yirmi' => 'yirmisi', 'otuz' => 'otuzu', 'kırk' => 'kırkı', 'elli' => 'ellisi', 'altmış' => 'altmışı', 'yetmiş' => 'yetmişi',
+        'seksen' => 'sekseni', 'doksan' => 'doksanı'];
+    $last = array_pop($parts);
+    $parts[] = $pos[$last];
+    return implode(' ', $parts);
+}
+
+/** Adları Türkçe sıralar: "A", "A ve B", "A, B ve C". */
+function text_join_list(array $names): string
+{
+    $names = array_values(array_filter(array_map('strval', $names), fn($n) => $n !== ''));
+    if (count($names) < 2) {
+        return $names[0] ?? '';
+    }
+    $last = array_pop($names);
+    return implode(', ', $names) . ' ve ' . $last;
 }
 
 /** Metindeki yer tutucuları ve biçim işaretlerini ayıklar. */
@@ -156,6 +236,9 @@ function text_mark_html(string $name, string $inner): string
     if ($d[0] === 'em') {
         return '<em>' . $inner . '</em>';
     }
+    if ($d[0] === 'mark') {
+        return '<mark>' . $inner . '</mark>';
+    }
     return annot($inner, $d[1], $d[2]);
 }
 
@@ -207,7 +290,7 @@ function text_nowidow(string $html): string
 }
 
 /** Biçim işaretli metni güvenli HTML'e çevirir (kapanmamış işaretler sonda kapatılır, artık kapanışlar yok sayılır). */
-function text_rich_html(string $raw, array $vars): string
+function text_rich_html(string $raw, array $vars, string $nl = '<br>'): string
 {
     $stack = [['', '']];
     foreach (preg_split(text_mark_re(), $raw, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) as $piece) {
@@ -220,7 +303,7 @@ function text_rich_html(string $raw, array $vars): string
             }
             continue;
         }
-        $stack[count($stack) - 1][1] .= text_part_html($piece, $vars, '<br>');
+        $stack[count($stack) - 1][1] .= text_part_html($piece, $vars, $nl);
     }
     while (count($stack) > 1) {
         [$name, $buf] = array_pop($stack);
@@ -371,8 +454,8 @@ function texts_clean(string $key, $raw): array
         if (!in_array($m[1], $allowed, true)) {
             return ['value' => '', 'error' => 'Bilinmeyen yer tutucu {' . $m[1] . '}. ' . ($allowed ? 'Bu metinde yazılabilenler: ' . implode(', ', array_map(fn($a) => '{' . $a . '}', $allowed)) . '.' : 'Bu metinde yer tutucu kullanılamaz.')];
         }
-        if (isset($m[2]) && !in_array($m[2], ['yazı', 'Yazı', 'büyük'], true)) {
-            return ['value' => '', 'error' => 'Bilinmeyen biçim {' . $m[1] . '|' . $m[2] . '}; yalnızca |yazı, |Yazı ve |büyük vardır.'];
+        if (isset($m[2]) && !in_array($m[2], TEXT_FILTERS, true)) {
+            return ['value' => '', 'error' => 'Bilinmeyen biçim {' . $m[1] . '|' . $m[2] . '}; yalnızca ' . implode(', ', array_map(fn($f) => '|' . $f, TEXT_FILTERS)) . ' vardır.'];
         }
         $used[$m[1]] = true;
     }
