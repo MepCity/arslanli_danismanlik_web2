@@ -26,7 +26,7 @@ page([
     'id'          => 'blog',
     'title'       => $category && isset($cats[$category]) ? $cats[$category] . ' · Makaleler' : 'Makaleler',
     'description' => 'Arslanlı Bülteni: Ar-Ge yapılanması, kalite belgelendirme, yatırım teşvikleri ve hibe programları üzerine sade ve somut yazılar.',
-    'folio'       => 'Evrak 05 · <b>Makaleler</b>',
+    'folio'       => pg_folio('blog'),
 ]);
 
 $leadSlug = array_key_first($list);
@@ -121,7 +121,7 @@ $rest     = array_slice($list, 1, null, true);
 
 <div class="wrap">
   <a class="next" href="<?= url('iletisim') ?>">
-    <span class="next__k">Sonraki evrak · 06</span>
+    <span class="next__k">Sonraki evrak · <?= pg_no('iletisim') ?></span>
     <span class="next__t"><span>İletişim</span></span>
     <?= arrow() ?>
   </a>

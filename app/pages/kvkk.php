@@ -21,7 +21,7 @@ page([
     'id'          => 'legal',
     'title'       => 'KVKK Aydınlatma Metni',
     'description' => 'Arslanlı Yatırım & Danışmanlık web sitesindeki dilekçe, Haberdar Ol, bülten kayıt ve iş başvurusu formlarıyla işlenen kişisel verilere ilişkin aydınlatma metni.',
-    'folio'       => 'Evrak 13 · <b>KVKK Aydınlatma Metni</b>',
+    'folio'       => pg_folio('kvkk'),
 ]);
 
 $mail  = '<a class="link" href="mailto:' . e(cfg('email')) . '">' . e(cfg('email')) . '</a>';
@@ -142,5 +142,5 @@ legal_doc([
         'Hakkınızda ne bildiğimizi sorabilir, düzeltilmesini ya da silinmesini isteyebilirsiniz.',
     ],
     'maddeler' => $maddeler,
-    'next'     => ['label' => 'Çerez politikası', 'href' => url('kurumsal/cerez-politikasi'), 'no' => '12'],
+    'next'     => ['label' => 'Çerez politikası', 'href' => url('kurumsal/cerez-politikasi'), 'no' => pg_no('cerez')],
 ]);

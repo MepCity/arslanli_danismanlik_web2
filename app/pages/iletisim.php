@@ -8,7 +8,7 @@ page([
     'id'          => 'contact',
     'title'       => 'İletişim',
     'description' => 'Arslanlı Yatırım & Danışmanlık’a yazın: telefon, e-posta, WhatsApp ve adres. Hibe, teşvik ve Ar-Ge desteklerine dair sorunuzu kısa bir dilekçeyle iletin.',
-    'folio'       => 'Evrak 06 · <b>İletişim</b>',
+    'folio'       => pg_folio('iletisim'),
 ]);
 
 $topics = array_map(fn($s) => $s['nav'], services());
@@ -21,7 +21,7 @@ $date  = today_official();
 ?>
 
 <section class="dk-head pagehead wrap" aria-labelledby="contact-title">
-  <p class="label" data-rise>Evrak 06 · İletişim</p>
+  <p class="label" data-rise><?= e(pg_label('iletisim')) ?></p>
   <h1 class="display dk-head__h" id="contact-title" data-rise style="--delay:.05s">Bize bir dilekçe yazın.</h1>
   <p class="lead dk-head__lead" data-rise style="--delay:.12s">Form doldurmuyorsunuz; boşlukları olan kısa bir dilekçe yazıyorsunuz. Adınızı, konunuzu ve size nasıl ulaşacağımızı yazmanız yeterli. Acelesi olan işler için telefon ve WhatsApp hemen yanında.</p>
 </section>
@@ -183,11 +183,12 @@ $date  = today_official();
   </aside>
 </section>
 
-<?php [$nxPath, $nxLabel, $nxNo] = next_page([['haberdarol', 'Haberdar Ol', '07'], ['kurumsal/misyonumuz', 'Misyonumuz', '08']]); ?>
+<?php if ($nx = pg_next('iletisim')): ?>
 <div class="wrap">
-  <a class="next" href="<?= url($nxPath) ?>">
-    <span class="next__k">Sonraki evrak · <?= e($nxNo) ?></span>
-    <span class="next__t"><span><?= e($nxLabel) ?></span></span>
+  <a class="next" href="<?= url($nx['path']) ?>">
+    <span class="next__k">Sonraki evrak · <?= e($nx['nn']) ?></span>
+    <span class="next__t"><span><?= e($nx['label']) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>
+<?php endif; ?>

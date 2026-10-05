@@ -20,7 +20,7 @@ return [
 
     'company' => [
         'authorized' => 'Hatice Arslan',
-        'tax_office' => 'İkitelli',
+        'tax_office' => 'Pendik',
         'tax_number' => '303 063 8183',
     ],
 

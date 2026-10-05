@@ -21,7 +21,7 @@ declare(strict_types=1);
  * Her alıcı gönderilmeden ÖNCE dosyada "gonderiliyor" diye işaretlenir; istek yarıda kesilirse o alıcıya yeniden gönderilmez,
  * "hata" olarak işaretlenir ve yönetici isterse yeniden dener. Böylece bir alıcıya aynı gönderimden iki e-posta gitmez.
  *
- * Panel: app/admin/sections/bulten.php · Herkese açık ayrılma sayfası: app/pages/bulten-ayril.php · MCP: app/mcp/tools_bulten.php
+ * Panel: app/admin/sections/bulten.php · Herkese açık ayrılma sayfası: app/pages/bulten-ayril.php (assets/css/pages/unsub.css) · MCP: app/mcp/tools_bulten.php
  */
 
 require_once APP . '/spam.php';     // spam_records(): kayıt dosyasının paylaşımlı kilitle okunması
@@ -607,8 +607,10 @@ function bulten_ayril_sayfasi(): void
     $vars = ['durum' => 'gecersiz', 'adres' => '', 'aksiyon' => ''];
     if ($email !== null) {
         if ($post) {
-            bulten_ayril($email, 'e-postadaki bağlantıyla');
-            $vars = ['durum' => 'tamam', 'adres' => $email, 'aksiyon' => ''];
+            // Yeni bir ayrılma kaydedildiyse "tamam"; adres zaten ayrılmışsa (çift tıklama, sayfanın yenilenmesi) "zaten"
+            $vars = ['durum' => bulten_ayril($email, 'e-postadaki bağlantıyla') ? 'tamam' : 'zaten', 'adres' => $email, 'aksiyon' => '', 'tarih' => bulten_ayrilanlar()[$email] ?? time()];
+        } elseif (isset(bulten_ayrilanlar()[$email])) {
+            $vars = ['durum' => 'zaten', 'adres' => $email, 'aksiyon' => '', 'tarih' => bulten_ayrilanlar()[$email]];   // GET hiçbir şeyi değiştirmez
         } else {
             $vars = ['durum' => 'onay', 'adres' => $email, 'aksiyon' => url('bulten/ayril') . '?e=' . rawurlencode($e) . '&k=' . rawurlencode($k)];
         }
@@ -709,12 +711,12 @@ function bulten_html_sablon(string $konu, string $govde, string $ayril): string
 {
     $govde = strtr($govde, [
         '<p>'          => '<p style="margin:0 0 16px">',
-        '<h2>'         => '<h2 style="margin:26px 0 10px;font-size:20px;line-height:1.3">',
+        '<h2>'         => '<h2 style="margin:28px 0 10px;font-size:22px;line-height:1.25;font-weight:bold">',
         '<h3>'         => '<h3 style="margin:22px 0 8px;font-size:17px;line-height:1.35">',
         '<ul>'         => '<ul style="margin:0 0 16px;padding:0 0 0 22px">',
         '<ol>'         => '<ol style="margin:0 0 16px;padding:0 0 0 22px">',
         '<li>'         => '<li style="margin:0 0 6px">',
-        '<blockquote>' => '<blockquote style="margin:0 0 16px;padding:2px 0 2px 14px;border-left:3px solid #e5776b">',
+        '<blockquote>' => '<blockquote style="margin:0 0 16px;padding:2px 0 2px 14px;border-left:3px solid #cf412f">',
         '<a '          => '<a style="text-decoration:underline" ',
     ]);
     $a = 'style="text-decoration:underline"';
@@ -723,17 +725,42 @@ function bulten_html_sablon(string $konu, string $govde, string $ayril): string
         cfg('phone') ? 'Telefon: <a ' . $a . ' href="tel:' . e((string) cfg('phone_href')) . '">' . e((string) cfg('phone')) . '</a>' : '',
         $eposta !== '' ? 'E-posta: <a ' . $a . ' href="mailto:' . e($eposta) . '">' . e($eposta) . '</a>' : '',
     ]);
+    $serif = "Georgia,'Times New Roman',Times,serif";
+    $sans = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+    $ad = e((string) cfg('name'));
+    // Yazı ve zemin rengi verilmez (uygulama açık ya da koyu temasına göre kendisi seçer); çizgiler ve vurgu iki zeminde de görünen orta tonlardır
     return '<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
         . '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>' . e($konu) . '</title></head>'
         . '<body style="margin:0;padding:0">'
-        . '<div style="max-width:600px;margin:0 auto;padding:24px 20px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6">'
-        . '<div style="border-top:4px solid #e5776b;padding:16px 0 0;font-size:14px;font-weight:bold">' . e((string) cfg('name')) . '</div>'
-        . '<div style="padding:22px 0 6px">' . $govde . '</div>'
-        . '<div style="border-top:1px solid #9aa3b2;margin:14px 0 0;padding:16px 0 0;font-size:13px;line-height:1.55">'
-        . '<p style="margin:0 0 10px"><strong>' . e((string) cfg('name')) . '</strong><br>' . e((string) cfg('address')) . ($iletisim ? '<br>' . implode(' · ', $iletisim) : '') . '</p>'
-        . '<p style="margin:0 0 10px">' . e(t('ayril.posta.neden')) . '</p>'
-        . '<p style="margin:0">' . e(t('ayril.posta.ayril')) . ' <a ' . $a . ' href="' . e($ayril) . '">' . e(t('ayril.posta.baglanti')) . '</a></p>'
+        . '<div style="max-width:600px;margin:0 auto;padding:24px 20px;font-family:' . $serif . ';font-size:17px;line-height:1.6">'
+        // Künye satırı: gazete başlığı gibi, altında çift çizgi (üstü kalın kırmızı, altı ince)
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:3px solid #cf412f;border-bottom:1px solid #9aa3b2"><tr>'
+        . '<td style="padding:10px 12px 9px 0;font-family:' . $sans . ';font-size:13px;font-weight:bold;letter-spacing:.04em;text-transform:uppercase">' . $ad . '</td>'
+        . '<td align="right" style="padding:10px 0 9px;font-family:' . $serif . ';font-size:13px;font-style:italic;white-space:nowrap">' . e(today_official()) . '</td>'
+        . '</tr></table>'
+        . '<div style="padding:26px 0 6px">' . $govde . '</div>'
+        . '<div style="border-top:1px solid #9aa3b2;margin:18px 0 0;padding:16px 0 0;font-family:' . $sans . ';font-size:13px;line-height:1.55">'
+        . '<p style="margin:0 0 12px"><strong>' . $ad . '</strong><br>' . e((string) cfg('address')) . ($iletisim ? '<br>' . implode(' · ', $iletisim) : '') . '</p>'
+        . '<p style="margin:0 0 10px">' . e(bulten_posta_metinleri()['neden']) . '</p>'
+        . '<p style="margin:0">' . e(bulten_posta_metinleri()['ayril']) . ' <a ' . $a . ' href="' . e($ayril) . '">' . e(bulten_posta_metinleri()['baglanti']) . '</a></p>'
         . '</div></div></body></html>';
+}
+
+/**
+ * E-postanın altbilgisindeki cümleler. TEK YERDE durur: Aşama 2B (Sayfa metinleri kayıt defteri) bunu t('ayril.posta.*')
+ * anahtarlarına taşıyacaktır (kaynak sitede app/data/texts/72-bulten.php). Yasal bilgilendirmedir; cümleler kaldırılmamalıdır.
+ * @return array{neden:string, ayril:string, baglanti:string}
+ */
+function bulten_posta_metinleri(): array
+{
+    return [
+        // ayril.posta.neden: e-postanın neden geldiğini açıklayan cümle
+        'neden'    => 'Bu e-postayı, web sitemizdeki bülten formunu doldururken verdiğiniz onay nedeniyle alıyorsunuz.',
+        // ayril.posta.ayril: ayrılma bağlantısından önceki cümle (bağlantı hemen ardına eklenir)
+        'ayril'    => 'Bu e-postaları artık almak istemiyorsanız abonelikten ücretsiz olarak ayrılabilirsiniz:',
+        // ayril.posta.baglanti: ayrılma bağlantısının yazısı
+        'baglanti' => 'Abonelikten ayrıl',
+    ];
 }
 
 /** Düz metin sürümünün altbilgisi (HTML sürümündekiyle aynı bilgiler). */
@@ -741,7 +768,7 @@ function bulten_metin_altbilgi(string $ayril): string
 {
     $iletisim = array_filter([cfg('phone') ? 'Telefon: ' . cfg('phone') : '', cfg('email') ? 'E-posta: ' . cfg('email') : '']);
     return "\n\n" . str_repeat('-', 40) . "\n" . cfg('name') . "\n" . cfg('address') . ($iletisim ? "\n" . implode(' | ', $iletisim) : '')
-        . "\n\n" . t('ayril.posta.neden') . "\n" . t('ayril.posta.ayril') . ' ' . $ayril . "\n";
+        . "\n\n" . bulten_posta_metinleri()['neden'] . "\n" . bulten_posta_metinleri()['ayril'] . ' ' . $ayril . "\n";
 }
 
 /**

@@ -133,6 +133,136 @@ function next_page(array $candidates): array
     return end($candidates);
 }
 
+/* ---------- Sayfa kaydı: "Evrak NN" numaralarının tek kaynağı ----------
+ * Fihrist, üst bilgideki dizin, sayfa etiketleri ("Evrak 06 · İletişim") ve "sonraki evrak" kartları buradan beslenir;
+ * şablonlara numara elle yazılmaz. Sıra: ana liste (menu), kurumsal (corp), yasal (legal). Kapalı bölümler (feature) sıradan
+ * çıkar ve numaralar boşluksuz kapanır. Anahtarlar site_static_routes_all() şablon adlarıdır. */
+
+/** Kayıt (kapalı bölümler dahil, sıralı): anahtar => [key, path, label, group]. */
+function site_pages_all(): array
+{
+    $path = array_flip(site_static_routes_all());
+    $def = [
+        ['home', 'Ana sayfa', 'menu'],
+        ['hakkimizda', 'Hakkımızda', 'menu'],
+        ['hizmetler', 'Hizmetler', 'menu'],
+        ['referans', 'Referanslar', 'menu'],
+        ['blog', 'Makaleler', 'menu'],
+        ['duyurular', 'Duyurular', 'menu'],
+        ['kariyer', 'Kariyer', 'menu'],
+        ['iletisim', 'İletişim', 'menu'],
+        ['haberdarol', 'Haberdar Ol', 'corp'],
+        ['misyon', 'Misyonumuz', 'corp'],
+        ['vizyon', 'Vizyonumuz', 'corp'],
+        ['mihenk', 'Mihenk Taşlarımız', 'corp'],
+        ['hesap', 'Hesap Numaralarımız', 'corp'],
+        ['cerez', 'Çerez Politikası', 'legal'],
+        ['kvkk', 'KVKK Aydınlatma Metni', 'legal'],
+    ];
+    $out = [];
+    foreach ($def as [$key, $name, $group]) {
+        $out[$key] = ['key' => $key, 'path' => (string) $path[$key], 'label' => $name, 'group' => $group];
+    }
+    return $out;
+}
+
+/** Açık sayfalar, numaralı ve sıralı: anahtar => [key, path, label, group, no (int), nn ("06")]. */
+function site_pages(): array
+{
+    $out = [];
+    $n = 0;
+    foreach (site_pages_all() as $key => $pg) {
+        if (!path_enabled($pg['path'])) {
+            continue;
+        }
+        $n++;
+        $out[$key] = $pg + ['no' => $n, 'nn' => nn($n)];
+    }
+    return $out;
+}
+
+/** Açık sayfalardan bir grubun listesi ('menu' | 'corp' | 'legal'), numaralarıyla. */
+function site_pages_in(string $group): array
+{
+    return array_values(array_filter(site_pages(), fn($p) => $p['group'] === $group));
+}
+
+/** Bir sayfanın kaydı; bölümü kapalıysa null. */
+function pg(string $key): ?array
+{
+    return site_pages()[$key] ?? null;
+}
+
+/** İki haneli evrak numarası ("06"); sayfa kayıtta yoksa ya da kapalıysa "—". */
+function pg_no(string $key): string
+{
+    return pg($key)['nn'] ?? '—';
+}
+
+/** Sayfanın adı ("İletişim"); kayıtta olmayan anahtarda boş. */
+function pg_name(string $key): string
+{
+    return site_pages_all()[$key]['label'] ?? '';
+}
+
+/** Üst bilgideki etiket (HTML): "Evrak 06 · <b>İletişim</b>". $name verilirse sayfa adının yerine geçer. */
+function pg_folio(string $key, ?string $name = null): string
+{
+    return 'Evrak ' . pg_no($key) . ' · <b>' . e($name ?? pg_name($key)) . '</b>';
+}
+
+/** Sayfa başlığındaki küçük etiket (düz metin, kaçırılmamış): "Evrak 06 · İletişim". */
+function pg_label(string $key, ?string $name = null): string
+{
+    return 'Evrak ' . pg_no($key) . ' · ' . ($name ?? pg_name($key));
+}
+
+/** Sıradaki açık sayfa (menu, corp, legal sırasıyla); son sayfadaysa ya da sayfa kapalıysa null. */
+function pg_next(string $key): ?array
+{
+    $found = false;
+    foreach (site_pages() as $k => $p) {
+        if ($found) {
+            return $p;
+        }
+        $found = $k === $key;
+    }
+    return null;
+}
+
+/** Hizmet dosyasının numarası: "03.4" (Hizmetler sayfasının numarası + dosya sırası). */
+function svc_no($service): string
+{
+    $n = is_array($service) ? (int) ($service['no'] ?? 0) : (int) $service;
+    return pg_no('hizmetler') . '.' . $n;
+}
+
+/** Geçerli yola karşılık gelen kayıt: [kayıt|null, tam eşleşme mi]. Alt sayfalar (hizmet dosyası, yazı, ilan) bağlı oldukları bölüme düşer. */
+function pg_for_path(string $path): array
+{
+    $path = trim($path, '/');
+    $parent = '';
+    if (str_starts_with($path, 'urunler/detay/')) {
+        $parent = 'hizmetler';
+    } elseif (str_starts_with($path, 'blog/')) {
+        $parent = 'blog';
+    } elseif (str_starts_with($path, 'kariyer/')) {
+        $parent = 'kariyer';
+    } elseif (str_starts_with($path, 'duyurular/')) {
+        $parent = 'duyurular';
+    }
+    $found = null;
+    foreach (site_pages() as $k => $p) {
+        if ($p['path'] === $path) {
+            return [$p, true];
+        }
+        if ($k === $parent) {
+            $found = $p;
+        }
+    }
+    return [$found, false];
+}
+
 /** Herkese açık, dizine eklenecek sayfa yolları (site haritası ve ziyaretçi sayacı); kapalı bölümler yoktur. */
 function site_public_paths(): array
 {

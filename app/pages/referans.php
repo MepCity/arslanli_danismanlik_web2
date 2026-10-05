@@ -1,10 +1,10 @@
 <?php
-$refs = site('refs');
+$refs = refs_map();
 page([
     'id'          => 'refs',
     'title'       => 'Referanslar',
     'description' => 'Hibe, teşvik ve Ar-Ge başvurularında dosyasını hazırladığımız kurumlardan bazıları: Pilot Seating, Tork, CNK Havacılık, Acar Kaporta, Sacform, Mado, NSK ve diğerleri.',
-    'folio'       => 'Evrak 04 · <b>Referanslar</b>',
+    'folio'       => pg_folio('referans'),
 ]);
 
 // JavaScript yokken de masada birkaç kaşe görünsün: [sıra, x%, y%, açı, mürekkep]
@@ -45,7 +45,7 @@ $slugs = array_keys($refs);
         <div class="desk__layer" data-layer>
           <?php foreach ($preset as [$i, $x, $y, $rot, $ink]): $slug = $slugs[$i]; ?>
             <span class="imp imp--<?= $ink ?>" data-preset style="left:<?= $x ?>%;top:<?= $y ?>%;--rot:<?= $rot ?>deg">
-              <span class="imp__logo" style="--src:url('<?= asset('img/refs/ink/' . $slug . '.webp') ?>')"></span>
+              <span class="imp__logo" style="--src:url('<?= ref_ink_url($slug) ?>')"></span>
             </span>
           <?php endforeach; ?>
         </div>
@@ -63,7 +63,7 @@ $slugs = array_keys($refs);
   </div>
 
   <script type="application/json" data-refs><?= json_encode(array_map(
-      fn($slug, $name) => ['slug' => $slug, 'name' => $name, 'src' => asset('img/refs/ink/' . $slug . '.webp')],
+      fn($slug, $name) => ['slug' => $slug, 'name' => $name, 'src' => ref_ink_url($slug)],
       $slugs,
       array_values($refs)
   ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
@@ -85,7 +85,7 @@ $slugs = array_keys($refs);
               <li class="ledger__row">
                 <span class="ledger__no" aria-hidden="true"><?= nn($n) ?></span>
                 <span class="ledger__name"><?= e($name) ?></span>
-                <span class="ledger__ink" aria-hidden="true" style="--src:url('<?= asset('img/refs/ink/' . $slug . '.webp') ?>')"></span>
+                <span class="ledger__ink" aria-hidden="true" style="--src:url('<?= ref_ink_url($slug) ?>')"></span>
               </li>
             <?php endforeach; ?>
           </ol>
@@ -96,11 +96,12 @@ $slugs = array_keys($refs);
   </div>
 </section>
 
-<?php [$nxPath, $nxLabel, $nxNo] = next_page([['blog', 'Makaleler', '05'], ['duyurular', 'Duyurular', '05'], ['iletisim', 'İletişim', '06']]); ?>
+<?php if ($nx = pg_next('referans')): ?>
 <div class="wrap">
-  <a class="next" href="<?= url($nxPath) ?>">
-    <span class="next__k">Sonraki evrak · <?= e($nxNo) ?></span>
-    <span class="next__t"><span><?= e($nxLabel) ?></span></span>
+  <a class="next" href="<?= url($nx['path']) ?>">
+    <span class="next__k">Sonraki evrak · <?= e($nx['nn']) ?></span>
+    <span class="next__t"><span><?= e($nx['label']) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>
+<?php endif; ?>

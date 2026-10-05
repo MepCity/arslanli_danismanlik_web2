@@ -4,7 +4,7 @@ $process = site('process');
 page([
     'id'          => 'home',
     'description' => 'Hibe ve teşvik mevzuatını sade Türkçeye çeviriyor, TÜBİTAK, KOSGEB, Bakanlık, ihracat ve AB desteklerinde başvuru dosyasını hazırlayıp son ödemeye kadar yürütüyoruz. 2007’den beri İstanbul’da.',
-    'folio'       => 'Evrak 01 · <b>Ana sayfa</b>',
+    'folio'       => pg_folio('home'),
     'vendor'      => ['CustomEase'],
 ]);
 
@@ -111,15 +111,15 @@ $wall = function (string $mode) use ($law): void { ?>
 <section class="dosyalar section" aria-labelledby="dosya-title">
   <div class="wrap">
     <header class="dosyalar__head">
-      <p class="label">Dosyalar · 03</p>
-      <h2 class="display h2" id="dosya-title">Dokuz alanda dosya hazırlıyoruz.</h2>
+      <p class="label">Dosyalar · <?= pg_no('hizmetler') ?></p>
+      <h2 class="display h2" id="dosya-title"><?= number_word(count(services())) ?> alanda dosya hazırlıyoruz.</h2>
       <a class="link ui" href="<?= url('hizmetler') ?>">Dosya dolabını açın</a>
     </header>
     <ol class="dlist" role="list">
       <?php foreach (services() as $slug => $s): ?>
         <li class="drow" style="--c:var(--f-<?= e($s['color']) ?>)">
           <a href="<?= service_url($slug) ?>">
-            <span class="drow__tab"><span>03.<?= (int) $s['no'] ?></span></span>
+            <span class="drow__tab"><span><?= svc_no($s) ?></span></span>
             <span class="drow__t"><?= e($s['title']) ?></span>
             <span class="drow__d"><?= e($s['short']) ?></span>
             <?= arrow('arw drow__arw') ?>
@@ -129,6 +129,8 @@ $wall = function (string $mode) use ($law): void { ?>
     </ol>
   </div>
 </section>
+
+<?php /* Çağrı takvimi: Duyurular bölümü kapalıyken hiçbir şey basılmaz */ $cagriMode = 'home'; require APP . '/partials/cagri.php'; ?>
 
 <!-- 4 · Kırmızı kalem -->
 <section class="kalem section" aria-labelledby="kalem-title">
@@ -157,8 +159,8 @@ $wall = function (string $mode) use ($law): void { ?>
       <a class="btn" href="<?= url('referans') ?>">Kaşe masasına geçin <?= arrow() ?></a>
     </header>
     <ul class="kaseler__grid" role="list">
-      <?php foreach (site('refs') as $slug => $name): ?>
-        <li><span class="inklogo" role="img" aria-label="<?= e($name) ?>" style="--src:url('<?= asset('img/refs/ink/' . $slug . '.webp') ?>')"></span></li>
+      <?php foreach (refs_map() as $slug => $name): ?>
+        <li><span class="inklogo" role="img" aria-label="<?= e($name) ?>" style="--src:url('<?= ref_ink_url($slug) ?>')"></span></li>
       <?php endforeach; ?>
     </ul>
   </div>

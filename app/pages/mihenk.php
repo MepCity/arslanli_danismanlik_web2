@@ -5,7 +5,7 @@ page([
     'theme'       => 'dark',
     'title'       => 'Mihenk Taşlarımız',
     'description' => 'Arslanlı Yatırım & Danışmanlık’ın çalışırken uyduğu altı ilke: uymuyorsa söyleriz, son güne kalmayız, dosyanız sizindir.',
-    'folio'       => 'Evrak 10 · <b>Mihenk Taşlarımız</b>',
+    'folio'       => pg_folio('mihenk'),
 ]);
 
 $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
@@ -59,7 +59,7 @@ $needles = [8 => '#b48a68', 14 => '#c39f5e', 18 => '#d4b052', 22 => '#e0bb42', 2
 <section class="section tas-next">
   <div class="wrap">
     <a class="next" href="<?= url('hakkimizda') ?>">
-      <span class="next__k">Sonraki evrak · 02</span>
+      <span class="next__k">Sonraki evrak · <?= pg_no('hakkimizda') ?></span>
       <span class="next__t"><span>Hakkımızda</span></span>
       <?= arrow() ?>
     </a>

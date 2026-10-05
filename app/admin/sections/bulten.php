@@ -36,6 +36,11 @@ $uyari    = $yol === ''
     ? ui_alert('<strong>Şu an e-posta gönderilemiyor.</strong> Sunucuda e-posta fonksiyonu (mail) kapalı ve SMTP ayarlı değil. Gönderim ve deneme düğmeleri, <a href="'
         . adm_url('ayarlar') . '#eposta">İletişim ve şirket</a> bölümündeki E-posta kartından SMTP bilgileri girilene kadar kapalıdır. Abone listesi, dışa aktarma ve taslak hazırlama çalışır.', 'warn')
     : '';
+// Görünürlük anahtarı kapalıyken form ve sayfalar sitede yoktur; abone listesi ve gönderim sürer, e-postadaki ayrılma bağlantısı da çalışır
+if (!feature('bulten')) {
+    $uyari .= '<div class="alert alert--off" role="status">' . ui_icon('eye-slash') . '<div><strong>Bülten kaydı şu an sitede kapalı.</strong> Ziyaretçiler bülten formunu görmüyor, yeni abone gelmiyor. Mevcut aboneler ve gönderimler çalışmaya devam eder; e-postalardaki abonelikten ayrılma bağlantısı da açıktır. <a href="'
+        . adm_url('gorunurluk') . '">Görünürlük ayarından açın</a></div></div>';
+}
 
 /** Bir gönderimin tahmini süresi (saatlik sınıra göre). */
 $sure = function (int $n): string {

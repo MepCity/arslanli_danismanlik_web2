@@ -411,18 +411,97 @@ html:not(.js) .hdr { position: absolute; } /* JS yoksa üst bilgi sayfayla birli
 .hdr.is-solid::before { opacity: 0.94; }
 .hdr__brand { position: relative; display: block; width: clamp(118px, 11vw, 150px); color: var(--navy); }
 body[data-theme="dark"] .hdr__brand { color: var(--fg); }
-.hdr__folio {
+/* üst bilginin ortası: koşu başlığı (evrak etiketi) ve altında sayfa dizini */
+.hdr__mid {
   position: relative;
   justify-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  max-width: 820px;
+  container: hmid / inline-size;
+}
+.hdr__folio {
+  max-width: 100%;
+  line-height: 1.25;
   font-style: italic;
   font-size: var(--t-small);
   color: var(--ink-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 .hdr__folio b { font-style: normal; font-family: var(--font-sans); font-weight: 600; font-stretch: 85%; color: var(--fg); }
+
+/* sayfa dizini: fihristin tek satırlık hali. Numara önce, ad sonra, aralarda noktalı dolgu; bulunduğunuz sayfa fosforlu kalemle işaretli */
+.hnav { width: 100%; }
+.hnav__list { display: flex; align-items: baseline; }
+.hnav__list li { display: flex; align-items: baseline; flex: 1 1 auto; min-width: 0; }
+.hnav__list li:last-child { flex: 0 0 auto; }
+.hnav__list li:not(:last-child)::after {
+  content: "";
+  flex: 1 1 16px;
+  min-width: 16px;
+  height: 4px;
+  margin: 0 10px;
+  align-self: center;
+  transform: translateY(5px);
+  background: radial-gradient(circle, currentColor 1px, transparent 1.5px) 0 50% / 8px 4px repeat-x;
+  opacity: 0.4;
+}
+.hnav a {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 0;
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-weight: 650;
+  font-stretch: 80%;
+  font-size: 0.9375rem;
+  line-height: 1.2;
+}
+.hnav__no { font-family: var(--font-serif); font-style: italic; font-weight: 400; font-stretch: 100%; font-size: 0.8125rem; color: var(--ink-3); font-variant-numeric: lining-nums; }
+.hnav__t {
+  background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 0% 44%;
+  transition: background-size 0.4s var(--ease-out);
+}
+.hnav a:hover .hnav__t, .hnav a:focus-visible .hnav__t, .hnav a[aria-current] .hnav__t { background-size: 100% 44%; }
+.hnav a[aria-current="page"] .hnav__no, .hnav a:hover .hnav__no { color: var(--fg); }
+.hnav a:focus-visible { outline-offset: 2px; border-radius: 2px; }
+body[data-theme="dark"] .hnav__t { background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 100% / 0% 2px; }
+body[data-theme="dark"] .hnav a:hover .hnav__t, body[data-theme="dark"] .hnav a:focus-visible .hnav__t, body[data-theme="dark"] .hnav a[aria-current] .hnav__t { background-size: 100% 2px; }
+
+/* dar ortada adlar sığmaz: yalnızca numaralar kalır (adlar ekran okuyucuya açık, etikette okunur), sığınca adlar geri gelir.
+   Her sınıf (hnav--wNNN) o sayıda sayfanın adlarıyla sığabildiği en dar ortayı gösterir; sınıfı layout.php sayfa sayısına göre verir. Numara-yalnız görünümde bulunulan sayfanın numarası fosforlanır */
+@container hmid (max-width: 549px) {
+  .hnav--w550 .hnav__no { font-size: 0.9375rem; color: var(--ink-2); }
+  .hnav--w550 .hnav__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .hnav--w550 a[aria-current] .hnav__no, .hnav--w550 a:hover .hnav__no, .hnav--w550 a:focus-visible .hnav__no { color: var(--fg); background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 100% 44%; padding-inline: 2px; margin-inline: -2px; }
+  body[data-theme="dark"] .hnav--w550 a[aria-current] .hnav__no, body[data-theme="dark"] .hnav--w550 a:hover .hnav__no, body[data-theme="dark"] .hnav--w550 a:focus-visible .hnav__no { background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 100% / 100% 2px; }
+}
+@container hmid (max-width: 639px) {
+  .hnav--w640 .hnav__no { font-size: 0.9375rem; color: var(--ink-2); }
+  .hnav--w640 .hnav__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .hnav--w640 a[aria-current] .hnav__no, .hnav--w640 a:hover .hnav__no, .hnav--w640 a:focus-visible .hnav__no { color: var(--fg); background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 100% 44%; padding-inline: 2px; margin-inline: -2px; }
+  body[data-theme="dark"] .hnav--w640 a[aria-current] .hnav__no, body[data-theme="dark"] .hnav--w640 a:hover .hnav__no, body[data-theme="dark"] .hnav--w640 a:focus-visible .hnav__no { background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 100% / 100% 2px; }
+}
+@container hmid (max-width: 739px) {
+  .hnav--w740 .hnav__no { font-size: 0.9375rem; color: var(--ink-2); }
+  .hnav--w740 .hnav__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .hnav--w740 a[aria-current] .hnav__no, .hnav--w740 a:hover .hnav__no, .hnav--w740 a:focus-visible .hnav__no { color: var(--fg); background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 100% 44%; padding-inline: 2px; margin-inline: -2px; }
+  body[data-theme="dark"] .hnav--w740 a[aria-current] .hnav__no, body[data-theme="dark"] .hnav--w740 a:hover .hnav__no, body[data-theme="dark"] .hnav--w740 a:focus-visible .hnav__no { background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 100% / 100% 2px; }
+}
+@container hmid (max-width: 839px) {
+  .hnav--w840 .hnav__no { font-size: 0.9375rem; color: var(--ink-2); }
+  .hnav--w840 .hnav__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .hnav--w840 a[aria-current] .hnav__no, .hnav--w840 a:hover .hnav__no, .hnav--w840 a:focus-visible .hnav__no { color: var(--fg); background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 82% / 100% 44%; padding-inline: 2px; margin-inline: -2px; }
+  body[data-theme="dark"] .hnav--w840 a[aria-current] .hnav__no, body[data-theme="dark"] .hnav--w840 a:hover .hnav__no, body[data-theme="dark"] .hnav--w840 a:focus-visible .hnav__no { background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 100% / 100% 2px; }
+}
 .hdr__act { position: relative; display: flex; align-items: center; gap: 10px; }
 .hdr__menu {
   display: inline-flex;
@@ -447,11 +526,15 @@ body[data-theme="dark"] .hdr__brand { color: var(--fg); }
 .hdr__cta { font-size: 0.875rem; padding: 0.8em 1.05em; }
 
 @media (max-width: 860px) {
-  .hdr__folio { display: none; }
   .hdr__cta { display: none; }
-  .hdr__in { grid-template-columns: auto 1fr auto; }
+  .hdr__in { grid-template-columns: auto 1fr auto; gap: 14px; }
+  .hnav { display: none; }
+  .hdr__mid { max-width: none; }
   :root { --hdr-h: 64px; }
 }
+/* telefonda etiket kısalır: yalnızca "Evrak 03"; çok dar ekranda "Evrak" sözcüğü de düşer */
+@media (max-width: 560px) { .hdr__nm { display: none; } }
+@media (max-width: 380px) { .hdr__w { display: none; } .hdr__folio { font-style: normal; font-family: var(--font-sans); font-weight: 600; font-stretch: 85%; color: var(--fg); } }
 
 /* logo */
 .logo { width: 100%; height: auto; overflow: visible; }

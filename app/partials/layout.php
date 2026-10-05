@@ -18,33 +18,15 @@ $vendor  = $p['vendor'] ?? [];
 $current = '/' . trim($path ?? '', '/');
 $isCur = fn(string $to) => ($current === '/' . trim($to, '/')) ? ' aria-current="page"' : '';
 
-$menu = [
-    ['', 'Ana sayfa', '01'],
-    ['hakkimizda', 'Hakkımızda', '02'],
-    ['hizmetler', 'Hizmetler', '03'],
-    ['referans', 'Referanslar', '04'],
-    ['blog', 'Makaleler', '05'],
-    ['iletisim', 'İletişim', '06'],
-];
-if (!feature('blog')) {
-    // Makaleler kapalıyken 05 numaralı sayfa Duyurular olur: fihristte ve sayfa üstündeki evrak numaralarında boşluk kalmaz
-    array_splice($menu, 4, 1, [['duyurular', 'Duyurular', '05']]);
-}
-// Panelden kapatılan bölümler (Yazılar, Duyurular, Referanslar, Kariyer, Bülten) fihristten kalkar; kalan sayfaların numaraları değişmez
-// (numaraların tek kayıttan üretilmesi Aşama 2B'dedir)
-$menu = array_values(array_filter($menu, fn($m) => path_enabled($m[0])));
-$corp = [
-    ['haberdarol', 'Haberdar Ol', '07'],
-    ['kurumsal/misyonumuz', 'Misyonumuz', '08'],
-    ['kurumsal/vizyonumuz', 'Vizyonumuz', '09'],
-    ['kurumsal/mihenk-taslarimiz', 'Mihenk Taşlarımız', '10'],
-    ['hesap-numaralarimiz', 'Hesap Numaralarımız', '11'],
-    ['kariyer', 'Kariyer', '14'],
-];
-if (feature('blog')) {
-    $corp[] = ['duyurular', 'Duyurular', '15'];   // 12 ve 13 yasal sayfaların numarası
-}
-$corp = array_values(array_filter($corp, fn($m) => path_enabled($m[0])));
+// Fihrist ve üst bilgideki dizin tek sayfa kaydından gelir (app/bootstrap.php, site_pages()): numaralar boşluksuz, kapalı bölümler yok
+$menu = site_pages_in('menu');
+$corp = site_pages_in('corp');
+[$here, $hereExact] = pg_for_path($path ?? '');
+// Etiket: "Evrak 03 · <b>Ad</b>" → kısa ekranlarda adı düşer (hdr__nm), çok dar ekranda "Evrak" sözcüğü de (hdr__w)
+$folio = $p['folio'] ?: pg_folio('home');
+$folioHtml = preg_match('/^Evrak\s+(\S+)\s*·\s*(.+)$/su', $folio, $fm)
+    ? '<span class="hdr__ev"><span class="hdr__w">Evrak </span>' . $fm[1] . '</span><span class="hdr__nm"> · ' . $fm[2] . '</span>'
+    : $folio;
 // Açılışta öne çıkan duyuru (varsa): pencere, çip ve kendi dosyaları yalnızca o zaman yüklenir
 $spot = function_exists('ann_featured') ? ann_featured() : null;
 ?><!doctype html>
@@ -71,6 +53,8 @@ $spot = function_exists('ann_featured') ? ann_featured() : null;
 <link rel="preload" href="<?= url('assets/fonts/newsreader.woff2') ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
 <?php if ($pageCss): ?><link rel="stylesheet" href="<?= $pageCss ?>"><?php endif; ?>
+<?php foreach (($p['styles'] ?? []) as $extraCss): ?><link rel="stylesheet" href="<?= asset('css/' . $extraCss . '.css') ?>">
+<?php endforeach; ?>
 <?php if ($spot): ?><link rel="stylesheet" href="<?= asset('css/spotlight.css') ?>">
 <?php endif; ?>
 <script>
@@ -110,7 +94,16 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 <header class="hdr" data-hdr>
   <div class="hdr__in wrap">
     <a class="hdr__brand" href="<?= url() ?>" aria-label="<?= e(cfg('name')) ?>, ana sayfa"><?php require APP . '/partials/logo.php'; ?></a>
-    <p class="hdr__folio" aria-hidden="true"><?= $p['folio'] ?: 'Evrak 01 · <b>Ana sayfa</b>' ?></p>
+    <div class="hdr__mid">
+      <p class="hdr__folio" aria-hidden="true" data-folio><?= $folioHtml ?></p>
+      <nav class="hnav hnav--w<?= [4 => 550, 5 => 550, 6 => 640, 7 => 740][count($menu)] ?? (count($menu) < 4 ? 550 : 840) ?>" aria-label="Ana sayfalar" data-hnav>
+        <ol class="hnav__list" role="list">
+          <?php foreach ($menu as $m): $cur = $hereExact && $here && $here['key'] === $m['key'] ? ' aria-current="page"' : ($here && $here['key'] === $m['key'] ? ' aria-current="true"' : ''); ?>
+            <li><a href="<?= url($m['path']) ?>"<?= $cur ?> data-no="<?= e($m['nn']) ?>"><span class="hnav__no" aria-hidden="true"><?= e($m['nn']) ?></span><span class="hnav__t"><?= e($m['label']) ?></span></a></li>
+          <?php endforeach; ?>
+        </ol>
+      </nav>
+    </div>
     <div class="hdr__act">
       <a class="btn btn--sm hdr__cta" href="<?= url('iletisim') ?>">Ön görüşme <?= arrow() ?></a>
       <button class="hdr__menu" type="button" aria-expanded="false" aria-controls="fihrist" data-menu-open>
@@ -129,25 +122,25 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
     <nav aria-label="Ana menü">
       <p class="fih__h"><span>Fihrist</span><em>sayfa</em></p>
       <ul class="idx" role="list">
-        <?php foreach ($menu as [$to, $label, $no]): ?>
-          <li><a href="<?= url($to) ?>"<?= $isCur($to) ?>><span class="t"><?= e($label) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= $no ?></span></a></li>
+        <?php foreach ($menu as $m): ?>
+          <li><a href="<?= url($m['path']) ?>"<?= $isCur($m['path']) ?>><span class="t"><?= e($m['label']) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= $m['nn'] ?></span></a></li>
         <?php endforeach; ?>
       </ul>
     </nav>
     <div class="fih__side">
       <nav aria-label="Hizmetler">
-        <p class="fih__h"><span>Dosyalar</span><em>03</em></p>
+        <p class="fih__h"><span>Dosyalar</span><em><?= pg_no('hizmetler') ?></em></p>
         <ul class="idx idx--sm" role="list">
           <?php foreach (services() as $slug => $s): ?>
-            <li><a href="<?= service_url($slug) ?>"<?= $isCur('urunler/detay/' . $slug) ?>><span class="tab" style="--c:var(--f-<?= e($s['color']) ?>)" aria-hidden="true"></span><span class="t"><?= e($s['nav']) ?></span><span class="dots" aria-hidden="true"></span><span class="pg">03.<?= (int) $s['no'] ?></span></a></li>
+            <li><a href="<?= service_url($slug) ?>"<?= $isCur('urunler/detay/' . $slug) ?>><span class="tab" style="--c:var(--f-<?= e($s['color']) ?>)" aria-hidden="true"></span><span class="t"><?= e($s['nav']) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= svc_no($s) ?></span></a></li>
           <?php endforeach; ?>
         </ul>
       </nav>
       <nav aria-label="Kurumsal">
         <p class="fih__h"><span>Kurumsal</span><em>sayfa</em></p>
         <ul class="idx idx--sm" role="list">
-          <?php foreach ($corp as [$to, $label, $no]): ?>
-            <li><a href="<?= url($to) ?>"<?= $isCur($to) ?>><span class="t"><?= e($label) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= $no ?></span></a></li>
+          <?php foreach ($corp as $m): ?>
+            <li><a href="<?= url($m['path']) ?>"<?= $isCur($m['path']) ?>><span class="t"><?= e($m['label']) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= $m['nn'] ?></span></a></li>
           <?php endforeach; ?>
         </ul>
       </nav>
@@ -232,6 +225,7 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 <script src="<?= asset('vendor/lenis.min.js') ?>" defer></script>
 <?php if ($spot): ?><script src="<?= asset('js/spotlight.js') ?>" defer></script>
 <?php endif; ?>
+<script src="<?= asset('js/hdrnav.js') ?>" defer></script>
 <script type="module" src="<?= asset('js/app.js') ?>"<?= $pageJs ? ' data-page-script="' . e($pageJs) . '"' : '' ?>></script>
 </body>
 </html>

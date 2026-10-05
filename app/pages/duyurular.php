@@ -9,7 +9,7 @@ page([
     'id'          => 'announcements',
     'title'       => 'Duyurular ve Çağrı Takvimi',
     'description' => 'Hibe ve teşvik programlarının başvuru başlangıç, son başvuru ve sonuç tarihleri. Arslanlı Yatırım & Danışmanlık çağrı takvimi.',
-    'folio'       => 'Evrak ' . (feature('blog') ? '15' : '05') . ' · <b>Duyurular</b>',
+    'folio'       => pg_folio('duyurular'),
 ]);
 
 $types    = ann_types();
@@ -77,7 +77,7 @@ $sheet = function (array $a) use (&$no, $types, $featured, $stampLbl, $rots): vo
 ?>
 
 <section class="ann-head pagehead wrap" aria-labelledby="ann-title">
-  <p class="label" data-rise>Evrak <?= feature('blog') ? '15' : '05' ?> · Duyurular</p>
+  <p class="label" data-rise><?= e(pg_label('duyurular')) ?></p>
   <h1 class="display ann-head__h" id="ann-title" data-rise style="--delay:.05s">Duyurular.</h1>
   <div class="ann-head__side" data-rise style="--delay:.12s">
     <p class="lead">Açılan çağrılar ve önemli tarihler. Her ilanın altında resmî kaynağına bağlantı vardır; tarihleri tek dokunuşla takviminize ekleyebilirsiniz.</p>
@@ -87,6 +87,8 @@ $sheet = function (array $a) use (&$no, $types, $featured, $stampLbl, $rots): vo
     </p>
   </div>
 </section>
+
+<?php $cagriMode = 'page'; require APP . '/partials/cagri.php'; ?>
 
 <section class="board" aria-label="Açık çağrılar">
   <div class="board__in wrap">

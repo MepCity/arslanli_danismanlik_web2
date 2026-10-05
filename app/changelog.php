@@ -386,10 +386,17 @@ function changelog_diff(string $key, $before, $after): array
             ], fn($x) => (string) ($x['title'] ?? ''), ['İlan eklendi', 'İlan silindi', 'İlan güncellendi']);
 
         case 'services':
+            $colors = service_colors();
+            $law = fn(string $k) => fn($x) => (string) (is_array($x['law'] ?? null) ? ($x['law'][$k] ?? '') : '');
             $items = cl_map_diff($b, $a, [
-                'Başlık' => $s('title'), 'Menü adı' => $s('nav'), 'Kısa açıklama' => $s('short'), 'Giriş' => $s('lead'), 'Kimler için' => $s('for'),
-                'Programlar' => fn($x) => cl_render($x['programs'] ?? []), 'Kapsam' => fn($x) => cl_render($x['scope'] ?? []),
-                'Sık sorulan sorular' => fn($x) => cl_render($x['faq'] ?? []), 'Hareketli çizim' => $s('glyph'),
+                'Başlık' => $s('title'), 'Menüdeki ad' => $s('nav'), 'Dosya sırtı etiketi' => $s('tab'),
+                'Renk' => fn($x) => $x ? ($colors[$x['color'] ?? ''] ?? (string) ($x['color'] ?? '')) : '',
+                'Kısa açıklama' => $s('short'), 'Giriş paragrafı' => $s('lead'),
+                'Programlar' => fn($x) => cl_render($x['programs'] ?? []), 'Ne yapıyoruz (adımlar)' => fn($x) => cl_render($x['steps'] ?? []),
+                'Evrak listesi' => fn($x) => cl_render($x['docs'] ?? []),
+                'Uygun olduğu durumlar' => $s('fit'), 'Uygun olmadığı durumlar' => $s('unfit'),
+                'Mevzuat kaynağı' => $law('source'), 'Mevzuat alıntısı (resmî metinden birebir)' => $law('text'), 'Mevzuat alıntısının sade Türkçesi' => $law('plain'),
+                'Sık sorulan sorular' => fn($x) => cl_render($x['faq'] ?? []),
             ], fn($x) => (string) ($x['title'] ?? ''), ['Hizmet eklendi', 'Hizmet silindi', 'Hizmet güncellendi']);
             $ob = array_values(array_intersect(array_keys($b), array_keys($a)));
             $oa = array_values(array_intersect(array_keys($a), array_keys($b)));
@@ -407,33 +414,45 @@ function changelog_diff(string $key, $before, $after): array
             ], fn($x) => (string) ($x['title'] ?? ''), ['Yazı eklendi', 'Yazı silindi', 'Yazı güncellendi']);
 
         case 'refs':
-            $byLogo = fn(array $l) => array_column(array_filter($l, fn($x) => is_array($x) && !empty($x['logo'])), 'name', 'logo');
-            $mb = $byLogo($b);
-            $ma = $byLogo($a);
-            $added = array_diff_key($ma, $mb);
-            $gone = array_diff_key($mb, $ma);
+            // Kod (id) ile eşleşir; eski kayıtlarda kod yoksa logo dosya adı kullanılır
+            $byId = function (array $l): array {
+                $o = [];
+                foreach ($l as $x) {
+                    if (is_array($x) && !empty($x['name'])) {
+                        $o[(string) ($x['id'] ?? pathinfo((string) ($x['logo'] ?? ''), PATHINFO_FILENAME))] = $x;
+                    }
+                }
+                return $o;
+            };
+            $mb = $byId($b);
+            $ma = $byId($a);
             $items = [];
-            foreach ($added as $logo => $name) {
-                $from = array_search($name, $gone, true);
-                if ($from !== false) {       // aynı kurum, yeni logo
-                    unset($gone[$from]);
-                    $items[] = ['title' => 'Referans logosu değişti: "' . $name . '"', 'rows' => [['Logo', (string) $from, (string) $logo]]];
-                } else {
-                    $items[] = ['title' => 'Referans eklendi: "' . $name . '"', 'rows' => [['Kurum adı', '', (string) $name], ['Logo', '', (string) $logo]]];
+            foreach ($ma as $id => $x) {
+                if (!isset($mb[$id])) {
+                    $items[] = ['title' => 'Referans eklendi: "' . $x['name'] . '"', 'rows' => [['Kurum adı', '', (string) $x['name']], ['Logo', '', (string) ($x['logo'] ?? '')]]];
                 }
             }
-            foreach ($gone as $logo => $name) {
-                $items[] = ['title' => 'Referans silindi: "' . $name . '"', 'rows' => [['Kurum adı', (string) $name, ''], ['Logo', (string) $logo, '']]];
-            }
-            foreach (array_intersect_key($ma, $mb) as $logo => $name) {
-                if ($mb[$logo] !== $name) {
-                    $items[] = ['title' => 'Referans adı değişti: "' . $name . '"', 'rows' => [['Kurum adı', (string) $mb[$logo], (string) $name]]];
+            foreach ($mb as $id => $x) {
+                if (!isset($ma[$id])) {
+                    $items[] = ['title' => 'Referans silindi: "' . $x['name'] . '"', 'rows' => [['Kurum adı', (string) $x['name'], ''], ['Logo', (string) ($x['logo'] ?? ''), '']]];
+                    continue;
+                }
+                $y = $ma[$id];
+                $rows = [];
+                if ($x['name'] !== $y['name']) {
+                    $rows[] = ['Kurum adı', (string) $x['name'], (string) $y['name']];
+                }
+                if (($x['logo'] ?? '') !== ($y['logo'] ?? '')) {
+                    $rows[] = ['Logo ve kaşe görünümü', (string) ($x['logo'] ?? ''), (string) ($y['logo'] ?? '')];
+                }
+                if ($rows) {
+                    $items[] = ['title' => 'Referans güncellendi: "' . $y['name'] . '"', 'rows' => $rows, 'fields' => true];
                 }
             }
             $ob = array_values(array_intersect(array_keys($mb), array_keys($ma)));
             $oa = array_values(array_intersect(array_keys($ma), array_keys($mb)));
             if ($ob !== $oa) {
-                $items[] = ['title' => 'Referans sırası değişti', 'rows' => [['Sıra', implode("\n", array_map(fn($k) => (string) $mb[$k], $ob)), implode("\n", array_map(fn($k) => (string) $ma[$k], $oa))]]];
+                $items[] = ['title' => 'Referans sırası değişti', 'rows' => [['Sıra', implode("\n", array_map(fn($k) => (string) $mb[$k]['name'], $ob)), implode("\n", array_map(fn($k) => (string) $ma[$k]['name'], $oa))]]];
             }
             return $items;
 
@@ -452,17 +471,35 @@ function changelog_diff(string $key, $before, $after): array
             return $items;
 
         case 'lists':
-            $labels = ['process' => 'Çalışma süreci', 'principles' => 'İlkeler', 'mission_goals' => 'Misyon hedefleri', 'vision_items' => 'Vizyon maddeleri',
-                'stations' => 'Ana sayfa dalga programları', 'noise' => 'Kurumlar ve programları', 'banks' => 'Banka hesapları', 'deneyim' => 'Kariyer formu deneyim seçenekleri',
-                'sektorler' => 'Bülten formu sektör seçenekleri',
-                'ref_count' => 'Gösterilen referans sayısı'];
+            $lines = fn(callable $f) => fn($v) => implode("\n", array_map($f, array_values((array) $v)));
+            $kinds = ['law' => 'Mevzuat', 'us' => 'Biz'];
+            $labels = [
+                'process'    => ['Çalışma süreci (ana sayfa takvimi)', $lines(fn($x) => ($x['phase'] ?? '') . ' › ' . ($x['title'] ?? '') . ' — Biz: ' . ($x['us'] ?? '') . ' Siz: ' . ($x['you'] ?? ''))],
+                'timeline'   => ['Mevzuat zaman çizelgesi', $lines(fn($x) => ($x['year'] ?? '') . ' · ' . ($kinds[$x['kind'] ?? ''] ?? ($x['kind'] ?? '')) . ' · ' . ($x['title'] ?? '') . ': ' . ($x['text'] ?? '') . ' [' . ($x['src'] ?? '') . ']')],
+                'principles' => ['Mihenk taşlarımız (ilkeler)', $lines(fn($x) => ($x[0] ?? '') . ': ' . ($x[1] ?? ''))],
+                'banks'      => ['Banka hesapları', $lines(fn($x) => ($x['bank'] ?? '') . ' · ' . ($x['holder'] ?? '') . ' · ' . ($x['account'] ?? '') . ' · ' . ($x['iban'] ?? ''))],
+                'sektorler'  => ['Bülten formu sektör seçenekleri', $lines(fn($x) => (string) $x)],
+                'deneyim'    => ['Kariyer formu deneyim seçenekleri', $lines(fn($x) => (string) $x)],
+            ];
             $def = (array) require APP . '/data/site.php';
             $items = [];
-            foreach ($labels as $k => $label) {
-                $x = cl_render($b[$k] ?? ($def[$k] ?? null));
-                $y = cl_render($a[$k] ?? ($def[$k] ?? null));
+            foreach ($labels as $k => [$label, $fn]) {
+                $x = $fn($b[$k] ?? ($def[$k] ?? []));
+                $y = $fn($a[$k] ?? ($def[$k] ?? []));
                 if ($x !== $y) {
                     $items[] = ['title' => 'Liste değişti: ' . $label, 'rows' => [[$label, $x, $y]]];
+                }
+            }
+            // Misyon ve vizyon: alan alan
+            $fields = [
+                'mission' => ['Misyon', ['Misyon cümlesi' => fn($m) => (string) ($m['statement'] ?? ''), 'Misyon maddeleri' => fn($m) => cl_render($m['items'] ?? [])]],
+                'vision'  => ['Vizyon mektubu', ['Açılış yılı' => fn($m) => (string) ($m['open_year'] ?? ''), 'Selamlama' => fn($m) => (string) ($m['greeting'] ?? ''),
+                    'Giriş paragrafı' => fn($m) => (string) ($m['intro'] ?? ''), 'Vizyon maddeleri' => fn($m) => cl_render($m['items'] ?? []), 'Kapanış' => fn($m) => (string) ($m['closing'] ?? '')]],
+            ];
+            foreach ($fields as $k => [$label, $defs]) {
+                $rows = cl_rows($defs, (array) ($b[$k] ?? ($def[$k] ?? [])), (array) ($a[$k] ?? ($def[$k] ?? [])));
+                if ($rows) {
+                    $items[] = ['title' => 'Liste değişti: ' . $label, 'rows' => $rows, 'fields' => true];
                 }
             }
             return $items;

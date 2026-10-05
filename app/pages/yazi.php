@@ -19,7 +19,7 @@ page([
     'description' => $post['excerpt'],
     'image'       => absolute_url('assets/' . $img),
     'canonical'   => $abs,
-    'folio'       => 'Evrak 05 · <b>Makale</b>',
+    'folio'       => pg_folio('blog', 'Makale'),
 ]);
 
 $share = [

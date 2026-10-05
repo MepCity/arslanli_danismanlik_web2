@@ -8,7 +8,7 @@ page([
     'id'          => 'signup',
     'title'       => 'Haberdar Ol',
     'description' => 'Sizi ilgilendiren hibe ve teşvik çağrıları açıldığında, program şartları değiştiğinde ya da kapanış tarihi yaklaştığında e-postayla haber verelim. Kuponu doldurun.',
-    'folio'       => 'Evrak 07 · <b>Haberdar Ol</b>',
+    'folio'       => pg_folio('haberdarol'),
 ]);
 
 $durum = (string) ($_GET['durum'] ?? '');
@@ -16,14 +16,14 @@ $sent  = $durum === 'tamam';
 ?>
 
 <section class="kp-head pagehead wrap" aria-labelledby="signup-title">
-  <p class="label" data-rise>Evrak 07 · Haberdar Ol</p>
+  <p class="label" data-rise><?= e(pg_label('haberdarol')) ?></p>
   <h1 class="display kp-head__h" id="signup-title" data-rise style="--delay:.05s">Kesip gönderin.</h1>
   <p class="lead kp-head__lead" data-rise style="--delay:.12s">Sizi ilgilendiren bir destek çağrısı açıldığında, bir programın şartları değiştiğinde ya da takip ettiğiniz bir başvurunun son tarihi yaklaştığında e-postayla haber verelim. Kuponu bir kez doldurmanız yeterli.</p>
 </section>
 
 <section class="kp wrap" aria-label="Haberdar Ol kuponu">
   <div class="kp__page">
-    <p class="kp__run" aria-hidden="true"><span>Arslanlı Bülteni</span><span>Kupon sayfası · 07</span></p>
+    <p class="kp__run" aria-hidden="true"><span>Arslanlı Bülteni</span><span>Kupon sayfası · <?= pg_no('haberdarol') ?></span></p>
 
     <div class="kp__stage<?= $sent ? ' is-sent' : '' ?>" data-kp-stage>
       <div class="kp__hole" data-kp-hole<?= $sent ? '' : ' hidden' ?>>
@@ -154,7 +154,7 @@ $sent  = $durum === 'tamam';
 
 <div class="wrap">
   <a class="next" href="<?= url('kurumsal/misyonumuz') ?>">
-    <span class="next__k">Sonraki evrak · 08</span>
+    <span class="next__k">Sonraki evrak · <?= pg_no('misyon') ?></span>
     <span class="next__t"><span>Misyonumuz</span></span>
     <?= arrow() ?>
   </a>

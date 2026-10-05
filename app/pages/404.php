@@ -14,7 +14,7 @@ $requested = mb_strimwidth($requested, 0, 80, '…');
 
 $ekler = [
     ['', 'Ana sayfa', 'Kanun metni, takvim ve dosyalarımız'],
-    ['hizmetler', 'Hizmetler', 'Dokuz alanda hazırladığımız dosyalar'],
+    ['hizmetler', 'Hizmetler', number_word(count(services())) . ' alanda hazırladığımız dosyalar'],
     ['iletisim', 'İletişim', 'Aradığınızı bize sorun'],
 ];
 ?>

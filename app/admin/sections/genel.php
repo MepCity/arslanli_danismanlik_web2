@@ -61,6 +61,10 @@ $health[] = $lastBackup > $now - 30 * 86400
 $health[] = !empty($state['kvkk_reviewed'])
     ? [true, 'KVKK metni gözden geçirildi', 'İşaretlenme: ' . date('d.m.Y', (int) $state['kvkk_reviewed']), '']
     : [false, 'KVKK metni hukukçu onayı bekliyor', 'Metin yayına hazır; hukuk danışmanınız okuduktan sonra işaretleyin.', adm_url('guvenlik') . '#kvkk'];
+$refBroken = refs_problems();
+$health[] = $refBroken
+    ? [false, count($refBroken) . ' referansın logo ya da kaşe dosyası eksik', implode(', ', array_slice(array_keys($refBroken), 0, 4)) . ': sitede kaşe görünmez. Logoyu yeniden yükleyin.', adm_url('referanslar')]
+    : [true, 'Referans logoları ve kaşeleri tamam', count(refs_list()) . ' referansın dosyaları yerinde.', ''];
 $okCount = count(array_filter($health, fn($h) => $h[0]));
 
 ob_start(); ?>
@@ -91,12 +95,13 @@ ob_start(); ?>
   <a class="stat" href="<?= adm_url('basvurular') ?>">
     <span class="stat__top">İş başvuruları <?= ui_icon('briefcase') ?></span>
     <span class="stat__n"><?= count($apps) ?></span>
-    <span class="stat__note"><?= ($unread['basvurular'] ? '<b>' . $unread['basvurular'] . ' yeni</b> başvuru var' : 'Yeni başvuru yok') . ($susApps ? ' · <b>' . $susApps . '</b> şüpheli bekliyor' : '') ?></span>
+    <span class="stat__note"><?= ($unread['basvurular'] ? '<b>' . $unread['basvurular'] . ' yeni</b> başvuru var' : 'Yeni başvuru yok') . (($openJobs = count(ilan_published())) ? ' · ' . $openJobs . ' açık ilan' : '') . ($susApps ? ' · <b>' . $susApps . '</b> şüpheli bekliyor' : '') ?></span>
   </a>
-  <a class="stat" href="<?= adm_url('kayitlar') ?>?tur=bulten">
-    <span class="stat__top">Bülten kayıtları <?= ui_icon('envelope-simple') ?></span>
-    <span class="stat__n"><?= $subs ?></span>
-    <span class="stat__note">Bülten ve Haberdar Ol formları</span>
+  <?php require_once APP . '/bulten.php'; $subOnayli = count(array_filter(bulten_aboneler(), fn($a) => $a['durum'] === 'onayli')); ?>
+  <a class="stat" href="<?= adm_url('bulten') ?>">
+    <span class="stat__top">Bülten aboneleri <?= ui_icon('envelope-simple') ?></span>
+    <span class="stat__n"><?= $subOnayli ?></span>
+    <span class="stat__note">e-posta alabilen abone · <?= $subs ?> form kaydı</span>
   </a>
 </section>
 

@@ -79,7 +79,12 @@ if ($path === 'olc') {
     exit;
 }
 
-// Aşama 2C: bültenden ayrılma sayfası (/bulten/ayril, Evrak tasarımında) buraya eklenecek; görünürlük denetiminden önce çalışmalı.
+// Bültenden ayrılma (/bulten/ayril): e-postadaki bağlantı, bülten bölümü sitede kapalı olsa da çalışır; bu yüzden görünürlük denetiminden önce gelir
+if ($path === 'bulten/ayril') {
+    require APP . '/bulten.php';
+    bulten_ayril_sayfasi();
+    exit;
+}
 // Aşama 3B: yapay zekâ erişimi (/mcp ve OAuth adresleri, app/mcp/routes.php) buraya eklenecek; o zamana dek /mcp "bulunamadı" döner.
 
 // Panelden kapatılan bölümler (Yazılar, Duyurular, Referanslar, Kariyer, Bülten) bulunamadı döner
@@ -130,6 +135,21 @@ if (preg_match('#^blog/([a-z0-9\-]+)$#', $path, $m)) {
         not_found();
     }
     render('yazi', ['slug' => $slug, 'post' => posts()[$slug]]);
+    exit;
+}
+
+// İş ilanı: /kariyer/{adres}. Taslak, hiç yayınlanmamış ilan (ya da bölüm kapalıyken her ilan) bulunamadı döner;
+// kapalı ve süresi dolmuş ilan 410 ile "ilan kapandı" sayfasını gösterir (form yok, dizine kapalı).
+if (preg_match('#^kariyer/([a-z0-9\-]+)$#', $path, $m)) {
+    $ilan = ilan_public_find($m[1]);
+    if ($ilan === null) {
+        not_found();
+    }
+    if (!ilan_active($ilan)) {
+        http_response_code(410);
+        header('X-Robots-Tag: noindex, follow');
+    }
+    render('ilan', ['ilan' => $ilan]);
     exit;
 }
 

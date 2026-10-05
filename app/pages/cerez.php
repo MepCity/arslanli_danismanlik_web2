@@ -11,7 +11,7 @@ page([
     'id'          => 'legal',
     'title'       => 'Çerez Politikası',
     'description' => 'Arslanlı Yatırım & Danışmanlık web sitesinin tarayıcınızda ne sakladığı ve ne saklamadığı: çerez, analiz aracı ve reklam takibi kullanılmaz.',
-    'folio'       => 'Evrak 12 · <b>Çerez Politikası</b>',
+    'folio'       => pg_folio('cerez'),
 ]);
 
 /* ---------- Sitenin kodunu tara ---------- */
@@ -176,5 +176,5 @@ legal_doc([
     'lead'     => 'Sitemizi gezerken tarayıcınızda neyin kaldığını ve neyin kalmadığını anlatan metin.',
     'summary'  => $summary,
     'maddeler' => $maddeler,
-    'next'     => ['label' => 'KVKK metni', 'href' => url('kurumsal/kvkk-aydinlatma-metni'), 'no' => '13'],
+    'next'     => ['label' => 'KVKK metni', 'href' => url('kurumsal/kvkk-aydinlatma-metni'), 'no' => pg_no('kvkk')],
 ]);

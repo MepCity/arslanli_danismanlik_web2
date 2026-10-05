@@ -15,7 +15,7 @@ page([
     'id'          => 'service',
     'title'       => $s['title'],
     'description' => $s['short'],
-    'folio'       => 'Evrak 03.' . $n . ' · <b>' . e($s['title']) . '</b>',
+    'folio'       => 'Evrak ' . svc_no($n) . ' · <b>' . e($s['title']) . '</b>',
 ]);
 
 $ekler = [
@@ -32,7 +32,7 @@ $ekler = [
   <header class="kapak pagehead">
     <div class="wrap">
       <div class="kapak__board" data-kapak>
-        <span class="kapak__tab" aria-hidden="true"><b>03.<?= $n ?></b> <?= e($s['tab']) ?></span>
+        <span class="kapak__tab" aria-hidden="true"><b><?= svc_no($n) ?></b> <?= e($s['tab']) ?></span>
         <svg class="kapak__tel" viewBox="0 0 40 300" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <linearGradient id="tel-g" x1="0" x2="1">
@@ -43,7 +43,7 @@ $ekler = [
           <path d="M12 70h22a4 4 0 0 1 0 8H12zM12 222h22a4 4 0 0 1 0 8H12z" fill="url(#tel-g)"/>
         </svg>
         <div class="kapak__in">
-          <p class="docmeta"><span>Dosya No <b>03.<?= $n ?></b></span><span>Konu: <b><?= e($s['nav']) ?></b></span><span>Ek: <b><?= count($ekler) ?> bölüm</b></span></p>
+          <p class="docmeta"><span>Dosya No <b><?= svc_no($n) ?></b></span><span>Konu: <b><?= e($s['nav']) ?></b></span><span>Ek: <b><?= count($ekler) ?> bölüm</b></span></p>
           <div class="kapak__label" data-label>
             <h1 class="display kapak__h" id="dosya-title"><?= e($s['title']) ?></h1>
           </div>
@@ -202,7 +202,7 @@ $ekler = [
 
 <div class="wrap">
   <a class="next next--file" href="<?= service_url($nSlug) ?>" style="--c:var(--f-<?= e($next['color']) ?>)">
-    <span class="next__k">Sonraki dosya · 03.<?= (int) $next['no'] ?></span>
+    <span class="next__k">Sonraki dosya · <?= svc_no($next) ?></span>
     <span class="next__t"><span><?= e($next['title']) ?></span></span>
     <?= arrow() ?>
   </a>

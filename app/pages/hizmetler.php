@@ -4,7 +4,7 @@ page([
     'id'          => 'services',
     'title'       => 'Hizmetler',
     'description' => 'TÜBİTAK, KOSGEB, Sanayi ve Teknoloji Bakanlığı, Ticaret Bakanlığı, AB projeleri, sınai mülkiyet, kalite belgelendirme, yatırım danışmanlığı ve yatırım kredilerinde başvuru dosyası ve yürütme.',
-    'folio'       => 'Evrak 03 · <b>Hizmetler</b>',
+    'folio'       => pg_folio('hizmetler'),
 ]);
 
 // "Ne yapmak istiyorsunuz?" → ilgili dosyalar
@@ -24,7 +24,7 @@ $tabs = [4, 22, 40, 58, 74, 13, 31, 49, 66];
 
 <section class="dhead pagehead" aria-labelledby="dhead-title">
   <div class="wrap dhead__in">
-    <p class="docmeta"><span>Evrak <b>03</b></span><span>Konu: <b>Hizmet alanlarımız</b></span><span>Ek: <b><?= count($all) ?> dosya</b></span></p>
+    <p class="docmeta"><span>Evrak <b><?= pg_no('hizmetler') ?></b></span><span>Konu: <b>Hizmet alanlarımız</b></span><span>Ek: <b><?= count($all) ?> dosya</b></span></p>
     <h1 class="display dhead__h" id="dhead-title">Dosya dolabı</h1>
     <p class="lead dhead__lead">Her destek türü için ayrı bir dosya tutuyoruz: kimler başvurabilir, hangi programlar var, sizden hangi evrak istenir. Aşağı kaydırdıkça dosyalar tek tek öne gelir. Ne yapmak istediğinizi işaretlerseniz ilgili dosyaları öne çıkarırız.</p>
   </div>
@@ -58,12 +58,12 @@ $tabs = [4, 22, 40, 58, 74, 13, 31, 49, 66];
               <article class="file__card" aria-labelledby="ft-<?= e($s['no']) ?>">
                 <span class="file__hook file__hook--l" aria-hidden="true"></span>
                 <span class="file__hook file__hook--r" aria-hidden="true"></span>
-                <a class="file__tab" href="#dosya-<?= e($s['no']) ?>" data-tab="<?= $i ?>" aria-label="Dosya 03.<?= (int) $s['no'] ?>: <?= e($s['title']) ?> dosyasını öne getir">
-                  <span class="file__tabno">03.<?= (int) $s['no'] ?></span><span class="file__tabt"><?= e($s['tab']) ?></span>
+                <a class="file__tab" href="#dosya-<?= e($s['no']) ?>" data-tab="<?= $i ?>" aria-label="Dosya <?= svc_no($s) ?>: <?= e($s['title']) ?> dosyasını öne getir">
+                  <span class="file__tabno"><?= svc_no($s) ?></span><span class="file__tabt"><?= e($s['tab']) ?></span>
                 </a>
                 <div class="file__face">
                   <div class="file__label">
-                    <p class="file__no"><span>Dosya No</span> <b>03.<?= (int) $s['no'] ?></b></p>
+                    <p class="file__no"><span>Dosya No</span> <b><?= svc_no($s) ?></b></p>
                     <h3 class="file__t" id="ft-<?= e($s['no']) ?>"><a href="<?= service_url($slug) ?>"><?= e($s['title']) ?></a></h3>
                   </div>
                   <p class="file__short"><?= e($s['short']) ?></p>
@@ -100,11 +100,12 @@ $tabs = [4, 22, 40, 58, 74, 13, 31, 49, 66];
   </div>
 </section>
 
-<?php [$nxPath, $nxLabel, $nxNo] = next_page([['referans', 'Referanslar', '04'], ['blog', 'Makaleler', '05'], ['duyurular', 'Duyurular', '05'], ['iletisim', 'İletişim', '06']]); ?>
+<?php if ($nx = pg_next('hizmetler')): ?>
 <div class="wrap">
-  <a class="next" href="<?= url($nxPath) ?>">
-    <span class="next__k">Sonraki evrak · <?= e($nxNo) ?></span>
-    <span class="next__t"><span><?= e($nxLabel) ?></span></span>
+  <a class="next" href="<?= url($nx['path']) ?>">
+    <span class="next__k">Sonraki evrak · <?= e($nx['nn']) ?></span>
+    <span class="next__t"><span><?= e($nx['label']) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>
+<?php endif; ?>

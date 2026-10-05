@@ -4,7 +4,7 @@ page([
     'id'          => 'mission',
     'title'       => 'Misyonumuz',
     'description' => 'Misyonumuz: ' . $m['statement'] . ' Bunu her dosyada yaptığımız beş işle yerine getiriyoruz.',
-    'folio'       => 'Evrak 08 · <b>Misyonumuz</b>',
+    'folio'       => pg_folio('misyon'),
 ]);
 
 /** Kalemle çizilmiş kutu: her satırda biraz farklı olsun diye dört çeşit. */
@@ -60,7 +60,7 @@ $ticks = [
 
 <div class="wrap">
   <a class="next" href="<?= url('kurumsal/vizyonumuz') ?>">
-    <span class="next__k">Sonraki evrak · 09</span>
+    <span class="next__k">Sonraki evrak · <?= pg_no('vizyon') ?></span>
     <span class="next__t"><span>Vizyonumuz</span></span>
     <?= arrow() ?>
   </a>

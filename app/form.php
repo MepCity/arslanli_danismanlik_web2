@@ -268,7 +268,6 @@ if (!verify_form_token($token) || spam_token_used($token)) {
 
 // İlana başvuru: "ilan" alanı varsa açık bir ilanın kimliği olmalı. Taslak, kapalı, süresi dolmuş, silinmiş ya da hiç olmamış ilan için aynı yanıt verilir
 // (taslağın var olup olmadığı sezdirilmez). Reddedilen gönderim hız sınırına sayılmaz ve belirteci tüketmez. Alan yoksa başvuru genel başvurudur (aday havuzu).
-// Aşama 2D: ilan sayfası ve Kariyer'deki açık pozisyonlar eklenene dek sitedeki hiçbir form "ilan" alanı göndermez.
 $ilan = null;
 if ($type === 'kariyer' && array_key_exists('ilan', $_POST)) {
     $ilan = is_string($_POST['ilan']) && trim($_POST['ilan']) !== '' ? ilan_find(trim($_POST['ilan'])) : null;
@@ -420,7 +419,9 @@ $suspect = $spam['score'] >= SPAM_LIMIT;
 
 $done = match ($type) {
     'bulten'  => 'Kaydınız alındı. Yeni çağrılar ve programlar açıldığında sizi haberdar edeceğiz.',
-    'kariyer' => 'Başvurunuz bize ulaştı. Değerlendirmenin ardından sizinle iletişime geçeceğiz.',
+    'kariyer' => $ilan !== null
+        ? 'Başvurunuz “' . $ilan['title'] . '” ilanına bağlanarak bize ulaştı. Değerlendirmenin ardından sizinle iletişime geçeceğiz.'
+        : 'Başvurunuz bize ulaştı. Değerlendirmenin ardından sizinle iletişime geçeceğiz.',
     default   => 'Dilekçeniz bize ulaştı. En kısa sürede dönüş yapacağız.',
 };
 

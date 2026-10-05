@@ -8,7 +8,7 @@ page([
     'id'          => 'bank',
     'title'       => 'Hesap Numaralarımız',
     'description' => 'Arslanlı Yatırım & Danışmanlık banka hesap bilgileri: Ziraat Katılım Bankası ve Halk Bankası IBAN numaraları.',
-    'folio'       => 'Evrak 11 · <b>Hesap Numaralarımız</b>',
+    'folio'       => pg_folio('hesap'),
 ]);
 
 $banks = site('banks');
@@ -16,9 +16,9 @@ $now   = time();
 ?>
 
 <section class="bank-head pagehead wrap" aria-labelledby="bank-title">
-  <p class="label" data-rise>Evrak 11 · Hesap Numaralarımız</p>
+  <p class="label" data-rise><?= e(pg_label('hesap')) ?></p>
   <h1 class="display bank-head__h" id="bank-title" data-rise style="--delay:.05s">Hesap numaralarımız.</h1>
-  <p class="lead bank-head__lead" data-rise style="--delay:.12s">Ödemenizi aşağıdaki iki hesaptan birine yapabilirsiniz. Açıklama satırına firmanızın adını yazmanız, ödemeyi doğru dosyayla eşleştirmemizi kolaylaştırır.</p>
+  <p class="lead bank-head__lead" data-rise style="--delay:.12s">Ödemenizi aşağıdaki <?= count($banks) === 2 ? 'iki hesaptan birine' : 'hesaplardan birine' ?> yapabilirsiniz. Açıklama satırına firmanızın adını yazmanız, ödemeyi doğru dosyayla eşleştirmemizi kolaylaştırır.</p>
 </section>
 
 <section class="pos wrap" aria-label="Banka hesapları">
@@ -68,7 +68,7 @@ $now   = time();
 
 <div class="wrap">
   <a class="next" href="<?= url('iletisim') ?>">
-    <span class="next__k">Bir sorunuz mu var? · 06</span>
+    <span class="next__k">Bir sorunuz mu var? · <?= pg_no('iletisim') ?></span>
     <span class="next__t"><span>İletişim</span></span>
     <?= arrow() ?>
   </a>

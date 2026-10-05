@@ -37,10 +37,10 @@
 .bl-tbl { margin: 0 -22px; border-top: 1px solid var(--line); }
 .bl-tbl:last-child { margin-bottom: -22px; }
 .bl-tbl form { margin: 0; }
-.bl-tbl .tbl th, .bl-tbl .tbl td { padding-left: 11px; padding-right: 11px; }
+.bl-tbl .tbl th, .bl-tbl .tbl td { padding-left: 8px; padding-right: 8px; }
 .bl-tbl .tbl th:first-child, .bl-tbl .tbl td:first-child { padding-left: 22px; }
-.bl-tbl .wrap { min-width: 180px; }
-.bl-tbl__sek { min-width: 150px; }
+.bl-tbl .wrap { min-width: 110px; max-width: 150px; }
+.bl-tbl__sek { min-width: 100px; }
 /* Durum rozetinin altındaki not: ayrılmış adres formu yeniden doldurduysa */
 .bl-tbl__not { display: block; margin-top: 4px; max-width: 190px; font-size: 12px; line-height: 1.35; color: var(--text-2); white-space: normal; }
 /* İşlem sütunu yatay kaydırmada yerinde kalır: düğme dar ekranda da görünür */

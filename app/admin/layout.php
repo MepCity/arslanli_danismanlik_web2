@@ -16,12 +16,7 @@ if (!function_exists('adm_pending_sections')) {
     function adm_pending_sections(): array
     {
         return [
-            'hizmetler'   => '2A',   // Hizmetler (v3 hizmet şeması)
-            'referanslar' => '2A',   // Referanslar
-            'kurumsal'    => '2A',   // Kurumsal içerik (süreç, ilkeler, misyon/vizyon, banka hesapları...)
             'metinler'    => '2B',   // Sayfa metinleri (kayıt defteri)
-            'bulten'      => '2C',   // Bülten: aboneler ve toplu e-posta
-            'ilanlar'     => '2D',   // İş ilanları
             'seo'         => '3A',   // SEO ve yapay zekâ
             'mcp'         => '3B',   // Yapay zekâ erişimi
         ];

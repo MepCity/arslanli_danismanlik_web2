@@ -4,7 +4,7 @@ page([
     'id'          => 'about',
     'title'       => 'Hakkımızda',
     'description' => 'Arslanlı Yatırım & Danışmanlık 2007’de İstanbul’da kuruldu. TÜBİTAK, KOSGEB, Bakanlık, ihracat ve AB desteklerinde başvuru dosyasını hazırlıyor, kabulden sonra raporlama ve ödeme taleplerini yürütüyoruz.',
-    'folio'       => 'Evrak 02 · <b>Hakkımızda</b>',
+    'folio'       => pg_folio('hakkimizda'),
 ]);
 
 // Klasör renkleri (ofis klasörü sırtları) ve kalınlıkları
@@ -157,7 +157,7 @@ $cards = [
 
 <div class="wrap">
   <a class="next" href="<?= url('hizmetler') ?>">
-    <span class="next__k">Sonraki evrak · 03</span>
+    <span class="next__k">Sonraki evrak · <?= pg_no('hizmetler') ?></span>
     <span class="next__t"><span>Hizmetler</span></span>
     <?= arrow() ?>
   </a>

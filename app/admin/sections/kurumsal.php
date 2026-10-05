@@ -1,206 +1,165 @@
 <?php
 /**
- * Kurumsal içerik: süreç, ilkeler, misyon/vizyon, ana sayfa hareketleri, banka hesapları, form seçenekleri.
+ * Kurumsal içerik: süreç, ilkeler, mevzuat zaman çizelgesi, misyon/vizyon, banka hesapları, form seçenekleri.
  * Veri: site('anahtar') listeleri (app/data/site.php); panelden kaydedilenler content 'lists' içinde.
- * Kayıt, mevcut 'lists' içeriğine BİRLEŞTİRİLİR (başka alanlar, örn. ref_count, korunur).
+ * Doğrulama ve kayıt app/content.php içindedir (lists_save, list_clean, list_errors); sekme başına yalnızca o sekmenin listeleri kaydedilir.
  */
 
 $tabs = [
     'surec'    => 'Süreç ve ilkeler',
+    'tarihce'  => 'Zaman çizelgesi',
     'misyon'   => 'Misyon ve vizyon',
-    'anasayfa' => 'Ana sayfa hareketleri',
     'banka'    => 'Banka hesapları',
     'form'     => 'Form seçenekleri',
+    'kanun'    => 'Ana sayfa kanun metni',
 ];
 $tab = $rest[0] ?? 'surec';
 if (!isset($tabs[$tab])) {
     adm_go('kurumsal');
 }
-
-/** IBAN: boşluksuz büyük harfe çevirir, TR + 24 rakam ve mod-97 sağlamasını denetler. Geçerliyse 4'lü gruplu metni döndürür. */
-function kr_iban(string $raw): ?string
-{
-    $iban = strtoupper(preg_replace('/\s+/', '', $raw));
-    if (!preg_match('/^TR\d{24}$/', $iban)) return null;
-    $moved = substr($iban, 4) . substr($iban, 0, 4);
-    $num = '';
-    foreach (str_split($moved) as $c) $num .= ctype_alpha($c) ? (string) (ord($c) - 55) : $c;
-    $rem = 0;
-    foreach (str_split($num, 7) as $chunk) $rem = (int) ($rem . $chunk) % 97;
-    return $rem === 1 ? trim(chunk_split($iban, 4, ' ')) : null;
-}
+$LM = lists_limits();
 
 $errors = [];
 $data   = [];   // sekmedeki alanların gösterilecek değerleri (hata durumunda gönderilenler)
 
-/** [[h, t], ...] listesini onarıcıya (h/t) çevirir */
+/** [[başlık, metin], ...] listesini onarıcıya (h/t) çevirir */
 $pairs = fn($list) => array_map(fn($x) => ['h' => (string) ($x[0] ?? ''), 't' => (string) ($x[1] ?? '')], array_values((array) $list));
 
-if ($tab === 'surec') {
-    $data = ['process' => $pairs(site('process')), 'principles' => $pairs(site('principles'))];
-} elseif ($tab === 'misyon') {
-    $data = ['mission_goals' => array_values((array) site('mission_goals')), 'vision_items' => $pairs(site('vision_items'))];
-} elseif ($tab === 'anasayfa') {
-    $noise = [];
-    foreach ((array) site('noise') as $inst => $items) $noise[] = ['inst' => (string) $inst, 'items' => implode("\n", (array) $items)];
-    $data = ['stations' => array_values((array) site('stations')), 'noise' => $noise];
-} elseif ($tab === 'banka') {
-    $data = ['banks' => array_values((array) site('banks'))];
-} else {
-    $data = ['sektorler' => array_values((array) site('sektorler')), 'deneyim' => array_values((array) site('deneyim'))];
-}
+/** Sekmenin listeleri: anahtar => ham değer okuyucu (POST'tan) */
+$read = [
+    'surec'   => ['process' => fn() => post_rows('process', ['phase', 'title', 'us', 'you'], 1500), 'principles' => fn() => post_rows('principles', ['h', 't'], 1500)],
+    'tarihce' => ['timeline' => fn() => post_rows('timeline', ['year', 'kind', 'title', 'text', 'src'], 1500)],
+    'misyon'  => [
+        'mission' => fn() => ['statement' => post_str('mission_statement', 1500), 'items' => post_list('mission_items', 1500)],
+        'vision'  => fn() => ['open_year' => post_str('vision_open_year', 10), 'greeting' => post_str('vision_greeting', 1500), 'intro' => post_str('vision_intro', 3000), 'items' => post_list('vision_items', 1500), 'closing' => post_str('vision_closing', 1500)],
+    ],
+    'banka'   => ['banks' => fn() => post_rows('banks', ['bank', 'holder', 'account', 'iban'], 200)],
+    'form'    => ['sektorler' => fn() => post_list('sektorler', 400), 'deneyim' => fn() => post_list('deneyim', 400)],
+];
 
 /* ---------- Kaydet ---------- */
-if ($method === 'POST') {
-    $save = [];
-    /** Başlık + metin çiftleri: ikisi de dolu olmalı */
-    $readPairs = function (string $key, string $what, ?int $exact, int $min) use (&$errors, &$data, &$save): void {
-        $rows = post_rows($key, ['h', 't'], 1500);
-        $data[$key] = $rows;
-        $bad = array_filter($rows, fn($r) => $r['h'] === '' || $r['t'] === '');
-        if ($bad) { $errors[] = $what . ': her satırın hem başlığı hem metni dolu olmalı.'; return; }
-        if ($exact !== null && count($rows) !== $exact) { $errors[] = $what . ': tam ' . $exact . ' madde olmalı (şu an ' . count($rows) . '). Sitedeki tasarım bu sayıya göre kurulmuştur.'; return; }
-        if (count($rows) < $min) { $errors[] = $what . ': en az ' . $min . ' madde olmalı.'; return; }
-        $save[$key] = array_map(fn($r) => [$r['h'], $r['t']], $rows);
-    };
-    $readList = function (string $key, string $what, ?int $exact, int $min, int $max = 40) use (&$errors, &$data, &$save): void {
-        $list = post_list($key, 400);
-        $data[$key] = $list;
-        if ($exact !== null && count($list) !== $exact) { $errors[] = $what . ': tam ' . $exact . ' madde olmalı (şu an ' . count($list) . '). Sitedeki başlık ve tasarım bu sayıya göre kurulmuştur.'; return; }
-        if (count($list) < $min) { $errors[] = $what . ': en az ' . $min . ' madde olmalı.'; return; }
-        if (count($list) > $max) { $errors[] = $what . ': en fazla ' . $max . ' madde olabilir.'; return; }
-        $save[$key] = $list;
-    };
-
-    if ($tab === 'surec') {
-        $readPairs('process', 'Çalışma süreci', 4, 4);
-        $readPairs('principles', 'İlkeler', null, 1);
-    } elseif ($tab === 'misyon') {
-        $readList('mission_goals', 'Misyon hedefleri', null, 3, 8);
-        $readPairs('vision_items', 'Vizyon maddeleri', null, 1);
-    } elseif ($tab === 'anasayfa') {
-        $readList('stations', 'Dalga programları', null, 3, 30);
-        $rows = post_rows('noise', ['inst', 'items'], 4000);
-        $data['noise'] = $rows;
-        $noise = [];
-        $noiseErr = false;
-        foreach ($rows as $r) {
-            $items = array_values(array_filter(array_map(fn($l) => mb_substr(trim($l), 0, 120), explode("\n", $r['items'])), fn($l) => $l !== ''));
-            if ($r['inst'] === '' || !$items) { $noiseErr = true; break; }
-            if (isset($noise[$r['inst']])) { $errors[] = '"' . $r['inst'] . '" kurumu iki kez yazılmış. Her kurum bir kez yer almalı.'; $noiseErr = true; break; }
-            $noise[$r['inst']] = $items;
-        }
-        if ($noiseErr && !$errors) $errors[] = 'Kurum grupları: her grupta kurum adı ve en az bir program (her satıra bir tane) olmalı.';
-        elseif (!$noiseErr && !$noise) $errors[] = 'Kurum grupları: en az bir kurum ekleyin.';
-        elseif (!$noiseErr) $save['noise'] = $noise;
-    } elseif ($tab === 'banka') {
-        $rows = post_rows('banks', ['bank', 'holder', 'account', 'iban'], 120);
-        $data['banks'] = $rows;
-        $banks = [];
-        foreach ($rows as $i => $r) {
-            $n = $i + 1;
-            if ($r['bank'] === '' || $r['holder'] === '' || $r['account'] === '' || $r['iban'] === '') { $errors[] = $n . '. hesap: banka, hesap sahibi, hesap numarası ve IBAN alanlarının hepsi dolu olmalı.'; continue; }
-            $fmt = kr_iban($r['iban']);
-            if ($fmt === null) { $errors[] = $n . '. hesabın IBAN\'ı geçerli değil. TR ile başlayan 26 karakter olmalı ve rakamlarında yazım hatası bulunmamalı.'; continue; }
-            $data['banks'][$i]['iban'] = $fmt;
-            $banks[] = ['bank' => $r['bank'], 'holder' => $r['holder'], 'account' => $r['account'], 'iban' => $fmt];
-        }
-        if (!$rows) $errors[] = 'En az bir banka hesabı ekleyin.';
-        if (!$errors) $save['banks'] = $banks;
-    } else {
-        // Sektör adları form kayıtlarında ve bülten süzgecinde olduğu gibi kullanılır: en fazla 80 karakter, yinelenmez
-        $sek = post_list('sektorler', 400);
-        if (array_filter($sek, fn($x) => mb_strlen($x) > 80)) $errors[] = 'Sektör seçenekleri: bir sektör adı en fazla 80 karakter olabilir.';
-        elseif (count($sek) !== count(array_unique($sek))) $errors[] = 'Sektör seçenekleri: aynı sektör iki kez yazılmış.';
-        $readList('sektorler', 'Sektör seçenekleri', null, 3, 60);
-        $readList('deneyim', 'Deneyim seçenekleri', null, 2, 20);
+$posted = null;
+if ($method === 'POST' && isset($read[$tab])) {
+    $posted = [];
+    foreach ($read[$tab] as $k => $fn) {
+        $posted[$k] = $fn();
     }
-
-    if (!$errors && $save) {
-        $lists = content_get('lists', []);
-        if (!is_array($lists)) $lists = [];
-        if (content_put('lists', array_merge($lists, $save))) {
-            adm_flash('Değişiklikler kaydedildi.');
-            adm_go('kurumsal/' . $tab);
-        }
-        $errors[] = 'Kaydedilemedi: storage klasörü yazılabilir mi?';
+    $r = lists_save($posted);
+    if ($r['ok']) {
+        adm_flash($r['changed'] ? 'Değişiklikler kaydedildi.' : 'Değişiklik yok; kayıt oluşturulmadı.');
+        adm_go('kurumsal/' . $tab);
     }
+    $errors = $r['errors'];
 }
+
+/** Gösterilecek değer: hata varsa gönderilen (temizlenmiş), yoksa sitedeki güncel liste */
+$val = fn(string $k) => $posted !== null && isset($posted[$k]) ? list_clean($k, $posted[$k]) : site($k);
 
 /* ---------- Görünüm ---------- */
 ob_start();
-if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong> ' . implode(' ', array_map('e', $errors)));
+if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong><ul class="errs"><li>' . implode('</li><li>', array_map('e', $errors)) . '</li></ul>');
 ?>
 <div class="ay">
   <nav class="tabs ay__tabs" aria-label="Kurumsal içerik bölümleri">
     <?php foreach ($tabs as $k => $label): ?><a class="tab<?= $k === $tab ? ' is-on' : '' ?>" href="<?= adm_url('kurumsal/' . $k) ?>"<?= $k === $tab ? ' aria-current="page"' : '' ?>><?= e($label) ?></a><?php endforeach; ?>
   </nav>
 
+<?php if ($tab === 'kanun'):
+    $law = (array) site('hero_law');
+    $blocks = '';
+    foreach ((array) ($law['blocks'] ?? []) as $b) {
+        $blocks .= '<div class="law-block"><p class="law-block__ref">' . e((string) ($b['ref'] ?? '')) . '</p><blockquote>' . e((string) ($b['law'] ?? '')) . '</blockquote><p class="law-block__plain"><b>Sade Türkçesi:</b> ' . e(strip_tags((string) ($b['plain'] ?? ''))) . '</p></div>';
+    }
+    echo ui_card('Ana sayfadaki kanun metni', '<div class="svc-quote">' . ui_icon('lock-key') . '<p><b>Bu metin panelden düzenlenemez.</b> Ana sayfadaki mercek altında görünen metin, ' . e((string) ($law['title'] ?? '')) . ' kanunundan <b>resmî mevzuattan birebir alınmış</b> alıntılardır (<code>app/data/site.php</code> içindeki <code>hero_law</code>). Yanlış bir değişiklik yasal metni çarpıtabileceği için yalnızca mevzuat resmen değiştiğinde, kanunun güncel metniyle karşılaştırılarak sitenin kaynak dosyasında güncellenir; geliştiricinize iletin. Hizmet sayfalarındaki mevzuat alıntıları ise Hizmetler bölümünden, uyarıyla birlikte düzenlenebilir.</p></div>'
+        . '<p class="muted">' . e(implode(' · ', array_map('strval', (array) ($law['meta'] ?? [])))) . '</p>' . $blocks, [
+        'actions' => ui_view_link(url()),
+    ]);
+else: ?>
   <form id="list-form" method="post" action="<?= adm_url('kurumsal/' . $tab) ?>" class="ay__list-form" novalidate>
     <?= adm_csrf_field() ?>
     <?php
-    $pairFields = fn(string $hl, string $tl) => [
-        ['key' => 'h', 'label' => $hl, 'maxlength' => 120, 'class' => 'span-2'],
-        ['key' => 't', 'label' => $tl, 'type' => 'textarea', 'rows' => 3, 'maxlength' => 1500, 'class' => 'span-2'],
+    $pairFields = fn(string $hl, string $tl, int $hm, int $tm) => [
+        ['key' => 'h', 'label' => $hl, 'maxlength' => $hm, 'class' => 'span-2'],
+        ['key' => 't', 'label' => $tl, 'type' => 'textarea', 'rows' => 3, 'maxlength' => $tm, 'class' => 'span-2'],
     ];
 
     if ($tab === 'surec') {
-        echo ui_card('Çalışma süreci', ui_repeater('process', '', $data['process'], $pairFields('Fiil', 'Açıklama'), ['min' => 1, 'add' => 'Adım ekle']), [
-            'desc'    => 'Ana sayfada "Nasıl çalışırız?" bölümünde kartlar olarak, yatay kayan bir şerit halinde görünür. Başlık tek bir fiil olmalıdır (örneğin "Dinleriz"). Bölüm tam 4 adımlık tasarlandığı için sayı sabittir; adımların sırasını ve metinlerini değiştirebilirsiniz.',
-            'actions' => ui_view_link(url('#proc-t')),
+        $P = $LM['process'];
+        echo ui_card('Çalışma süreci', ui_repeater('process', '', $val('process'), [
+            ['key' => 'phase', 'label' => 'Aşama', 'maxlength' => $P['phase'][1], 'placeholder' => 'Örn: Hazırlık'],
+            ['key' => 'title', 'label' => 'Başlık', 'maxlength' => $P['title'][1], 'placeholder' => 'Örn: Tanışma'],
+            ['key' => 'us', 'label' => 'Biz ne yaparız?', 'type' => 'textarea', 'rows' => 2, 'maxlength' => $P['us'][1], 'class' => 'span-2'],
+            ['key' => 'you', 'label' => 'Siz ne yaparsınız? (kısa)', 'maxlength' => $P['you'][1], 'class' => 'span-2'],
+        ], ['add' => 'Adım ekle']), [
+            'desc'    => 'Ana sayfadaki "Sekiz yaprak" takviminde her adım bir yaprak olur; sağdaki kırmızı yaprak sonuncudur. Başlıkta ve sayfada "sekiz" yazdığı için adım sayısı tam 8 olmalıdır; sırayı ve metinleri değiştirebilirsiniz. Aşama adı yaprağın üstünde büyük harfle basılır; ayrı aşama adları kullanmak zorunda değilsiniz.',
+            'actions' => ui_view_link(url('#takvim-title')),
         ]);
-        echo ui_card('İlkeler', ui_repeater('principles', '', $data['principles'], $pairFields('Başlık', 'Açıklama'), ['min' => 1, 'add' => 'İlke ekle']), [
-            'desc'    => '"Mihenk taşlarımız" sayfasında, üzerinde parmakla silinen taş kartlar olarak görünür. 6 ilke en dengeli görünümü verir.',
+        echo ui_card('İlkeler (Mihenk taşlarımız)', ui_repeater('principles', '', $pairs($val('principles')), $pairFields('Başlık', 'Açıklama', $LM['principles']['title'][1], $LM['principles']['text'][1]), ['add' => 'İlke ekle']), [
+            'desc'    => 'Mihenk taşlarımız sayfasında taş üzerinde silinen altı ilke. Sayfa metinleri "altı ilke" dediği için sayı tam 6 olmalıdır.',
             'actions' => ui_view_link(url('kurumsal/mihenk-taslarimiz')),
         ]);
+    } elseif ($tab === 'tarihce') {
+        $T = $LM['timeline'];
+        echo ui_card('Mevzuat zaman çizelgesi', ui_repeater('timeline', '', $val('timeline'), [
+            ['key' => 'year', 'label' => 'Yıl', 'maxlength' => 4, 'placeholder' => '2008', 'type' => 'text'],
+            ['key' => 'kind', 'label' => 'Tür', 'type' => 'select', 'options' => ['law' => 'Mevzuat', 'us' => 'Biz (kuruluş)']],
+            ['key' => 'title', 'label' => 'Başlık (klasör sırtında)', 'maxlength' => $T['title'][1], 'class' => 'span-2'],
+            ['key' => 'src', 'label' => 'Kaynak (örn. R.G. 12/3/2008)', 'maxlength' => $T['src'][1], 'class' => 'span-2'],
+            ['key' => 'text', 'label' => 'Metin', 'type' => 'textarea', 'rows' => 3, 'maxlength' => $T['text'][1], 'class' => 'span-2'],
+        ], ['add' => 'Kayıt ekle']), [
+            'desc'    => 'Hakkımızda sayfasındaki arşiv rafı: her kayıt raftan çekilen bir klasördür. ' . $T['count'][0] . ' ile ' . $T['count'][1] . ' kayıt; her yıl en çok bir kez yer alır ve kayıtlar kaydederken yıla göre sıralanır. "Biz" türündeki ilk kayıt sayfa açılınca açık klasördür. Sayfadaki "ilk üçü bizden önce gelen düzenlemeler" cümlesi mevcut sıraya göredir; kayıt eklerseniz ya da çıkarırsanız Sayfa metinleri bölümünden güncelleyin. Mevzuat kaynaklarını resmî metinden kontrol edin.',
+            'actions' => ui_view_link(url('hakkimizda#raf-title')),
+        ]);
     } elseif ($tab === 'misyon') {
-        echo ui_card('Misyon hedefleri', ui_repeater('mission_goals', '', $data['mission_goals'], [['key' => '', 'type' => 'textarea', 'rows' => 2, 'maxlength' => 400]], ['min' => 1, 'add' => 'Hedef ekle']), [
-            'desc'    => 'Misyonumuz sayfasındaki hedef listesi (3 ile 8 madde). Bölüm başlığında madde sayısı geçiyor ("beş şeye"); sayıyı değiştirirseniz başlığı da <a href="' . adm_url('metinler/mission') . '">Sayfa metinleri</a> bölümünden güncelleyin.',
+        $M = $LM['mission'];
+        $V = $LM['vision'];
+        $mi = (array) $val('mission');
+        $vi = (array) $val('vision');
+        $founded = (int) cfg('founded');
+        echo ui_card('Misyon', ui_textarea('mission_statement', 'Misyon cümlesi', (string) ($mi['statement'] ?? ''), ['required' => true, 'rows' => 2, 'maxlength' => $M['statement'][1], 'counter' => true, 'help' => 'Defterin üstündeki ana cümle. "kâğıt işine boğulmadan" ifadesi yazıda kalırsa sayfada kırmızı kalemle altı çizilir.'])
+            . ui_repeater('mission_items', 'Yapılacaklar (iş listesi)', (array) ($mi['items'] ?? []), [['key' => '', 'type' => 'textarea', 'rows' => 2, 'maxlength' => $M['item'][1]]], ['add' => 'Madde ekle']), [
+            'desc'    => 'Misyonumuz sayfasında kalemle işaretlenen iş listesi. Sayfa ve Hakkımızda kartı "beş iş" dediği için madde sayısı tam 5 olmalıdır.',
             'actions' => ui_view_link(url('kurumsal/misyonumuz')),
         ]);
-        echo ui_card('Vizyon maddeleri', ui_repeater('vision_items', '', $data['vision_items'], $pairFields('Başlık', 'Açıklama'), ['min' => 1, 'add' => 'Madde ekle']), [
-            'desc'    => 'Vizyonumuz sayfasında, ufuk çizgisi üzerinde yan yana kayan başlıklar. 4 madde önerilir.',
+        echo ui_card('Vizyon mektubu', ui_text('vision_open_year', 'Açılış yılı', (string) ($vi['open_year'] ?? ''), ['required' => true, 'maxlength' => 4, 'inputmode' => 'numeric', 'help' => 'Mektubun açılacağı yıl (' . ((int) date('Y') + 1) . ' ile 2100 arası). Sitede "kuruluşumuzun otuzuncu yılı" ifadesi var; ' . $founded . ' + 30 = ' . ($founded + 30) . '. Başka bir yıl yazarsanız bu ifadeyi Sayfa metinleri bölümünden güncelleyin.'])
+            . ui_text('vision_greeting', 'Selamlama', (string) ($vi['greeting'] ?? ''), ['required' => true, 'maxlength' => $V['greeting'][1], 'help' => 'Örn: "Sevgili 2037,"'])
+            . ui_textarea('vision_intro', 'Giriş paragrafı', (string) ($vi['intro'] ?? ''), ['required' => true, 'rows' => 3, 'maxlength' => $V['intro'][1], 'counter' => true])
+            . ui_repeater('vision_items', 'Maddeler', (array) ($vi['items'] ?? []), [['key' => '', 'type' => 'textarea', 'rows' => 2, 'maxlength' => $V['item'][1]]], ['add' => 'Madde ekle'])
+            . ui_text('vision_closing', 'Kapanış cümlesi', (string) ($vi['closing'] ?? ''), ['required' => true, 'maxlength' => $V['closing'][1]]), [
+            'desc'    => 'Vizyonumuz sayfasında zarftan çıkan mektup. ' . $V['count'][0] . ' ile ' . $V['count'][1] . ' madde.',
             'actions' => ui_view_link(url('kurumsal/vizyonumuz')),
         ]);
-    } elseif ($tab === 'anasayfa') {
-        echo ui_card('Dalga programları', ui_repeater('stations', '', $data['stations'], [['key' => '', 'placeholder' => 'Örn: TÜBİTAK 1501', 'maxlength' => 80]], ['min' => 1, 'add' => 'Program ekle']), [
-            'desc'    => 'Ana sayfanın en üstündeki ses dalgasında, imleç hangi frekansa gelirse o programın adı belirir. 10 ile 20 arası kısa ad en iyi sonucu verir; en az 3 gerekir.',
-            'actions' => ui_view_link(url()),
-        ]);
-        echo ui_card('Kurumlar ve programları', ui_repeater('noise', '', $data['noise'], [
-            ['key' => 'inst', 'label' => 'Kurum', 'maxlength' => 80, 'placeholder' => 'Örn: TÜBİTAK', 'class' => 'span-2'],
-            ['key' => 'items', 'label' => 'Programlar (her satıra bir tane)', 'type' => 'textarea', 'rows' => 4, 'class' => 'span-2'],
-        ], ['min' => 1, 'add' => 'Kurum ekle']), [
-            'desc'    => 'Ana sayfada "Onlarca kurum, onlarca program" bölümünde dağınık başlayıp düzene giren program adları, kurumlara göre gruplanmış halde.',
-            'actions' => ui_view_link(url()),
-        ]);
     } elseif ($tab === 'banka') {
-        echo ui_card('Banka hesapları', ui_repeater('banks', '', $data['banks'], [
-            ['key' => 'bank', 'label' => 'Banka', 'maxlength' => 80, 'placeholder' => 'Örn: Halk Bankası'],
-            ['key' => 'holder', 'label' => 'Hesap sahibi', 'maxlength' => 80],
-            ['key' => 'account', 'label' => 'Hesap numarası', 'maxlength' => 40],
+        $B = $LM['banks'];
+        echo ui_card('Banka hesapları', ui_repeater('banks', '', $val('banks'), [
+            ['key' => 'bank', 'label' => 'Banka', 'maxlength' => $B['bank'][1], 'placeholder' => 'Örn: Halk Bankası'],
+            ['key' => 'holder', 'label' => 'Hesap sahibi', 'maxlength' => $B['holder'][1]],
+            ['key' => 'account', 'label' => 'Hesap numarası', 'maxlength' => $B['account'][1]],
             ['key' => 'iban', 'label' => 'IBAN', 'maxlength' => 40, 'placeholder' => 'TR00 0000 0000 0000 0000 0000 00'],
-        ], ['min' => 1, 'add' => 'Hesap ekle']), [
-            'desc'    => 'Hesap Numaralarımız sayfasında kart olarak görünür; ziyaretçi IBAN\'a dokunarak kopyalar. IBAN yazılırken boşluklar serbesttir, kaydedince 4\'lü gruplara ayrılır ve rakamları denetlenir.',
+        ], ['add' => 'Hesap ekle']), [
+            'desc'    => 'Hesap Numaralarımız sayfasında her hesap için bir fiş basılır; ziyaretçi IBAN\'a dokunarak kopyalar. ' . $B['count'][0] . ' ile ' . $B['count'][1] . ' hesap. IBAN yazılırken boşluklar serbesttir, kaydedince 4\'lü gruplara ayrılır; TR kontrol rakamları denetlenir ve yanlış bir IBAN kaydedilmez.',
             'actions' => ui_view_link(url('hesap-numaralarimiz')),
         ]);
     } else {
-        echo ui_card('Sektör seçenekleri', ui_repeater('sektorler', '', $data['sektorler'], [['key' => '', 'placeholder' => 'Örn: İmalat: makine ve metal', 'maxlength' => 80]], ['min' => 1, 'add' => 'Sektör ekle']), [
-            'desc'    => 'Bülten kayıt formundaki "Sektör" açılır listesinin seçenekleri, buradaki sırayla (3 ile 60 arası). Aboneleri <a href="' . adm_url('bulten') . '">Bülten</a> bölümünde bu sektörlere göre süzersiniz; adı "İmalat" ile başlayan seçenekler orada "İmalat (tümü)" kısayoluyla birlikte seçilir. Bir seçeneğin adını değiştirirseniz eski adla kaydolmuş aboneler yeni adın süzgecine girmez; arama kutusuyla bulunur.',
+        $S = $LM['sektorler'];
+        $D = $LM['deneyim'];
+        echo ui_card('Sektör seçenekleri', ui_repeater('sektorler', '', (array) $val('sektorler'), [['key' => '', 'placeholder' => 'Örn: İmalat: makine ve metal', 'maxlength' => $S['item'][1]]], ['add' => 'Sektör ekle']), [
+            'desc'    => 'Bülten kayıt formundaki "Sektör" açılır listesinin seçenekleri, buradaki sırayla (' . $S['count'][0] . ' ile ' . $S['count'][1] . ' arası, yinelenmez). Aboneleri Bülten bölümünde bu sektörlere göre süzersiniz; adı "İmalat" ile başlayan seçenekler orada "İmalat (tümü)" kısayoluyla birlikte seçilir. Bir seçeneğin adını değiştirirseniz eski adla kaydolmuş aboneler yeni adın süzgecine girmez; arama kutusuyla bulunur.',
             'actions' => ui_view_link(url('haberdarol')),
         ]);
-        echo ui_card('Deneyim seçenekleri', ui_repeater('deneyim', '', $data['deneyim'], [['key' => '', 'placeholder' => 'Örn: 3-5 yıl', 'maxlength' => 60]], ['min' => 1, 'add' => 'Seçenek ekle']), [
-            'desc'    => 'Kariyer sayfasındaki başvuru formunda "Deneyim" açılır listesinin seçenekleri, buradaki sırayla.',
+        echo ui_card('Deneyim seçenekleri', ui_repeater('deneyim', '', (array) $val('deneyim'), [['key' => '', 'placeholder' => 'Örn: 3-5 yıl', 'maxlength' => $D['item'][1]]], ['add' => 'Seçenek ekle']), [
+            'desc'    => 'Kariyer sayfasındaki başvuru formunda ve iş ilanlarında "Deneyim" açılır listesinin seçenekleri, buradaki sırayla (' . $D['count'][0] . ' ile ' . $D['count'][1] . ' arası, yinelenmez). Bir ilanda seçili olan deneyim adını değiştirirseniz o ilanı yeniden kaydederken listeden seçmeniz gerekir.',
             'actions' => ui_view_link(url('kariyer')),
         ]);
     }
     ?>
   </form>
+<?php endif; ?>
 </div>
 <?php
 adm_layout('Kurumsal içerik', (string) ob_get_clean(), [
     'section'  => 'kurumsal',
-    'subtitle' => 'Sitenin kurumsal sayfalarındaki ve ana sayfadaki listeler.',
+    'subtitle' => 'Sitenin kurumsal sayfalarındaki ve ana sayfadaki ortak listeler.',
     'actions'  => ui_history_link('lists'),
-    'form'     => 'list-form',
+    'form'     => $tab === 'kanun' ? null : 'list-form',
 ]);
