@@ -85,7 +85,9 @@ if ($path === 'bulten/ayril') {
     bulten_ayril_sayfasi();
     exit;
 }
-// Aşama 3B: yapay zekâ erişimi (/mcp ve OAuth adresleri, app/mcp/routes.php) buraya eklenecek; o zamana dek /mcp "bulunamadı" döner.
+// Yapay zekâ erişimi: /mcp (MCP sunucusu), /oauth/* ve /.well-known/oauth-* adresleri. Kendi adresi değilse sessizce döner;
+// görünürlük denetiminden önce çalışır, böylece bölümler kapalıyken de yönetim erişimi sürer.
+require APP . '/mcp/routes.php';
 
 // Panelden kapatılan bölümler (Yazılar, Duyurular, Referanslar, Kariyer, Bülten) bulunamadı döner
 if (!path_enabled($path)) {

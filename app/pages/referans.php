@@ -2,8 +2,8 @@
 $refs = refs_map();
 page([
     'id'          => 'refs',
-    'title'       => 'Referanslar',
-    'description' => 'Hibe, teşvik ve Ar-Ge başvurularında dosyasını hazırladığımız kurumlardan bazıları: Pilot Seating, Tork, CNK Havacılık, Acar Kaporta, Sacform, Mado, NSK ve diğerleri.',
+    'title'       => pg_name('referans'),
+    'description' => t('referans.seo.description'),
     'folio'       => pg_folio('referans'),
 ]);
 
@@ -21,17 +21,17 @@ $slugs = array_keys($refs);
   <div class="wrap">
     <div class="kmasa__head">
       <div>
-        <p class="docmeta"><span>Sayı: <b>ARS-<?= date('Y') ?>/004</b></span><span>Konu: <b>Referanslar</b></span></p>
-        <h1 class="serif-display kmasa__h" id="refs-title">Dosyasını hazırladığımız kurumlardan bazıları.</h1>
+        <p class="docmeta"><span><?= th('referans.hero.sayi') ?></span><span><?= th('referans.hero.konu') ?></span></p>
+        <h1 class="serif-display kmasa__h" id="refs-title"><?= e(t('referans.hero.baslik')) ?></h1>
       </div>
       <div class="kmasa__side">
-        <p class="kmasa__p">Aşağıdaki sümen sizin. Masanın üzerinde bir yere tıkladığınızda sıradaki kurumun kaşesi oraya basılır. Kurumların tam listesi masanın altındaki kayıt defterinde.</p>
+        <p class="kmasa__p"><?= e(t('referans.masa.giris')) ?></p>
         <div class="kmasa__act">
-          <button class="btn btn--ink btn--sm" type="button" data-stamp-all>Hepsini bas</button>
-          <button class="btn btn--sm" type="button" data-stamp-one>Bir kaşe bas</button>
-          <button class="btn btn--sm" type="button" data-clear>Masayı temizle</button>
+          <button class="btn btn--ink btn--sm" type="button" data-stamp-all><?= e(t('referans.masa.hepsi')) ?></button>
+          <button class="btn btn--sm" type="button" data-stamp-one><?= e(t('referans.masa.bir')) ?></button>
+          <button class="btn btn--sm" type="button" data-clear><?= e(t('referans.masa.temizle')) ?></button>
         </div>
-        <p class="kmasa__next" aria-live="polite">Sıradaki kaşe: <b data-next-name><?= e($refs[$slugs[count($preset) % count($slugs)]]) ?></b></p>
+        <p class="kmasa__next" aria-live="polite"><?= th('referans.masa.siradaki', ['ad' => ['html' => '<b data-next-name>' . e($refs[$slugs[count($preset) % count($slugs)]]) . '</b>']]) ?></p>
       </div>
     </div>
   </div>
@@ -40,8 +40,8 @@ $slugs = array_keys($refs);
     <div class="sumen">
       <i class="sumen__side" aria-hidden="true"></i>
       <div class="desk" data-desk aria-hidden="true">
-        <p class="desk__hint only-fine">Tıklayın, kaşe basılsın.</p>
-        <p class="desk__hint only-touch">Dokunun, kaşe basılsın.</p>
+        <p class="desk__hint only-fine"><?= e(t('referans.masa.ipucu_fare')) ?></p>
+        <p class="desk__hint only-touch"><?= e(t('referans.masa.ipucu_dokunma')) ?></p>
         <div class="desk__layer" data-layer>
           <?php foreach ($preset as [$i, $x, $y, $rot, $ink]): $slug = $slugs[$i]; ?>
             <span class="imp imp--<?= $ink ?>" data-preset style="left:<?= $x ?>%;top:<?= $y ?>%;--rot:<?= $rot ?>deg">
@@ -72,14 +72,14 @@ $slugs = array_keys($refs);
 <section class="defter section" aria-labelledby="defter-title">
   <div class="wrap">
     <header class="defter__head">
-      <p class="label">Kayıt defteri</p>
-      <h2 class="display h2" id="defter-title">Kurumlar, sırasıyla.</h2>
+      <p class="label"><?= e(t('referans.defter.etiket')) ?></p>
+      <h2 class="display h2" id="defter-title"><?= e(t('referans.defter.baslik')) ?></h2>
     </header>
 
     <div class="book">
       <?php foreach (array_chunk($refs, (int) ceil(count($refs) / 2), true) as $p => $chunk): ?>
         <div class="book__page">
-          <p class="book__cols" aria-hidden="true"><span>Sıra</span><span>Kurum</span><span>Kaşe</span></p>
+          <p class="book__cols" aria-hidden="true"><span><?= e(t('referans.defter.sutun_sira')) ?></span><span><?= e(t('referans.defter.sutun_kurum')) ?></span><span><?= e(t('referans.defter.sutun_kase')) ?></span></p>
           <ol class="ledger" role="list" start="<?= $p * (int) ceil(count($refs) / 2) + 1 ?>">
             <?php $n = $p * (int) ceil(count($refs) / 2); foreach ($chunk as $slug => $name): $n++; ?>
               <li class="ledger__row">
@@ -99,7 +99,7 @@ $slugs = array_keys($refs);
 <?php if ($nx = pg_next('referans')): ?>
 <div class="wrap">
   <a class="next" href="<?= url($nx['path']) ?>">
-    <span class="next__k">Sonraki evrak · <?= e($nx['nn']) ?></span>
+    <span class="next__k"><?= e(t('referans.sonraki.etiket', ['no' => $nx['nn']])) ?></span>
     <span class="next__t"><span><?= e($nx['label']) ?></span></span>
     <?= arrow() ?>
   </a>

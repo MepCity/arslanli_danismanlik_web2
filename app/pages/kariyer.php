@@ -8,8 +8,8 @@
  */
 page([
     'id'          => 'careers',
-    'title'       => 'Kariyer',
-    'description' => 'Arslanlı Yatırım & Danışmanlık ekibine katılmak için iş başvurusu formu. Hibe, teşvik ve yatırım danışmanlığında birlikte çalışalım.',
+    'title'       => pg_name('kariyer'),
+    'description' => t('kariyer.seo.description'),
     'folio'       => pg_folio('kariyer'),
 ]);
 
@@ -22,10 +22,10 @@ $levels = site('deneyim');
 
 <section class="kr-head pagehead wrap" aria-labelledby="kr-title">
   <p class="label" data-rise><?= e(pg_label('kariyer')) ?></p>
-  <h1 class="display kr-head__h" id="kr-title" data-rise style="--delay:.05s">Dosyanızı <?= annot('açalım', 'under', 'red') ?>.</h1>
+  <h1 class="display kr-head__h" id="kr-title" data-rise style="--delay:.05s"><?= th('kariyer.hero.baslik') ?></h1>
   <div class="kr-head__txt" data-rise style="--delay:.12s">
-    <p class="lead">Hibe, teşvik ve yatırım danışmanlığında bizimle çalışmak istiyorsanız aşağıdaki formu doldurun. Başvurunuz özgeçmişinizle birlikte doğrudan ekibimize ulaşır.</p>
-    <p class="kr-head__more">Burada iş, çağrı metnini ve mevzuatı okumak, bir başvuruyu eksiksiz hazırlamak ve son tarihe yetiştirmektir. Kâğıda, tarihe ve ayrıntıya özen gösteriyorsanız bize yazın.</p>
+    <p class="lead"><?= th('kariyer.hero.giris') ?></p>
+    <p class="kr-head__more"><?= th('kariyer.hero.devam') ?></p>
   </div>
 </section>
 
@@ -35,31 +35,31 @@ $jobs = ilan_published();
 if ($jobs): ?>
 <section class="kj wrap" id="acik-pozisyonlar" aria-labelledby="kj-title">
   <div class="kj__top" data-rise>
-    <h2 class="kj__h" id="kj-title">Açık pozisyonlar</h2>
-    <p class="kj__lead">Aşağıdaki kadrolar için başvuru alıyoruz. Birini seçerseniz başvurunuz doğrudan o ilana bağlanır. Size uygun bir ilan yoksa genel başvuru formu <a class="link" href="#basvuru">aşağıda</a>.</p>
+    <h2 class="kj__h" id="kj-title"><?= e(t('kariyer.pozisyon.baslik')) ?></h2>
+    <p class="kj__lead"><?= th('kariyer.pozisyon.giris', ['baglanti' => ['html' => '<a class="link" href="#basvuru">' . e(t('kariyer.pozisyon.giris_baglanti')) . '</a>']]) ?></p>
   </div>
   <ol class="kj__list" role="list">
     <?php foreach ($jobs as $i => $job):
         $left = $job['deadline'] !== '' ? (int) round((strtotime($job['deadline']) - strtotime(date('Y-m-d'))) / 86400) : null; ?>
       <li class="kj-slip" data-rise style="--rot:<?= [-0.35, 0.3, -0.2, 0.4][$i % 4] ?>deg;--delay:<?= round(0.05 * min($i, 4), 2) ?>s">
         <a class="kj-slip__a" href="<?= e(ilan_url($job)) ?>">
-          <span class="kj-slip__stub" aria-hidden="true"><small>Kadro</small><b><?= nn($i + 1) ?></b></span>
+          <span class="kj-slip__stub" aria-hidden="true"><small><?= e(t('kariyer.fis.kadro')) ?></small><b><?= nn($i + 1) ?></b></span>
           <span class="kj-slip__body">
             <span class="kj-slip__title"><?= e($job['title']) ?></span>
             <?php if ($job['summary'] !== ''): ?><span class="kj-slip__sum"><?= e($job['summary']) ?></span><?php endif; ?>
             <span class="kj-slip__f">
-              <?php foreach ([['Alan', $job['area']], ['Şehir', $job['city']], ['Çalışma türü', $job['type']], ['Deneyim', $job['experience']]] as [$k, $v]): if ($v === '') continue; ?>
+              <?php foreach ([[t('kariyer.fis.alan'), $job['area']], [t('kariyer.fis.sehir'), $job['city']], [t('kariyer.fis.tur'), $job['type']], [t('kariyer.fis.deneyim'), $job['experience']]] as [$k, $v]): if ($v === '') continue; ?>
                 <span><em><?= e($k) ?></em> <?= e($v) ?></span>
               <?php endforeach; ?>
             </span>
           </span>
           <span class="kj-slip__end">
             <?php if ($job['deadline'] !== ''): ?>
-              <span class="kj-slip__dl<?= $left <= 7 ? ' is-soon' : '' ?>"><em>Son başvuru</em><b><?= e(tr_date($job['deadline'])) ?></b><?php if ($left <= 7): ?><small><?= $left <= 0 ? 'Bugün son gün' : $left . ' gün kaldı' ?></small><?php endif; ?></span>
+              <span class="kj-slip__dl<?= $left <= 7 ? ' is-soon' : '' ?>"><em><?= e(t('kariyer.fis.son_basvuru')) ?></em><b><?= e(tr_date($job['deadline'])) ?></b><?php if ($left <= 7): ?><small><?= e($left <= 0 ? t('kariyer.fis.bugun') : t('kariyer.fis.kalan', ['n' => $left])) ?></small><?php endif; ?></span>
             <?php else: ?>
-              <span class="kj-slip__dl is-none"><em>Son başvuru</em><b>Süresiz</b></span>
+              <span class="kj-slip__dl is-none"><em><?= e(t('kariyer.fis.son_basvuru')) ?></em><b><?= e(t('kariyer.fis.suresiz')) ?></b></span>
             <?php endif; ?>
-            <span class="kj-slip__go">İlanı açın <?= arrow() ?></span>
+            <span class="kj-slip__go"><?= e(t('kariyer.fis.ac')) ?> <?= arrow() ?></span>
           </span>
         </a>
         <span class="kj-slip__clip" aria-hidden="true"><?= icon('paperclip', 'ico') ?></span>
@@ -69,11 +69,11 @@ if ($jobs): ?>
 </section>
 <?php endif; ?>
 
-<section class="kr wrap" aria-label="İş başvurusu">
+<section class="kr wrap" aria-label="<?= e(t('kariyer.form.alan_etiket')) ?>">
 
-  <aside class="kr__side" aria-label="Çalıştığımız alanlar ve değerlendirme süreci">
+  <aside class="kr__side" aria-label="<?= e(t('kariyer.yan.etiket')) ?>">
     <div class="kr__block" data-rise>
-      <h2 class="kr__h">Çalıştığımız alanlar</h2>
+      <h2 class="kr__h"><?= e(t('kariyer.yan.alanlar')) ?></h2>
       <ol class="kr__areas" role="list">
         <?php $i = 0; foreach (services() as $slug => $s): $i++; ?>
           <li><span class="kr__no" aria-hidden="true"><?= sprintf('%02d', $i) ?></span><a href="<?= service_url($slug) ?>"><?= e($s['title']) ?></a></li>
@@ -82,24 +82,24 @@ if ($jobs): ?>
     </div>
 
     <div class="kr__block" data-rise>
-      <h2 class="kr__h">Başvurunuz nasıl değerlendirilir?</h2>
+      <h2 class="kr__h"><?= e(t('kariyer.yan.surec')) ?></h2>
       <ol class="kr__steps" role="list">
         <li>
           <span class="kr__step" aria-hidden="true">1</span>
-          <p><b>Başvurunuz bize ulaşır.</b> Form ve özgeçmişiniz doğrudan ekibimize iletilir.</p>
+          <p><?= th('kariyer.yan.bir') ?></p>
         </li>
         <li>
           <span class="kr__step" aria-hidden="true">2</span>
-          <p><b>İnceleriz.</b> Deneyiminizi ve ilgilendiğiniz alanı ekibimizin ihtiyaçlarıyla birlikte değerlendiririz.</p>
+          <p><?= th('kariyer.yan.iki') ?></p>
         </li>
         <li>
           <span class="kr__step" aria-hidden="true">3</span>
-          <p><b>Size ulaşırız.</b> Uygun bir pozisyon olduğunda görüşme için sizinle iletişime geçeriz.</p>
+          <p><?= th('kariyer.yan.uc') ?></p>
         </li>
       </ol>
     </div>
 
-    <p class="kr__note" data-rise>Başvurunuzda paylaştığınız bilgiler yalnızca işe alım süreci için kullanılır. Ayrıntılar için <a class="link" href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>#basvuru-adaylari">Aydınlatma Metni</a>’ne bakabilirsiniz.</p>
+    <p class="kr__note" data-rise><?= th('kariyer.yan.not', ['baglanti' => ['html' => '<a class="link" href="' . url('kurumsal/kvkk-aydinlatma-metni') . '#basvuru-adaylari">' . e(t('kariyer.yan.not_baglanti')) . '</a>']]) ?></p>
   </aside>
 
   <div class="kr__desk" id="basvuru" data-desk>
@@ -110,8 +110,8 @@ if ($jobs): ?>
 
 <div class="wrap">
   <a class="next" href="<?= url('iletisim') ?>">
-    <span class="next__k">Aklınızdaki soru için</span>
-    <span class="next__t"><span>İletişim</span></span>
+    <span class="next__k"><?= e(t('kariyer.sonraki.etiket')) ?></span>
+    <span class="next__t"><span><?= e(pg_name('iletisim')) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>

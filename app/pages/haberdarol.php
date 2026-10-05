@@ -6,8 +6,8 @@
  */
 page([
     'id'          => 'signup',
-    'title'       => 'Haberdar Ol',
-    'description' => 'Sizi ilgilendiren hibe ve teşvik çağrıları açıldığında, program şartları değiştiğinde ya da kapanış tarihi yaklaştığında e-postayla haber verelim. Kuponu doldurun.',
+    'title'       => pg_name('haberdarol'),
+    'description' => t('haberdarol.seo.description'),
     'folio'       => pg_folio('haberdarol'),
 ]);
 
@@ -17,24 +17,25 @@ $sent  = $durum === 'tamam';
 
 <section class="kp-head pagehead wrap" aria-labelledby="signup-title">
   <p class="label" data-rise><?= e(pg_label('haberdarol')) ?></p>
-  <h1 class="display kp-head__h" id="signup-title" data-rise style="--delay:.05s">Kesip gönderin.</h1>
-  <p class="lead kp-head__lead" data-rise style="--delay:.12s">Sizi ilgilendiren bir destek çağrısı açıldığında, bir programın şartları değiştiğinde ya da takip ettiğiniz bir başvurunun son tarihi yaklaştığında e-postayla haber verelim. Kuponu bir kez doldurmanız yeterli.</p>
+  <h1 class="display kp-head__h" id="signup-title" data-rise style="--delay:.05s"><?= e(t('haberdarol.hero.baslik')) ?></h1>
+  <p class="lead kp-head__lead" data-rise style="--delay:.12s"><?= th('haberdarol.hero.giris') ?></p>
 </section>
 
-<section class="kp wrap" aria-label="Haberdar Ol kuponu">
+<section class="kp wrap" aria-label="<?= e(t('haberdarol.kupon.alan_etiket')) ?>">
   <div class="kp__page">
-    <p class="kp__run" aria-hidden="true"><span>Arslanlı Bülteni</span><span>Kupon sayfası · <?= pg_no('haberdarol') ?></span></p>
+    <p class="kp__run" aria-hidden="true"><span><?= e(t('haberdarol.kupon.sol')) ?></span><span><?= e(t('haberdarol.kupon.sag', ['no' => pg_no('haberdarol')])) ?></span></p>
 
     <div class="kp__stage<?= $sent ? ' is-sent' : '' ?>" data-kp-stage>
       <div class="kp__hole" data-kp-hole<?= $sent ? '' : ' hidden' ?>>
         <div class="kp__slip" tabindex="-1" data-kp-slip>
-          <p class="label">Alındı · <?= e(today_official()) ?></p>
-          <p class="kp__slip-h serif-display">Kuponunuz bize ulaştı.</p>
-          <p class="kp__slip-msg" data-kp-msg>Sizi ilgilendiren bir çağrı açıldığında haber vereceğiz.</p>
+          <p class="label"><?= e(t('haberdarol.alindi.etiket')) ?></p>
+          <p class="kp__slip-h serif-display"><?= e(t('haberdarol.alindi.baslik')) ?></p>
+          <p class="kp__slip-msg" data-kp-msg><?= e(t('haberdarol.alindi.mesaj')) ?></p>
+          <?php $yaz = ['html' => '<a class="link" href="' . url('iletisim') . '">' . e(t('haberdarol.alindi.yaz')) . '</a>']; ?>
           <?php if (feature('blog') || feature('duyurular')): ?>
-          <p class="kp__slip-more">O zamana kadar <a class="link" href="<?= url(feature('blog') ? 'blog' : 'duyurular') ?>"><?= feature('blog') ? 'makalelere' : 'açık çağrılara' ?></a> göz atabilir ya da bir sorunuz varsa <a class="link" href="<?= url('iletisim') ?>">bize yazabilirsiniz</a>.</p>
+          <p class="kp__slip-more"><?= th('haberdarol.alindi.devam', ['gozat' => ['html' => '<a class="link" href="' . url(feature('blog') ? 'blog' : 'duyurular') . '">' . e(t(feature('blog') ? 'haberdarol.alindi.makaleler' : 'haberdarol.alindi.cagrilar')) . '</a>'], 'yaz' => $yaz]) ?></p>
           <?php else: ?>
-          <p class="kp__slip-more">Bir sorunuz varsa <a class="link" href="<?= url('iletisim') ?>">bize yazabilirsiniz</a>.</p>
+          <p class="kp__slip-more"><?= th('haberdarol.alindi.devam_kisa', ['yaz' => $yaz]) ?></p>
           <?php endif; ?>
         </div>
       </div>
@@ -56,76 +57,76 @@ $sent  = $durum === 'tamam';
           <div class="hp" aria-hidden="true"><label>Web sitesi <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
           <?php if ($durum === 'hata'): ?>
-            <p class="kupon__notice" role="alert">Kuponunuz gönderilemedi. Lütfen alanları kontrol edip yeniden deneyin.</p>
+            <p class="kupon__notice" role="alert"><?= e(t('haberdarol.kupon.hata')) ?></p>
           <?php endif; ?>
 
           <header class="kupon__head">
-            <p class="kupon__kicker" id="kp-title">Kupon <em>Haberdar Ol</em></p>
-            <ol class="kupon__steps" aria-label="Üç adım">
-              <li><b>1</b> Doldurun</li>
-              <li><b>2</b> Kesin</li>
-              <li><b>3</b> Gönderin</li>
+            <p class="kupon__kicker" id="kp-title"><?= th('haberdarol.baslik.kupon') ?></p>
+            <ol class="kupon__steps" aria-label="<?= e(t('haberdarol.baslik.adimlar_etiket')) ?>">
+              <li><b>1</b> <?= e(t('haberdarol.baslik.adim1')) ?></li>
+              <li><b>2</b> <?= e(t('haberdarol.baslik.adim2')) ?></li>
+              <li><b>3</b> <?= e(t('haberdarol.baslik.adim3')) ?></li>
             </ol>
           </header>
 
           <div class="kupon__grid">
             <div class="field">
-              <label for="kp-ad">Adınız</label>
+              <label for="kp-ad"><?= e(t('haberdarol.form.ad')) ?></label>
               <input id="kp-ad" name="ad" type="text" required maxlength="80" autocomplete="given-name">
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label for="kp-soyad">Soyadınız</label>
+              <label for="kp-soyad"><?= e(t('haberdarol.form.soyad')) ?></label>
               <input id="kp-soyad" name="soyad" type="text" required maxlength="80" autocomplete="family-name">
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label for="kp-mail">E-posta adresiniz</label>
+              <label for="kp-mail"><?= e(t('haberdarol.form.eposta')) ?></label>
               <input id="kp-mail" name="email" type="email" required maxlength="160" autocomplete="email" inputmode="email">
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label for="kp-tel">Telefonunuz</label>
+              <label for="kp-tel"><?= e(t('haberdarol.form.telefon')) ?></label>
               <input id="kp-tel" name="telefon" type="tel" required maxlength="20" pattern="[0-9 +\(\)\-]{7,20}" autocomplete="tel" inputmode="tel">
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label for="kp-il">İliniz</label>
+              <label for="kp-il"><?= e(t('haberdarol.form.il')) ?></label>
               <select id="kp-il" name="il" required>
-                <option value="">İl seçin</option>
+                <option value=""><?= e(t('haberdarol.form.il_sec')) ?></option>
                 <?php foreach (site('iller') as $il): ?><option><?= e($il) ?></option><?php endforeach; ?>
               </select>
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label for="kp-sektor">Sektörünüz</label>
+              <label for="kp-sektor"><?= e(t('haberdarol.form.sektor')) ?></label>
               <select id="kp-sektor" name="sektor" required>
-                <option value="">Sektör seçin</option>
+                <option value=""><?= e(t('haberdarol.form.sektor_sec')) ?></option>
                 <?php foreach ((array) site('sektorler') as $sk): ?><option><?= e($sk) ?></option><?php endforeach; ?>
               </select>
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field kupon__wide">
-              <label for="kp-mesaj">İlgilendiğiniz konular <span class="opt">(isteğe bağlı)</span></label>
-              <textarea id="kp-mesaj" name="mesaj" rows="3" maxlength="5000" placeholder="İlgilendiğiniz teşvik, hibe ya da danışmanlık konularını yazabilirsiniz"></textarea>
+              <label for="kp-mesaj"><?= e(t('haberdarol.form.konular')) ?> <span class="opt"><?= e(t('haberdarol.form.istege_bagli')) ?></span></label>
+              <textarea id="kp-mesaj" name="mesaj" rows="3" maxlength="5000" placeholder="<?= e(t('haberdarol.form.konular_ornek')) ?>"></textarea>
               <span class="field__err" aria-live="polite"></span>
             </div>
           </div>
 
           <div class="kupon__consent">
             <div class="field">
-              <label class="check"><input type="checkbox" name="kvkk" value="1" required><span>Kişisel verilerimin işlenmesine ilişkin <a class="link" href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>" target="_blank" rel="noopener">Aydınlatma Metni</a>’ni okudum.</span></label>
+              <label class="check"><input type="checkbox" name="kvkk" value="1" required><span><?= th('haberdarol.onay.kvkk', ['baglanti' => ['html' => '<a class="link" href="' . url('kurumsal/kvkk-aydinlatma-metni') . '" target="_blank" rel="noopener">' . e(t('haberdarol.onay.kvkk_baglanti')) . '</a>']]) ?></span></label>
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label class="check"><input type="checkbox" name="etk" value="1" required><span><?= e(cfg('name')) ?> tarafından e-posta, SMS ve telefon yoluyla bilgilendirme ve ticari elektronik ileti gönderilmesine onay veriyorum. Onayımı dilediğim zaman geri alabilirim.</span></label>
+              <label class="check"><input type="checkbox" name="etk" value="1" required><span><?= th('haberdarol.onay.etk') ?></span></label>
               <span class="field__err" aria-live="polite"></span>
             </div>
           </div>
 
           <div class="kupon__foot">
             <p class="form-status" role="status" aria-live="polite"></p>
-            <button class="btn btn--ink" type="submit">Kuponu gönder <?= arrow() ?></button>
+            <button class="btn btn--ink" type="submit"><?= e(t('haberdarol.gonder.dugme')) ?> <?= arrow() ?></button>
           </div>
         </form>
       </div>
@@ -133,29 +134,29 @@ $sent  = $durum === 'tamam';
   </div>
 
   <aside class="kp__side" aria-labelledby="kp-side-title">
-    <h2 class="kp__side-h" id="kp-side-title">Size neler gelir?</h2>
+    <h2 class="kp__side-h" id="kp-side-title"><?= e(t('haberdarol.yan.baslik')) ?></h2>
     <ol class="kp__list" role="list">
       <li data-rise>
         <span class="kp__n">1</span>
-        <p><b>Yeni açılan çağrılar.</b> İlgilendiğiniz konularda bir destek çağrısı açıldığında, kimlerin başvurabileceğiyle birlikte.</p>
+        <p><?= th('haberdarol.yan.bir') ?></p>
       </li>
       <li data-rise style="--delay:.06s">
         <span class="kp__n">2</span>
-        <p><b>Değişen kurallar.</b> Bir programın destek oranı, bütçe sınırı ya da başvuru şartı değiştiğinde.</p>
+        <p><?= th('haberdarol.yan.iki') ?></p>
       </li>
       <li data-rise style="--delay:.12s">
         <span class="kp__n">3</span>
-        <p><b>Yaklaşan kapanışlar.</b> Takip ettiğiniz bir çağrının son başvuru tarihi yaklaştığında.</p>
+        <p><?= th('haberdarol.yan.uc') ?></p>
       </li>
     </ol>
-    <p class="kp__note">Kişisel verilerinizin nasıl işlendiğini <a class="link" href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>">KVKK Aydınlatma Metni</a>’nde bulabilirsiniz.</p>
+    <p class="kp__note"><?= th('haberdarol.yan.not', ['baglanti' => ['html' => '<a class="link" href="' . url('kurumsal/kvkk-aydinlatma-metni') . '">' . e(pg_name('kvkk')) . '</a>']]) ?></p>
   </aside>
 </section>
 
 <div class="wrap">
   <a class="next" href="<?= url('kurumsal/misyonumuz') ?>">
-    <span class="next__k">Sonraki evrak · <?= pg_no('misyon') ?></span>
-    <span class="next__t"><span>Misyonumuz</span></span>
+    <span class="next__k"><?= e(t('haberdarol.sonraki.etiket', ['no' => pg_no('misyon')])) ?></span>
+    <span class="next__t"><span><?= e(pg_name('misyon')) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>

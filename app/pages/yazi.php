@@ -19,26 +19,27 @@ page([
     'description' => $post['excerpt'],
     'image'       => absolute_url('assets/' . $img),
     'canonical'   => $abs,
-    'folio'       => pg_folio('blog', 'Makale'),
+    'folio'       => pg_folio('blog', t('yazi.folio.ad')),
 ]);
 
+// Paylaşım bağlantıları: [yazı (yazi.son.*), adres]
 $share = [
-    'LinkedIn' => 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode($abs),
-    'X'        => 'https://twitter.com/intent/tweet?url=' . rawurlencode($abs) . '&text=' . rawurlencode($post['title']),
-    'WhatsApp' => 'https://wa.me/?text=' . rawurlencode($post['title'] . ' ' . $abs),
+    [t('yazi.son.linkedin'), 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode($abs)],
+    [t('yazi.son.x'),        'https://twitter.com/intent/tweet?url=' . rawurlencode($abs) . '&text=' . rawurlencode($post['title'])],
+    [t('yazi.son.whatsapp'), 'https://wa.me/?text=' . rawurlencode($post['title'] . ' ' . $abs)],
 ];
 ?>
 
 <article class="yazi" aria-labelledby="post-title">
   <header class="yazi__head pagehead">
     <div class="wrap">
-      <p class="yazi__back"><a class="link ui" href="<?= url('blog') ?>">Arslanlı Bülteni</a><span aria-hidden="true"> / </span><span><?= e($post['category']) ?></span></p>
+      <p class="yazi__back"><a class="link ui" href="<?= url('blog') ?>"><?= e(t('yazi.bas.geri')) ?></a><span aria-hidden="true"> / </span><span><?= e($post['category']) ?></span></p>
       <h1 class="serif-display yazi__h" id="post-title"><?= $nw(nowidow($post['title'])) ?></h1>
       <div class="yazi__meta">
         <p class="docmeta">
-          <span>Tarih: <b><time datetime="<?= e($post['date']) ?>"><?= e(tr_date($post['date'])) ?></time></b></span>
-          <span>Okuma: <b><?= reading_time($post['body']) ?> dakika</b></span>
-          <span>Bölüm: <b><?= e($post['category']) ?></b></span>
+          <span><?= th('yazi.bas.tarih', ['yazi_tarihi' => ['html' => '<time datetime="' . e($post['date']) . '">' . e(tr_date($post['date'])) . '</time>']]) ?></span>
+          <span><?= th('yazi.bas.okuma', ['dk' => reading_time($post['body'])]) ?></span>
+          <span><?= th('yazi.bas.bolum', ['bolum' => $post['category']]) ?></span>
         </p>
         <p class="yazi__lead"><?= $nw(e($post['excerpt'])) ?></p>
       </div>
@@ -49,7 +50,7 @@ $share = [
     <div class="halftone">
       <img src="<?= asset($img) ?>" alt="" width="1200" height="800" decoding="async">
     </div>
-    <figcaption>Temsilî fotoğraf.</figcaption>
+    <figcaption><?= e(t('yazi.bas.altyazi')) ?></figcaption>
   </figure>
 
   <div class="yazi__body wrap">
@@ -72,12 +73,12 @@ $share = [
     </div>
 
     <footer class="yazi__foot">
-      <p class="label">Bu yazıyı paylaşın</p>
+      <p class="label"><?= e(t('yazi.son.paylas')) ?></p>
       <ul class="yazi__share" role="list">
-        <?php foreach ($share as $name => $href): ?>
+        <?php foreach ($share as [$name, $href]): ?>
           <li><a class="link ui" href="<?= e($href) ?>" rel="noopener" target="_blank"><?= e($name) ?></a></li>
         <?php endforeach; ?>
-        <li><button class="yazi__copy ui" type="button" data-copy="<?= e($abs) ?>" data-copy-msg="Bağlantı kopyalandı">Bağlantıyı kopyala</button></li>
+        <li><button class="yazi__copy ui" type="button" data-copy="<?= e($abs) ?>" data-copy-msg="<?= e(t('yazi.son.kopyalandi')) ?>"><?= e(t('yazi.son.kopyala')) ?></button></li>
       </ul>
     </footer>
   </div>
@@ -86,11 +87,11 @@ $share = [
 <?php if ($other): ?>
 <section class="yazi__more section" aria-labelledby="more-title">
   <div class="wrap">
-    <h2 class="display h3 yazi__moreh" id="more-title">Aynı sayıdan</h2>
+    <h2 class="display h3 yazi__moreh" id="more-title"><?= e(t('yazi.diger.baslik')) ?></h2>
     <div class="yazi__list">
       <?php foreach ($other as $oslug => $o): ?>
         <article class="yazi__item">
-          <p class="label"><?= e(tr_date($o['date'])) ?> · <?= reading_time($o['body']) ?> dk</p>
+          <p class="label"><?= e(t('yazi.diger.kunye', ['tarih_uzun' => tr_date($o['date']), 'dk' => reading_time($o['body'])])) ?></p>
           <h3><a href="<?= post_url($oslug) ?>"><?= $nw(e($o['title'])) ?></a></h3>
           <p><?= $nw(e($o['excerpt'])) ?></p>
         </article>
@@ -102,7 +103,7 @@ $share = [
 
 <div class="wrap">
   <a class="next" href="<?= post_url($next) ?>">
-    <span class="next__k">Sonraki makale</span>
+    <span class="next__k"><?= e(t('yazi.sonraki.etiket')) ?></span>
     <span class="next__t next__t--post"><span><?= $nw(nowidow($all[$next]['title'])) ?></span></span>
     <?= arrow() ?>
   </a>

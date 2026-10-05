@@ -3,10 +3,10 @@
  * Ek sekmeleri, mevzuat kartı, evrak listesi (tarayıcıda saklanır), yazdırma, kapak açılışı.
  */
 
-export default function init({ gsap, lenis, reduced, toast }) {
+export default function init({ gsap, lenis, reduced, toast, t }) {
   ekler(lenis, reduced);
-  mevzuat();
-  evrak(toast);
+  mevzuat(t);
+  evrak(toast, t);
   if (!reduced && gsap) kapak(gsap);
 }
 
@@ -43,7 +43,7 @@ function ekler(lenis, reduced) {
 
 /* ---------- Mevzuat kartı ---------- */
 
-function mevzuat() {
+function mevzuat(t) {
   const box = document.querySelector('[data-mevzuat]');
   const btn = box?.querySelector('[data-mevzuat-btn]');
   if (!box || !btn) return;
@@ -52,7 +52,7 @@ function mevzuat() {
   const sync = (on) => {
     box.classList.toggle('is-plain', on);
     btn.setAttribute('aria-pressed', String(on));
-    btn.textContent = on ? 'Kanun metni' : 'Sade Türkçesi';
+    btn.textContent = on ? t('hizmet.mevzuat.dugme_kanun') : t('hizmet.mevzuat.dugme_sade');
     law.setAttribute('aria-hidden', String(on));
     plain.setAttribute('aria-hidden', String(!on));
   };
@@ -62,7 +62,7 @@ function mevzuat() {
 
 /* ---------- Evrak listesi ---------- */
 
-function evrak(toast) {
+function evrak(toast, t) {
   const box = document.querySelector('[data-evrak]');
   if (!box) return;
   const key = 'arslanli:evrak:' + box.dataset.key;
@@ -88,7 +88,7 @@ function evrak(toast) {
       box.classList.remove('is-full');
       void box.offsetWidth; // damgayı yeniden bas
       box.classList.add('is-full');
-      if (animate) toast?.('Evrak listeniz tamam.');
+      if (animate) toast?.(t('hizmet.evrak.tamam'));
     }
     if (!full) box.classList.remove('is-full');
     wasFull = full;

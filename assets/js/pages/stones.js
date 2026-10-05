@@ -8,7 +8,7 @@
 const CELL = 18;          // kaplama ızgarasının hücre boyu (px)
 const THRESHOLD = 0.28;   // bir ilkenin ortaya çıkması için gereken kaplama oranı
 
-export default function init({ reduced }) {
+export default function init({ reduced, t: metin }) {
   const stone = document.querySelector('[data-stone]');
   const cv = stone?.querySelector('[data-cv]');
   if (!stone || !cv) return;
@@ -137,9 +137,15 @@ export default function init({ reduced }) {
   function update() {
     revealed = regions.filter((r) => r.done).length;
     if (countEl) {
-      countEl.innerHTML = revealed >= total
-        ? 'Altı ilkenin altısı da ortada.'
-        : `<b>${revealed}</b> / ${total} ilke ortaya çıktı`;
+      if (revealed >= total) {
+        countEl.textContent = metin('mihenk.cubuk.tamam');
+      } else {
+        // Sayı kalın yazılır: metindeki {n} yerine <b> konur (metin düz yazıdır, HTML içermez)
+        const [once, sonra = ''] = metin('mihenk.cubuk.sayac', { n: '\u0000', toplam: total }).split('\u0000');
+        const b = document.createElement('b');
+        b.textContent = revealed;
+        countEl.replaceChildren(once, b, sonra);
+      }
     }
     if (allBtn) allBtn.disabled = revealed >= total;
   }

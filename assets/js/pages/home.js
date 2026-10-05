@@ -5,8 +5,8 @@
  * 3) Kaşeler: logolar sırayla basılır.
  */
 
-export default function init({ gsap, ScrollTrigger, reduced, fine }) {
-  mercek(gsap, reduced, fine);
+export default function init({ gsap, ScrollTrigger, reduced, fine, t: metin }) {
+  mercek(gsap, reduced, fine, metin);
   takvim(gsap, ScrollTrigger, reduced);
   kaseler(gsap, ScrollTrigger, reduced);
   dosyalar(gsap, ScrollTrigger, reduced);
@@ -14,7 +14,7 @@ export default function init({ gsap, ScrollTrigger, reduced, fine }) {
 
 /* ---------------------------------------------------------------- Mercek */
 
-function mercek(gsap, reduced, fine) {
+function mercek(gsap, reduced, fine, metin) {
   const root = document.querySelector('[data-mercek]');
   const stage = root?.querySelector('[data-stage]');
   const lens = root?.querySelector('[data-lens]');
@@ -120,7 +120,7 @@ function mercek(gsap, reduced, fine) {
   plainBtn?.addEventListener('click', () => {
     plain = !plain;
     plainBtn.setAttribute('aria-pressed', String(plain));
-    plainBtn.textContent = plain ? 'Kanun metnine dön' : 'Tümünü sadeleştir';
+    plainBtn.textContent = plain ? metin('home.mercek.dugme_kanun') : metin('home.mercek.dugme_sade');
     const s = stage.getBoundingClientRect();
     const r0 = lens.offsetWidth / 2;
     const far = Math.hypot(Math.max(pos.x, s.width - pos.x), Math.max(pos.y, s.height - pos.y)) + 20;

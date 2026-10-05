@@ -3,7 +3,7 @@
  * bütün sade Türkçe notlarını birlikte açar.
  */
 
-export default function init({ lenis }) {
+export default function init({ lenis, t }) {
   const links = [...document.querySelectorAll('[data-toc]')];
   const sections = [...document.querySelectorAll('[data-madde]')];
 
@@ -45,7 +45,7 @@ export default function init({ lenis }) {
     const sync = () => {
       const open = notes.every((d) => d.open);
       all.setAttribute('aria-pressed', String(open));
-      all.textContent = open ? 'Sade notları kapat' : 'Tümünü sadeleştir';
+      all.textContent = t(open ? 'yasal.liste.tumu_kapat' : 'yasal.liste.tumu');
     };
     all.addEventListener('click', () => {
       const open = !notes.every((d) => d.open);

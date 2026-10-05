@@ -14,7 +14,7 @@ declare(strict_types=1);
  *   posts     blog yazıları
  *   refs      referans logoları ve kaşe maskeleri (liste)
  *   lists     süreç adımları, ilkeler, misyon/vizyon maddeleri, banka hesapları vb.
- *   texts     sayfa metinleri (Aşama 2B'de eklenecek; t() fonksiyonu)
+ *   texts     sayfa metinleri (t() ve th() işlevleri; bkz. app/texts.php)
  *   features  sitede açık ve kapalı bölümler
  *   seo       arama motoru ve yapay zekâ ayarları
  *
@@ -138,6 +138,9 @@ function content_restore(string $key, string $rev): bool
         return false;
     }
     $data = json_decode((string) file_get_contents($f), true);
+    if ($key === 'texts' && is_array($data)) {
+        $data = texts_sanitize_all($data);   // eski sürüm bugünkü kurallara uymuyorsa (kayıt defteri değişmiş olabilir) uymayan metinler alınmaz
+    }
     return $data !== null && content_put($key, $data);
 }
 
@@ -1203,8 +1206,55 @@ function post_image(array $post): ?string
 
 /* ---------- Sayfa metinleri ---------- */
 
-// Düzenlenebilir sayfa metinleri (texts_registry(), texts_flat(), t()) Aşama 2B'de eklenir (app/data/texts/*.php).
-// O zamana dek şablonlardaki metinler sabittir; bu dosyayı çağıran kod bu işlevleri function_exists ile korur.
+/**
+ * Düzenlenebilir metinlerin kaydı (app/data/texts/*.php, dosya adı sırasıyla birleştirilir):
+ *   [grup => ['label' => 'Ana sayfa', 'url' => '', 'icon' => 'house', 'sections' => [bölüm adı => [anahtar => [etiket, varsayılan, tür, yardım?, seçenekler?]]]]]
+ * tür: 'line' (tek satır), 'text' (düz metin), 'lines' (satır sonları korunur), 'rich' (sınırlı biçim işaretleri).
+ * Türler, seçenekler, biçim işaretleri ve yer tutucular: app/texts.php başı.
+ */
+function texts_registry(): array
+{
+    static $reg = null;
+    if ($reg === null) {
+        $reg = [];
+        $files = glob(APP . '/data/texts/*.php') ?: [];
+        sort($files);
+        foreach ($files as $f) {
+            $reg = array_merge($reg, (array) require $f);
+        }
+    }
+    return $reg;
+}
+
+/** [anahtar => [etiket, varsayılan, tür, yardım, seçenekler]] düz liste */
+function texts_flat(): array
+{
+    static $flat = null;
+    if ($flat === null) {
+        $flat = [];
+        foreach (texts_registry() as $group) {
+            foreach ($group['sections'] ?? [] as $items) {
+                foreach ($items as $k => $item) {
+                    $flat[$k] = $item;
+                }
+            }
+        }
+    }
+    return $flat;
+}
+
+/**
+ * Düzenlenebilir sayfa metni, DÜZ METİN olarak (biçim işaretleri soyulmuş, yer tutucular doldurulmuş, kaçırılmamış):
+ * şablonda e(t('grup.anahtar')) ile yazılır. $vars: bu metne özgü yer tutucuların değerleri.
+ * Biçimli (rich) ya da satır sonlu (lines) metni güvenli HTML olarak basmak için th() kullanılır.
+ * Panelden değiştirilen metin storage/content/texts.json içindedir.
+ */
+function t(string $key, array $vars = []): string
+{
+    return text_plain($key, $vars);
+}
+
+require_once APP . '/texts.php';
 
 /* ---------- Güvenli HTML (blog gövdesi) ---------- */
 

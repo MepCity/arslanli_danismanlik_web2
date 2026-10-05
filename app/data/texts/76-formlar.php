@@ -1,0 +1,91 @@
+<?php
+/**
+ * Bütün formların ortak iletileri: gönderirken ve gönderdikten sonra ziyaretçiye görünen durum yazıları (assets/js/app.js),
+ * sunucunun verdiği yanıtlar ve alan hataları (app/form.php), kopyalama bildirimi.
+ * Formların kendi etiketleri ve açıklamaları ilgili sayfanın grubundadır (bülten penceresi: "bulten").
+ */
+return [
+    'formlar' => [
+        'label' => 'Form iletileri',
+        'url'   => 'iletisim',
+        'icon'  => 'paper-plane-tilt',
+        'sections' => [
+            '1. Form gönderilirken (tarayıcıda görünen)' => [
+                'formlar.durum.kontrol' => ['Eksik ya da hatalı alan uyarısı', 'Lütfen işaretli alanları kontrol edin.', 'line', 'Formun altında, işaretli alanlar varken görünür. Sunucu da aynı yazıyı kullanır.', ['js' => true]],
+                'formlar.durum.gonderiliyor' => ['Gönderilirken görünen yazı', 'Gönderiliyor…', 'line', '', ['js' => true, 'max' => 40]],
+                'formlar.durum.gonderilemedi' => ['Genel gönderilemedi iletisi', 'Gönderilemedi.', 'line', 'Sunucu özel bir ileti vermediğinde görünür.', ['js' => true]],
+                'formlar.durum.beklenmeyen' => ['Sunucudan anlaşılmaz yanıt gelirse', 'Beklenmeyen bir yanıt alındı.', 'line', '', ['js' => true]],
+                'formlar.durum.baglanti' => ['İnternet bağlantısı kurulamazsa', 'Bağlantı kurulamadı. Lütfen telefonla ulaşın.', 'line', '', ['js' => true]],
+            ],
+            '2. Sayfa yenilenerek dönüldüğünde (JavaScript kapalıysa)' => [
+                'formlar.donus.tamam' => ['Gönderim başarılı bildirimi', 'Mesajınız bize ulaştı. Teşekkürler.', 'line', 'Sayfanın altında kısa süre görünür.', ['js' => true]],
+                'formlar.donus.hata' => ['Gönderim başarısız bildirimi', 'Gönderilemedi. Lütfen telefonla ulaşın.', 'line', '', ['js' => true]],
+            ],
+            '3. Alan uyarıları (gönderirken, tarayıcıda)' => [
+                'formlar.dogrulama.zorunlu' => ['Boş bırakılan zorunlu alan', 'Lütfen bu alanı doldurun.', 'line', 'Alanın altında kırmızı görünür.', ['js' => true]],
+                'formlar.dogrulama.secim' => ['Seçilmeyen zorunlu liste', 'Lütfen listeden bir seçim yapın.', 'line', 'İl ve sektör gibi açılır listeler için.', ['js' => true]],
+                'formlar.dogrulama.onay' => ['İşaretlenmeyen zorunlu onay kutusu', 'Devam etmek için lütfen bu kutuyu işaretleyin.', 'line', '', ['js' => true]],
+                'formlar.dogrulama.dosya' => ['Seçilmeyen zorunlu dosya', 'Lütfen bir dosya seçin.', 'line', '', ['js' => true]],
+                'formlar.dogrulama.eposta' => ['Geçersiz e-posta adresi', 'Lütfen geçerli bir e-posta adresi yazın.', 'line', '', ['js' => true]],
+                'formlar.dogrulama.telefon' => ['Geçersiz telefon numarası', 'Lütfen geçerli bir telefon numarası yazın.', 'line', '', ['js' => true]],
+                'formlar.dogrulama.bicim' => ['İstenen biçimde olmayan alan', 'Lütfen istenen biçimde yazın.', 'line', '', ['js' => true]],
+                'formlar.dogrulama.uzun' => ['Çok uzun yazılan alan', 'Bu metin çok uzun.', 'line', '', ['js' => true]],
+            ],
+            '4. Sunucu yanıtları (başarılı gönderim)' => [
+                'formlar.sunucu.bulten_tamam' => ['Bülten kaydı alındı', 'Kaydınız alındı. Yeni çağrılar ve programlar açıldığında sizi haberdar edeceğiz.', 'text', 'Bülten penceresinde ve Haberdar Ol sayfasında görünür.'],
+                'formlar.sunucu.kariyer_tamam' => ['İş başvurusu alındı (genel başvuru)', 'Başvurunuz bize ulaştı. Değerlendirmenin ardından sizinle iletişime geçeceğiz.', 'text', 'İlana bağlı olmayan başvuruda görünür.'],
+                'formlar.sunucu.kariyer_ilan_tamam' => ['İş başvurusu alındı (ilana bağlı)', 'Başvurunuz “{ilan}” ilanına bağlanarak bize ulaştı. Değerlendirmenin ardından sizinle iletişime geçeceğiz.', 'text', '{ilan} yerine ilanın adı gelir; silmeyin.', ['vars' => ['ilan' => 'ilanın adı'], 'need' => ['ilan']]],
+                'formlar.sunucu.iletisim_tamam' => ['İletişim dilekçesi alındı', 'Dilekçeniz bize ulaştı. En kısa sürede dönüş yapacağız.', 'text'],
+            ],
+            '5. Sunucu yanıtları (hata)' => [
+                'formlar.sunucu.gecersiz_form' => ['Tanınmayan form', 'Geçersiz form.', 'line'],
+                'formlar.sunucu.kapali' => ['Bölüm kapatılmışsa (Bülten ya da Kariyer)', 'Bu form şu an kullanıma kapalı. Bize telefon ya da e-posta ile ulaşabilirsiniz.', 'text'],
+                'formlar.sunucu.oturum' => ['Form süresi dolmuşsa', 'Oturum süresi dolduğu için form yenilendi; yazdıklarınız duruyor. Lütfen birkaç saniye sonra yeniden gönderin.', 'text'],
+                'formlar.sunucu.ilan_kapali' => ['İlan artık başvuruya açık değilse', 'Bu ilan artık başvuruya açık değil ya da bulunamadı. Genel başvuru formunu kullanarak özgeçmişinizi bırakabilirsiniz.', 'text'],
+                'formlar.sunucu.cok_gonderim_ip' => ['Aynı kişiden çok fazla gönderim', 'Kısa sürede çok fazla gönderim yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.', 'text'],
+                'formlar.sunucu.cok_gonderim_site' => ['Siteye çok fazla gönderim', 'Şu anda çok fazla gönderim alınıyor. Lütfen bir süre sonra tekrar deneyin.', 'text'],
+                'formlar.sunucu.cok_basvuru' => ['Çok fazla iş başvurusu', 'Şu anda çok fazla başvuru alınıyor. Lütfen bir süre sonra tekrar deneyin ya da özgeçmişinizi e-posta ile gönderin.', 'text'],
+                'formlar.sunucu.iletilemedi' => ['Mesaj hiçbir yoldan alınamadıysa', 'Mesajınız şu anda iletilemedi. Lütfen telefonla ya da e-posta ile ulaşın.', 'text'],
+                'formlar.sunucu.dosya_cok_buyuk' => ['Gönderilen dosya çok büyükse', 'Gönderilen dosya çok büyük. Lütfen en fazla 5 MB boyutunda bir dosya seçin.', 'text'],
+                'formlar.sunucu.dosya_kaydedilemedi' => ['Özgeçmiş dosyası sunucuya yazılamadıysa', 'Dosya kaydedilemedi. Lütfen daha sonra tekrar deneyin ya da e-posta ile gönderin.', 'text'],
+            ],
+            '6. Alan hataları (sunucu)' => [
+                'formlar.hata.zorunlu' => ['Boş bırakılan zorunlu alan', '{alan} alanı zorunludur.', 'line', '{alan} yerine alanın adı gelir; silmeyin.', ['vars' => ['alan' => 'alanın adı'], 'need' => ['alan']]],
+                'formlar.hata.uzun' => ['Çok uzun yazılan alan', '{alan} çok uzun.', 'line', '{alan} yerine alanın adı gelir; silmeyin.', ['vars' => ['alan' => 'alanın adı'], 'need' => ['alan']]],
+                'formlar.hata.onay' => ['İşaretlenmeyen zorunlu onay kutusu', 'Devam etmek için bu onayı vermeniz gerekiyor.', 'line'],
+                'formlar.hata.eposta' => ['Geçersiz e-posta adresi', 'Geçerli bir e-posta adresi yazın.', 'line'],
+                'formlar.hata.telefon' => ['Geçersiz telefon numarası', 'Geçerli bir telefon numarası yazın.', 'line'],
+                'formlar.hata.adres' => ['Geçersiz internet adresi (LinkedIn)', 'http:// ya da https:// ile başlayan geçerli bir adres yazın.', 'line'],
+                'formlar.hata.liste' => ['Listede olmayan seçim', 'Listeden bir seçim yapın.', 'line'],
+                'formlar.hata.cv_yok' => ['Özgeçmiş eklenmediyse', 'Özgeçmişinizi ekleyin.', 'line'],
+                'formlar.hata.cv_boyut' => ['Özgeçmiş dosyası 5 MB’tan büyükse', 'Dosya en fazla 5 MB olabilir.', 'line'],
+                'formlar.hata.cv_yuklenemedi' => ['Özgeçmiş yüklenemediyse', 'Dosya yüklenemedi. Lütfen tekrar deneyin.', 'line'],
+                'formlar.hata.cv_tur' => ['Özgeçmiş PDF ya da DOCX değilse', 'Yalnızca PDF ya da DOCX dosyası yükleyebilirsiniz.', 'line'],
+            ],
+            '7. Kopyalama bildirimi' => [
+                'formlar.kopya.tamam' => ['Kopyalama bildirimi (varsayılan)', 'Kopyalandı', 'line', 'IBAN gibi kopyalanan şeyin kendi bildirimi yoksa görünür.', ['js' => true, 'max' => 40]],
+            ],
+            '8. Alan adları (hata iletilerinde ve bildirim e-postasında)' => [
+                'formlar.alan.adsoyad' => ['Alan adı: Ad Soyad', 'Ad Soyad', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.ad' => ['Alan adı: Ad', 'Ad', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.soyad' => ['Alan adı: Soyad', 'Soyad', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.firma' => ['Alan adı: Firma', 'Firma', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.konu' => ['Alan adı: Konu', 'Konu', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.mesaj' => ['Alan adı: Mesaj', 'Mesaj', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.telefon' => ['Alan adı: Telefon', 'Telefon', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.eposta' => ['Alan adı: E-posta', 'E-posta', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.il' => ['Alan adı: İl', 'İl', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.sektor' => ['Alan adı: Sektör', 'Sektör', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.konular' => ['Alan adı: İlgilendiği konular', 'İlgilendiği konular', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.sehir' => ['Alan adı: Şehir', 'Şehir', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.linkedin' => ['Alan adı: LinkedIn', 'LinkedIn', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.pozisyon' => ['Alan adı: İlgilenilen alan / pozisyon', 'İlgilenilen alan / pozisyon', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.deneyim' => ['Alan adı: Deneyim süresi', 'Deneyim süresi', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.onyazi' => ['Alan adı: Ön yazı', 'Ön yazı', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.kvkk' => ['Alan adı: Aydınlatma metni', 'Aydınlatma metni', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.etk' => ['Alan adı: Ticari elektronik ileti onayı', 'Ticari elektronik ileti onayı', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+                'formlar.alan.saklama' => ['Alan adı: Gelecek pozisyonlar için saklama izni', 'Gelecek pozisyonlar için saklama izni', 'line', 'Hata iletisinde (“… alanı zorunludur”) ve size gelen bildirim e-postasında görünür; formun üstündeki etiketi değiştirmez.', ['max' => 50]],
+            ],
+        ],
+    ],
+];

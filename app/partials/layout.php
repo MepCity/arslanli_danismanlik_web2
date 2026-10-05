@@ -5,8 +5,8 @@
  * @var string $path     Geçerli yol (index.php)
  */
 $p     = page();
-$title = $p['title'] ? $p['title'] . ' | ' . cfg('name') : cfg('name') . ' | Hibe, teşvik ve Ar-Ge danışmanlığı';
-$desc  = $p['description'] ?: 'Arslanlı Yatırım & Danışmanlık: 2007’den beri TÜBİTAK, KOSGEB, Bakanlık, ihracat ve AB desteklerinde başvuru dosyası, proje yazımı ve yürütme. İstanbul.';
+$title = $p['title'] ? t('genel.seo.title_pattern', ['sayfa' => $p['title']]) : t('genel.seo.title_home');
+$desc  = $p['description'] ?: t('genel.seo.description');
 $canon = $p['canonical'] ?: absolute_url($path ?? '');
 $image = $p['image'] ?: absolute_url('assets/img/og.jpg');
 $id    = $p['id'];
@@ -22,13 +22,15 @@ $isCur = fn(string $to) => ($current === '/' . trim($to, '/')) ? ' aria-current=
 $menu = site_pages_in('menu');
 $corp = site_pages_in('corp');
 [$here, $hereExact] = pg_for_path($path ?? '');
-// Etiket: "Evrak 03 · <b>Ad</b>" → kısa ekranlarda adı düşer (hdr__nm), çok dar ekranda "Evrak" sözcüğü de (hdr__w)
+// Etiket: "Evrak 03 · <b>Ad</b>" → kısa ekranlarda adı düşer (hdr__nm), çok dar ekranda "Evrak" sözcüğü de (hdr__w); sözcük genel.folio.word
 $folio = $p['folio'] ?: pg_folio('home');
-$folioHtml = preg_match('/^Evrak\s+(\S+)\s*·\s*(.+)$/su', $folio, $fm)
-    ? '<span class="hdr__ev"><span class="hdr__w">Evrak </span>' . $fm[1] . '</span><span class="hdr__nm"> · ' . $fm[2] . '</span>'
+$folioHtml = preg_match('/^' . preg_quote(e(folio_word()), '/') . '\s+(\S+)\s*·\s*(.+)$/su', $folio, $fm)
+    ? '<span class="hdr__ev"><span class="hdr__w">' . e(folio_word()) . ' </span>' . $fm[1] . '</span><span class="hdr__nm"> · ' . $fm[2] . '</span>'
     : $folio;
 // Açılışta öne çıkan duyuru (varsa): pencere, çip ve kendi dosyaları yalnızca o zaman yüklenir
 $spot = function_exists('ann_featured') ? ann_featured() : null;
+// Yapısal verideki ilçe ve il, ayarlardaki kısa adresten ("Pendik, İstanbul") gelir
+[$loc, $reg] = array_map('trim', array_pad(explode(',', (string) cfg('address_short'), 2), 2, ''));
 ?><!doctype html>
 <html lang="tr">
 <head>
@@ -62,6 +64,7 @@ $spot = function_exists('ann_featured') ? ann_featured() : null;
 window.__revealFallback=setTimeout(function(){h.classList.add('reveal-fallback')},4000);
 window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||null});})();
 </script>
+<script type="application/json" id="js-metin"><?= json_encode(texts_js(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script type="application/ld+json"><?= json_encode(array_merge([
     '@context' => 'https://schema.org',
     '@type'    => 'ProfessionalService',
@@ -70,7 +73,7 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
     'telephone' => cfg('phone'),
     'email'    => cfg('email'),
     'foundingDate' => (string) cfg('founded'),
-    'address'  => ['@type' => 'PostalAddress', 'streetAddress' => cfg('address'), 'addressLocality' => 'Pendik', 'addressRegion' => 'İstanbul', 'addressCountry' => 'TR'],
+    'address'  => ['@type' => 'PostalAddress', 'streetAddress' => cfg('address'), 'addressLocality' => $loc, 'addressRegion' => $reg, 'addressCountry' => 'TR'],
     'sameAs'   => array_values(cfg('social')),
 ], $p['schema']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 </head>
@@ -89,14 +92,14 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
   </defs>
 </svg>
 
-<a class="skip" href="#main">İçeriğe geç</a>
+<a class="skip" href="#main"><?= e(t('genel.header.skip')) ?></a>
 
 <header class="hdr" data-hdr>
   <div class="hdr__in wrap">
-    <a class="hdr__brand" href="<?= url() ?>" aria-label="<?= e(cfg('name')) ?>, ana sayfa"><?php require APP . '/partials/logo.php'; ?></a>
+    <a class="hdr__brand" href="<?= url() ?>" aria-label="<?= e(t('genel.header.logo_label')) ?>"><?php require APP . '/partials/logo.php'; ?></a>
     <div class="hdr__mid">
-      <p class="hdr__folio" aria-hidden="true" data-folio><?= $folioHtml ?></p>
-      <nav class="hnav hnav--w<?= [4 => 550, 5 => 550, 6 => 640, 7 => 740][count($menu)] ?? (count($menu) < 4 ? 550 : 840) ?>" aria-label="Ana sayfalar" data-hnav>
+      <p class="hdr__folio" aria-hidden="true" data-folio data-word="<?= e(folio_word()) ?>"><?= $folioHtml ?></p>
+      <nav class="hnav hnav--w<?= [4 => 550, 5 => 550, 6 => 640, 7 => 740][count($menu)] ?? (count($menu) < 4 ? 550 : 840) ?>" aria-label="<?= e(t('genel.header.nav_label')) ?>" data-hnav>
         <ol class="hnav__list" role="list">
           <?php foreach ($menu as $m): $cur = $hereExact && $here && $here['key'] === $m['key'] ? ' aria-current="page"' : ($here && $here['key'] === $m['key'] ? ' aria-current="true"' : ''); ?>
             <li><a href="<?= url($m['path']) ?>"<?= $cur ?> data-no="<?= e($m['nn']) ?>"><span class="hnav__no" aria-hidden="true"><?= e($m['nn']) ?></span><span class="hnav__t"><?= e($m['label']) ?></span></a></li>
@@ -105,22 +108,22 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
       </nav>
     </div>
     <div class="hdr__act">
-      <a class="btn btn--sm hdr__cta" href="<?= url('iletisim') ?>">Ön görüşme <?= arrow() ?></a>
+      <a class="btn btn--sm hdr__cta" href="<?= url('iletisim') ?>"><?= e(t('genel.header.cta')) ?> <?= arrow() ?></a>
       <button class="hdr__menu" type="button" aria-expanded="false" aria-controls="fihrist" data-menu-open>
-        <span>Fihrist</span><span class="hdr__tabs" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span><?= e(t('genel.header.menu')) ?></span><span class="hdr__tabs" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
     </div>
   </div>
 </header>
 
-<div class="fih" id="fihrist" role="dialog" aria-modal="true" aria-label="Fihrist: site haritası" data-menu>
+<div class="fih" id="fihrist" role="dialog" aria-modal="true" aria-label="<?= e(t('genel.fihrist.label')) ?>" data-menu>
   <div class="fih__in wrap">
     <div class="fih__top">
-      <a class="hdr__brand" href="<?= url() ?>" aria-label="Ana sayfa"><?php require APP . '/partials/logo.php'; ?></a>
-      <button class="fih__close" type="button" data-menu-close><span>Kapat</span><?= icon('x') ?></button>
+      <a class="hdr__brand" href="<?= url() ?>" aria-label="<?= e(t('genel.fihrist.logo_label')) ?>"><?php require APP . '/partials/logo.php'; ?></a>
+      <button class="fih__close" type="button" data-menu-close><span><?= e(t('genel.fihrist.close')) ?></span><?= icon('x') ?></button>
     </div>
-    <nav aria-label="Ana menü">
-      <p class="fih__h"><span>Fihrist</span><em>sayfa</em></p>
+    <nav aria-label="<?= e(t('genel.fihrist.nav_label')) ?>">
+      <p class="fih__h"><span><?= e(t('genel.fihrist.pages_head')) ?></span><em><?= e(t('genel.fihrist.unit')) ?></em></p>
       <ul class="idx" role="list">
         <?php foreach ($menu as $m): ?>
           <li><a href="<?= url($m['path']) ?>"<?= $isCur($m['path']) ?>><span class="t"><?= e($m['label']) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= $m['nn'] ?></span></a></li>
@@ -128,16 +131,16 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
       </ul>
     </nav>
     <div class="fih__side">
-      <nav aria-label="Hizmetler">
-        <p class="fih__h"><span>Dosyalar</span><em><?= pg_no('hizmetler') ?></em></p>
+      <nav aria-label="<?= e(t('genel.fihrist.files_label')) ?>">
+        <p class="fih__h"><span><?= e(t('genel.fihrist.files_head')) ?></span><em><?= pg_no('hizmetler') ?></em></p>
         <ul class="idx idx--sm" role="list">
           <?php foreach (services() as $slug => $s): ?>
             <li><a href="<?= service_url($slug) ?>"<?= $isCur('urunler/detay/' . $slug) ?>><span class="tab" style="--c:var(--f-<?= e($s['color']) ?>)" aria-hidden="true"></span><span class="t"><?= e($s['nav']) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= svc_no($s) ?></span></a></li>
           <?php endforeach; ?>
         </ul>
       </nav>
-      <nav aria-label="Kurumsal">
-        <p class="fih__h"><span>Kurumsal</span><em>sayfa</em></p>
+      <nav aria-label="<?= e(t('genel.fihrist.corp_label')) ?>">
+        <p class="fih__h"><span><?= e(t('genel.fihrist.corp_head')) ?></span><em><?= e(t('genel.fihrist.unit')) ?></em></p>
         <ul class="idx idx--sm" role="list">
           <?php foreach ($corp as $m): ?>
             <li><a href="<?= url($m['path']) ?>"<?= $isCur($m['path']) ?>><span class="t"><?= e($m['label']) ?></span><span class="dots" aria-hidden="true"></span><span class="pg"><?= $m['nn'] ?></span></a></li>
@@ -161,46 +164,46 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
   <div class="wrap">
     <div class="ftr__close">
       <div>
-        <p class="ftr__salute">Saygılarımızla<em>,</em></p>
-        <p class="ftr__sign">Bir sorunuz, bir proje fikriniz ya da masanızda bekleyen bir çağrı metni varsa bize yazın; okuyup size dönelim.</p>
+        <p class="ftr__salute"><?= th('genel.footer.salute') ?></p>
+        <p class="ftr__sign"><?= th('genel.footer.sign') ?></p>
       </div>
       <?php $kaseClass = 'ftr__kase'; require APP . '/partials/kase.php'; ?>
     </div>
 
     <div class="ftr__ekler">
-      <h2>Ekler</h2>
+      <h2><?= e(t('genel.footer.ekler')) ?></h2>
       <div class="ftr__ek">
-        <span class="label">Ek-1 · Telefon</span>
+        <span class="label"><?= e(t('genel.footer.ek1')) ?></span>
         <a class="big" href="tel:<?= e(cfg('phone_href')) ?>"><?= e(cfg('phone')) ?></a>
-        <a class="small" href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank">WhatsApp’tan yazın</a>
+        <a class="small" href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank"><?= e(t('genel.footer.whatsapp_link')) ?></a>
       </div>
       <div class="ftr__ek">
-        <span class="label">Ek-2 · E-posta</span>
+        <span class="label"><?= e(t('genel.footer.ek2')) ?></span>
         <a class="big" href="mailto:<?= e(cfg('email')) ?>"><?= e(cfg('email')) ?></a>
         <span class="ftr__nav">
           <?php foreach (cfg('social') as $name => $href): ?><a href="<?= e($href) ?>" rel="noopener" target="_blank"><?= e($name) ?></a><?php endforeach; ?>
         </span>
       </div>
       <div class="ftr__ek">
-        <span class="label">Ek-3 · Adres</span>
+        <span class="label"><?= e(t('genel.footer.ek3')) ?></span>
         <a class="small" href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank"><?= e(cfg('address')) ?></a>
       </div>
     </div>
 
     <div class="ftr__base">
-      <p>&copy; <?= cfg('founded') ?>–<?= date('Y') ?> <?= e(cfg('name')) ?></p>
-      <nav aria-label="Yasal">
+      <p><?= e(t('genel.footer.copyright')) ?></p>
+      <nav aria-label="<?= e(t('genel.footer.nav_label')) ?>">
         <?php if (path_enabled('duyurular')): ?>
-        <a href="<?= url('duyurular') ?>">Duyurular</a>
+        <a href="<?= url('duyurular') ?>"><?= e(pg_name('duyurular')) ?></a>
         <?php endif; ?>
         <?php if (path_enabled('kariyer')): ?>
-        <a href="<?= url('kariyer') ?>">Kariyer</a>
+        <a href="<?= url('kariyer') ?>"><?= e(pg_name('kariyer')) ?></a>
         <?php endif; ?>
-        <a href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>">KVKK Aydınlatma Metni</a>
-        <a href="<?= url('kurumsal/cerez-politikasi') ?>">Çerez Politikası</a>
-        <a href="<?= url('hesap-numaralarimiz') ?>">Hesap Numaralarımız</a>
+        <a href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>"><?= e(pg_name('kvkk')) ?></a>
+        <a href="<?= url('kurumsal/cerez-politikasi') ?>"><?= e(pg_name('cerez')) ?></a>
+        <a href="<?= url('hesap-numaralarimiz') ?>"><?= e(pg_name('hesap')) ?></a>
         <?php if (feature('bulten')): ?>
-        <a href="<?= url('haberdarol') ?>" data-nl-open>Bültene kayıt ol</a>
+        <a href="<?= url('haberdarol') ?>" data-nl-open><?= e(t('genel.footer.bulten')) ?></a>
         <?php endif; ?>
       </nav>
     </div>
@@ -208,8 +211,8 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 </footer>
 
 <?php if (feature('whatsapp')): ?>
-<a class="wa" href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank" aria-label="WhatsApp ile yazın">
-  <?= icon('whatsapp-logo') ?><span>WhatsApp</span>
+<a class="wa" href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank" aria-label="<?= e(t('genel.whatsapp.label')) ?>">
+  <?= icon('whatsapp-logo') ?><span><?= e(t('genel.whatsapp.text')) ?></span>
 </a>
 <?php endif; ?>
 

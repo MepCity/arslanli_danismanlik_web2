@@ -4,13 +4,15 @@
  * Metnin bir kısmı sitenin kendi kodu taranarak kurulur: bir gün çerez, tarayıcı depolama alanı
  * ya da dış kaynaklı içerik eklenirse sayfa "kullanmıyoruz" demeyi bırakır. Yine de böyle bir
  * değişiklikten sonra metni gözden geçirin.
+ * Taramanın sonucuna göre hangi yazının basılacağı burada seçilir; yazıların kendisi kayıt defterindedir (app/data/texts/54-cerez.php; panelde
+ * Sayfa metinleri > Çerez Politikası): aynı maddenin "_var" (kullanılıyor) ve "_yok" (kullanılmıyor) sürümleri ayrı kayıttır.
  */
 require_once APP . '/pages/_legal.php';
 
 page([
     'id'          => 'legal',
-    'title'       => 'Çerez Politikası',
-    'description' => 'Arslanlı Yatırım & Danışmanlık web sitesinin tarayıcınızda ne sakladığı ve ne saklamadığı: çerez, analiz aracı ve reklam takibi kullanılmaz.',
+    'title'       => pg_name('cerez'),
+    'description' => t('cerez.seo.description'),
     'folio'       => pg_folio('cerez'),
 ]);
 
@@ -48,133 +50,93 @@ foreach ($files as $f) {
         $external = true;
     }
 }
-$pageNames = [
-    'app' => 'sitenin geneli', 'home' => 'ana sayfa', 'about' => 'Hakkımızda', 'services' => 'Hizmetler',
-    'service' => 'hizmet sayfaları', 'refs' => 'Referanslar', 'blog' => 'Makaleler', 'post' => 'makale sayfaları',
-    'contact' => 'İletişim', 'signup' => 'Haberdar Ol', 'bank' => 'Hesap Numaralarımız', 'mission' => 'Misyonumuz',
-    'vision' => 'Vizyonumuz', 'stones' => 'Mihenk Taşlarımız',
-];
+$pageNames = [];
+foreach (['app', 'home', 'about', 'services', 'service', 'refs', 'blog', 'post', 'contact', 'signup', 'bank', 'mission', 'vision', 'stones'] as $id) {
+    $pageNames[$id] = t('cerez.depolama.' . $id);
+}
 $storageWhere = implode(', ', array_map(fn($p) => $pageNames[$p] ?? $p, array_unique($storagePages)));
-$mail = '<a class="link" href="mailto:' . e(cfg('email')) . '">' . e(cfg('email')) . '</a>';
-$kvkk = '<a class="link" href="' . url('kurumsal/kvkk-aydinlatma-metni') . '">KVKK Aydınlatma Metni</a>';
+$vars = [
+    'kvkk_baglanti' => ['html' => '<a class="link" href="' . url('kurumsal/kvkk-aydinlatma-metni') . '">' . e(pg_name('kvkk')) . '</a>'],
+    'site_adresi'   => preg_replace('#^https?://#', '', (string) cfg('url')),
+    'sayfalar'      => $storageWhere,
+];
 
 /* ---------- Kısaca ---------- */
 
 $summary = [];
-$summary[] = $usesCookies
-    ? 'Bu site yalnızca çalışması için <mark>zorunlu</mark> teknik çerezler kullanır.'
-    : 'Bu site tarayıcınıza <mark>çerez yerleştirmez</mark>.';
-$summary[] = 'Ziyaretinizi izleyen analiz, reklam ya da sosyal medya aracı yok.';
+$summary[] = str_replace(['<b>', '</b>'], ['<mark>', '</mark>'], th($usesCookies ? 'cerez.kisaca.cerez_var' : 'cerez.kisaca.cerez_yok'));
+$summary[] = str_replace(['<b>', '</b>'], ['<mark>', '</mark>'], th('cerez.kisaca.analiz'));
 if (!$external) {
-    $summary[] = 'Yazı tipleri ve kodlar kendi sunucumuzdan gelir; ziyaretiniz <mark>üçüncü taraflara</mark> bildirilmez.';
+    $summary[] = str_replace(['<b>', '</b>'], ['<mark>', '</mark>'], th('cerez.kisaca.ucuncu'));
 }
 if ($storagePages) {
-    $summary[] = 'Bazı sayfalar yaptığınız seçimleri yalnızca kendi tarayıcınızda hatırlar; bu bilgi bize gelmez.';
+    $summary[] = str_replace(['<b>', '</b>'], ['<mark>', '</mark>'], th('cerez.kisaca.depolama'));
 }
-$summary[] = 'Form gönderirseniz kötüye kullanımı önlemek için IP adresiniz işlenir. Ayrıntısı ' . $kvkk . '’nde.';
+$summary[] = str_replace(['<b>', '</b>'], ['<mark>', '</mark>'], th('cerez.kisaca.form', $vars));
 
 /* ---------- Maddeler ---------- */
 
 $maddeler = [];
 
 $maddeler[] = [
-    'title' => 'Amaç ve kapsam',
-    'paras' => [
-        'Bu politika, ' . e(cfg('name')) . ' tarafından yayımlanan ' . e(preg_replace('#^https?://#', '', (string) cfg('url'))) . ' internet sitesinin, ziyaretiniz sırasında tarayıcınızda ve cihazınızda hangi bilgileri sakladığını ve hangilerini saklamadığını açıklar.',
-        'Formlar aracılığıyla bize ilettiğiniz kişisel verilerin işlenmesi ' . $kvkk . '’nde ayrıca düzenlenmiştir.',
-    ],
-    'sade' => 'Bu sayfa, sitenin cihazınızda ne bıraktığını anlatır. Formlara yazdıklarınız başka bir sayfanın konusu.',
+    'title' => t('cerez.m1.baslik'),
+    'paras' => [th('cerez.m1.f1', $vars), th('cerez.m1.f2', $vars)],
+    'sade'  => th('cerez.m1.sade'),
 ];
 
 $maddeler[] = [
-    'title' => 'Çerez nedir',
-    'paras' => [
-        'Çerezler, bir internet sitesi ziyaret edildiğinde tarayıcı aracılığıyla cihaza kaydedilen ve sonraki ziyaretlerde siteye geri gönderilebilen küçük metin dosyalarıdır. Oturumu açık tutmak, tercihleri hatırlamak, ziyaretçi davranışını ölçmek ya da reklam göstermek amacıyla kullanılabilirler.',
-    ],
-    'sade' => 'Sitenin tarayıcınıza bıraktığı küçük not kâğıtları. Bazıları işe yarar, bazıları sizi takip etmek içindir.',
+    'title' => t('cerez.m2.baslik'),
+    'paras' => [th('cerez.m2.f1')],
+    'sade'  => th('cerez.m2.sade'),
 ];
 
 $maddeler[] = [
-    'title' => 'Bu sitede kullanılan çerezler',
-    'paras' => $usesCookies
-        ? [
-            'Sitemiz yalnızca güvenli ve doğru çalışması için zorunlu olan teknik çerezleri kullanır. Analiz, reklam, hedefleme ya da sosyal medya çerezi kullanılmaz.',
-            'Sitenin barındırıldığı sunucu ya da güvenlik hizmeti kendi teknik çerezlerini kullanırsa bu madde buna göre güncellenir.',
-        ]
-        : [
-            'Sitemiz tarayıcınıza çerez yerleştirmez. Oturum çerezi, tercih çerezi, analiz çerezi, reklam ya da hedefleme çerezi ve sosyal medya çerezi kullanılmaz; bu nedenle sitede bir çerez onay penceresi de bulunmaz.',
-            'Sitenin barındırıldığı sunucu ya da güvenlik hizmeti (örneğin saldırı koruması) kendi teknik çerezlerini kullanmaya başlarsa bu madde buna göre güncellenir.',
-        ],
-    'sade' => $usesCookies
-        ? 'Yalnızca sitenin çalışması için gerekenler var. Sizi takip eden çerez yok.'
-        : 'Çerez yok. O yüzden size “çerezleri kabul ediyor musunuz?” diye sormuyoruz.',
+    'title' => t('cerez.m3.baslik'),
+    'paras' => $usesCookies ? [th('cerez.m3.f1_var'), th('cerez.m3.f2_var')] : [th('cerez.m3.f1_yok'), th('cerez.m3.f2_yok')],
+    'sade'  => th($usesCookies ? 'cerez.m3.sade_var' : 'cerez.m3.sade_yok'),
 ];
 
 $maddeler[] = [
-    'title' => 'Formlar ve güvenlik kayıtları',
-    'paras' => [
-        'İletişim, Haberdar Ol, bülten ve iş başvurusu formlarında, gönderimin bir insan tarafından yapıldığını ayırt etmek için forma imzalı, tek kullanımlık bir belirteç eklenir; forma ilk dokunduğunuzda tarayıcınız küçük bir hesaplama yapıp sonucunu da forma yazar. Bu bilgiler çerez olarak saklanmaz; formun içinde durur ve yalnızca formu gönderdiğinizde bize iletilir. Kullanılmış belirteçlerin özeti sunucumuzda en çok iki saat tutulur.',
-        'Kısa sürede çok sayıda gönderim yapılmasını engellemek için, form gönderildiğinde IP adresinizin özeti (hash) ve son gönderim zamanları sunucumuzda tutulur. Bu kayıt yalnızca bu amaçla kullanılır ve kısa süre sonra silinir. Gönderdiğiniz formun kendisinin (IP adresiniz dahil) nasıl saklandığı ' . $kvkk . '’nde anlatılmıştır.',
-        'Formda yazdığınız bilgilerin nasıl işlendiği ' . $kvkk . '’nde anlatılmıştır.',
-    ],
-    'sade' => 'Formlar çerezsiz çalışır. Spam’i engellemek için form gönderdiğinizde IP adresinizin bir özetini kısa süre kullanırız.',
+    'title' => t('cerez.m4.baslik'),
+    'paras' => [th('cerez.m4.f1'), th('cerez.m4.f2', $vars), th('cerez.m4.f3', $vars)],
+    'sade'  => th('cerez.m4.sade'),
 ];
 
 $maddeler[] = [
-    'title' => 'Tarayıcı depolama alanı',
-    'paras' => $storagePages
-        ? [
-            'Sitenin bazı bölümleri (' . e($storageWhere) . ') yaptığınız seçimleri hatırlamak için tarayıcınızın yerel depolama alanını (localStorage ya da sessionStorage) kullanır. Bu bilgi yalnızca cihazınızda tutulur, sunucumuza gönderilmez.',
-            'Bu bilgileri tarayıcınızın “site verilerini temizle” seçeneğiyle dilediğiniz zaman silebilirsiniz; site bundan sonra da çalışmaya devam eder.',
-        ]
-        : [
-            'Site, tarayıcınızın yerel depolama alanına (localStorage, sessionStorage ya da IndexedDB) bilgi yazmaz.',
-        ],
-    'sade' => $storagePages
-        ? 'İşaretlediğiniz bir şeyi hatırlamak için tarayıcınıza not düşebiliriz. O not sizde kalır, bize gelmez.'
-        : 'Tarayıcınıza başka türlü bir not da bırakmıyoruz.',
+    'title' => t('cerez.m5.baslik'),
+    'paras' => $storagePages ? [th('cerez.m5.f1_var', $vars), th('cerez.m5.f2_var')] : [th('cerez.m5.f1_yok')],
+    'sade'  => th($storagePages ? 'cerez.m5.sade_var' : 'cerez.m5.sade_yok'),
 ];
 
 $maddeler[] = [
-    'title' => 'Dış kaynaklar ve bağlantılar',
+    'title' => t('cerez.m6.baslik'),
     'paras' => array_values(array_filter([
-        $external
-            ? null
-            : 'Sitedeki yazı tipleri, görseller ve kod kütüphaneleri kendi sunucumuzdan yüklenir. Sayfaları açtığınızda yazı tipi, harita ya da istatistik hizmeti sunan üçüncü taraf sunuculara istek gönderilmez.',
-        $embeds
-            ? 'Bazı sayfalarda üçüncü taraflara ait gömülü içerikler (örneğin harita) bulunabilir. Bu içerikler kendi çerez politikalarına göre çerez kullanabilir.'
-            : null,
-        'WhatsApp, Google Haritalar, ' . (feature('blog') ? 'makalelerdeki paylaşım düğmeleri (LinkedIn, X, WhatsApp), ' : '') . 'sosyal medya hesaplarımız ve duyurulardaki kurum sayfalarına verilen bağlantılara tıkladığınızda ilgili sitenin kendi çerez ve gizlilik politikaları geçerli olur. Bu bağlantılara tıklamadığınız sürece o sitelere hiçbir bilgi gitmez.',
+        $external ? null : th('cerez.m6.kendi'),
+        $embeds ? th('cerez.m6.gomulu') : null,
+        th(feature('blog') ? 'cerez.m6.baglanti_blog' : 'cerez.m6.baglanti'),
     ])),
-    'sade' => 'Biz kimseye “şu kişi siteye girdi” diye haber vermiyoruz. Ama WhatsApp ya da Instagram bağlantısına tıklarsanız artık onların sitesindesiniz.',
+    'sade'  => th('cerez.m6.sade'),
 ];
 
 $maddeler[] = [
-    'title' => 'Çerezleri yönetme',
-    'paras' => [
-        'Kullandığınız tarayıcının ayarlarından çerezleri ve site verilerini görüntüleyebilir, silebilir ya da engelleyebilirsiniz.' . ($usesCookies
-            ? ' Zorunlu çerezlerin engellenmesi sitenin bazı işlevlerinin beklendiği gibi çalışmamasına yol açabilir.'
-            : ' Sitemiz çerez kullanmadığı için bu ayarları değiştirmeniz sitenin çalışmasını etkilemez.'),
-    ],
-    'sade' => $usesCookies ? 'Tarayıcı ayarlarınız sizin elinizde.' : 'Tarayıcı ayarlarınız sizin elinizde. Neyi kapatırsanız kapatın, bu site çalışır.',
+    'title' => t('cerez.m7.baslik'),
+    'paras' => [th($usesCookies ? 'cerez.m7.f1_var' : 'cerez.m7.f1_yok')],
+    'sade'  => th($usesCookies ? 'cerez.m7.sade_var' : 'cerez.m7.sade_yok'),
 ];
 
 $maddeler[] = [
-    'title' => 'Değişiklikler ve yürürlük',
-    'paras' => [
-        'Sitede çerez ya da benzeri bir teknoloji kullanmaya başlarsak bu politikayı önceden güncelleriz ve gerekli olduğu durumlarda onayınızı isteriz.',
-        'Bu politika yayımlandığı tarihte yürürlüğe girer. Sorularınız için ' . $mail . ' adresine yazabilirsiniz.',
-    ],
-    'sade' => 'Bir şey değişirse önce bu sayfayı değiştiririz.',
+    'title' => t('cerez.m8.baslik'),
+    'paras' => [th('cerez.m8.f1'), th('cerez.m8.f2')],
+    'sade'  => th('cerez.m8.sade'),
 ];
 
 legal_doc([
-    'no'       => 'ARS-' . date('Y') . '/012',
-    'subject'  => 'Çerezler ve tarayıcı verileri',
-    'h1'       => 'Çerez politikası',
-    'updated'  => '2026-10-05',
-    'lead'     => 'Sitemizi gezerken tarayıcınızda neyin kaldığını ve neyin kalmadığını anlatan metin.',
+    'no'       => t('cerez.baslik.sayi'),
+    'subject'  => t('cerez.baslik.konu'),
+    'h1'       => t('cerez.baslik.baslik'),
+    'updated'  => t('cerez.baslik.guncelleme'),
+    'lead'     => t('cerez.baslik.giris'),
     'summary'  => $summary,
     'maddeler' => $maddeler,
-    'next'     => ['label' => 'KVKK metni', 'href' => url('kurumsal/kvkk-aydinlatma-metni'), 'no' => pg_no('kvkk')],
+    'next'     => ['label' => t('cerez.sonraki.ad'), 'href' => url('kurumsal/kvkk-aydinlatma-metni'), 'no' => pg_no('kvkk')],
 ]);

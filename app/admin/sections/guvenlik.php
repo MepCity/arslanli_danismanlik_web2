@@ -123,6 +123,7 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
         if (preg_match('#^content/([a-z_]+)\.json$#', $nm, $m)) {
             $raw = $read($i, $size);
             $val = $raw === null ? null : json_decode($raw, true);
+            if ($m[1] === 'texts' && is_array($val)) $val = texts_sanitize_all($val);   // sayfa metinleri: bilinmeyen anahtar ve kurallara uymayan metin yedekten alınmaz
             if (!is_array($val) || !content_put($m[1], $val)) { $skipped++; continue; }
             $nContent++;
         } elseif (preg_match('#^content/_history/([a-z_]+)/(\d{8}-\d{6}-[a-f0-9]{4})\.json$#', $nm, $m)) {

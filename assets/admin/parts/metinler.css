@@ -82,4 +82,31 @@
   .txf__head { flex-wrap: wrap; }
   .txg__t { font-size: 18px; }
 }
-.txf .rt__area { min-height: 160px; max-height: 60vh; }
+
+/* Grup listesindeki metin sayısı */
+.txn__c { flex: none; min-width: 24px; text-align: right; font-size: 12px; font-weight: 600; color: #8793a8; font-variant-numeric: tabular-nums; }
+.txn__item.is-on .txn__c { color: var(--navy); }
+
+/* Alan: tür ve sınır sayacı, biçim ve yer tutucu düğmeleri, hata */
+.txf__meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-top: -2px; }
+.txf__type { letter-spacing: .02em; }
+.txf__cnt { font-variant-numeric: tabular-nums; }
+.txf__cnt.is-over { color: #b5473b; font-weight: 650; }
+.txf__bar, .txf__vars { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.txf__barl { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 2px; }
+.txf__fmt, .txf__var { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 560; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
+.txf__fmt:hover, .txf__var:hover { background: var(--navy-soft); border-color: #c5d2e8; color: var(--navy); }
+.txf__fmt--red { color: #b5473b; }
+.txf__var { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.txf__var small { font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.txf__var.is-need { border-color: #c5d2e8; background: var(--navy-soft); }
+.txf__err { margin: 0; padding: 8px 12px; border-radius: var(--r); background: var(--coral-soft); color: #9a3a2f; font-size: 13px; line-height: 1.45; }
+.txf__err[hidden] { display: none; }
+.txf.has-error .inp { border-color: #d9695a; box-shadow: 0 0 0 3px rgba(217, 105, 90, .15); }
+.txf.has-error::before { opacity: 1; background: #d9695a; }
+
+@media (max-width: 560px) {
+  .txf__var small { display: none; }
+}
+
+.txn__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--coral); }

@@ -344,13 +344,13 @@ function cl_map_diff(array $b, array $a, array $defs, callable $name, array $wor
     return $items;
 }
 
-/** Sayfa metninin bulunduğu yer: "Ana sayfa › Başlık" */
+/** Sayfa metninin bulunduğu yer: "Hesap numaralarımız › Fişler › Fişte IBAN etiketi" (kayıt defterinde artık olmayan anahtar için anahtarın kendisi) */
 function cl_text_where(string $key): string
 {
     foreach (texts_registry() as $g) {
-        foreach ((array) ($g['sections'] ?? []) as $items) {
+        foreach ((array) ($g['sections'] ?? []) as $sec => $items) {
             if (isset($items[$key])) {
-                return (string) ($g['label'] ?? '') . ' › ' . (string) $items[$key][0];
+                return (string) ($g['label'] ?? '') . ' › ' . (string) preg_replace('/^\d+[a-z]?\.\s*/u', '', (string) $sec) . ' › ' . (string) $items[$key][0];
             }
         }
     }
@@ -464,8 +464,8 @@ function changelog_diff(string $key, $before, $after): array
                 $x = isset($b[$k]) && trim((string) $b[$k]) !== '' ? (string) $b[$k] : $def;
                 $y = isset($a[$k]) && trim((string) $a[$k]) !== '' ? (string) $a[$k] : $def;
                 if ($x !== $y) {
-                    $html = ($flat[$k][2] ?? 'line') === 'html';
-                    $items[] = ['title' => 'Sayfa metni değişti: ' . cl_text_where((string) $k), 'rows' => [['Metin', $html ? cl_plain($x) : $x, $html ? cl_plain($y) : $y]]];
+                    // Metinler biçim işaretleriyle ([kalın]…) ve yer tutucularla ({firma}) olduğu gibi gösterilir: sahibi yazdığını görür
+                    $items[] = ['title' => 'Sayfa metni değişti: ' . cl_text_where((string) $k), 'rows' => [['Metin', $x, $y]]];
                 }
             }
             return $items;

@@ -23,6 +23,14 @@ if (!reduced && window.Lenis && gsap) {
   gsap.ticker.lagSmoothing(0);
 }
 
+/* ---------- Metinler: kayıt defterinden gelir (layout.php #js-metin; panelde Sayfa metinleri) ----------
+ * Betikte görünür hiçbir cümle yazılmaz: T('grup.anahtar') ya da T('grup.anahtar', { n: 3 }) ({n} yer tutucusunu doldurur).
+ * Metnin kayıt defterinde 'js' => true işaretli olması gerekir. Sayfa betikleri aynı işlevi ctx.t olarak alır. */
+
+let metinler = {};
+try { metinler = JSON.parse(document.getElementById('js-metin')?.textContent || '{}'); } catch { /* metinler okunamadı: boş döner */ }
+export const T = (key, vars = {}) => String(metinler[key] ?? '').replace(/\{([a-z][a-z0-9_]*)(?:\|[^{}]*)?\}/g, (m, n) => (n in vars ? String(vars[n]) : ''));
+
 /* ---------- Bildirim ---------- */
 
 const toastEl = document.querySelector('[data-toast]');
@@ -205,6 +213,21 @@ const formProof = (token) => {
   return '';
 };
 
+// Tarayıcının kendi (tarayıcı diline bağlı) uyarısı yerine sitenin metinleri kullanılır; tanınmayan durumda tarayıcı uyarısına dönülür
+const fieldMessage = (el) => {
+  const v = el.validity;
+  if (v.valueMissing) {
+    if (el.type === 'checkbox') return T('formlar.dogrulama.onay');
+    if (el.type === 'file') return T('formlar.dogrulama.dosya');
+    return T(el.tagName === 'SELECT' ? 'formlar.dogrulama.secim' : 'formlar.dogrulama.zorunlu');
+  }
+  if (v.typeMismatch && el.type === 'email') return T('formlar.dogrulama.eposta');
+  if (v.patternMismatch && el.type === 'tel') return T('formlar.dogrulama.telefon');
+  if (v.typeMismatch || v.patternMismatch) return T('formlar.dogrulama.bicim');
+  if (v.tooLong) return T('formlar.dogrulama.uzun');
+  return el.validationMessage;
+};
+
 document.querySelectorAll('form[data-form]').forEach((form) => {
   const status = form.querySelector('.form-status');
 
@@ -244,20 +267,20 @@ document.querySelectorAll('form[data-form]').forEach((form) => {
         const f = el.closest('.field');
         f?.classList.add('has-error');
         const err = f?.querySelector('.field__err');
-        if (err) err.textContent = el.validationMessage;
+        if (err) err.textContent = fieldMessage(el);
       });
       bad[0]?.focus();
-      if (status) { status.textContent = 'Lütfen işaretli alanları kontrol edin.'; status.className = 'form-status is-error'; }
+      if (status) { status.textContent = T('formlar.durum.kontrol'); status.className = 'form-status is-error'; }
       return;
     }
     prove(); // ziyaretçi forma hiç dokunmadan gönderdiyse (ör. otomatik doldurma) kanıt yine de eklenir
     form.dataset.busy = '1';
     form.classList.add('is-busy');
     let hold = false; // yeni belirteç verildiyse form birkaç saniye kapalı kalır
-    if (status) { status.textContent = 'Gönderiliyor…'; status.className = 'form-status'; }
+    if (status) { status.textContent = T('formlar.durum.gonderiliyor'); status.className = 'form-status'; }
     try {
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
-      const data = await res.json().catch(() => ({ ok: false, message: 'Beklenmeyen bir yanıt alındı.' }));
+      const data = await res.json().catch(() => ({ ok: false, message: T('formlar.durum.beklenmeyen') }));
       // Belirteç tek kullanımlıktır: başarılı yanıtta ve süresi dolmuş / kullanılmış belirteç yanıtında (419) sunucu yenisini verir.
       // 419'da form sıfırlanmaz, yazılanlar durur; ziyaretçi sayfayı yenilemeden yeniden gönderir. Sunucu iki saniyeden yeni belirteci
       // kabul etmediği, beş saniyeden yenisini de "çok hızlı" saydığı için form o süre boyunca yeni gönderim almaz.
@@ -269,7 +292,7 @@ document.querySelectorAll('form[data-form]').forEach((form) => {
         if (status) { status.textContent = data.message; status.className = 'form-status is-ok'; }
         form.dispatchEvent(new CustomEvent('form:ok', { detail: data }));
       } else {
-        if (status) { status.textContent = data.message || 'Gönderilemedi.'; status.className = 'form-status is-error'; }
+        if (status) { status.textContent = data.message || T('formlar.durum.gonderilemedi'); status.className = 'form-status is-error'; }
         Object.entries(data.errors || {}).forEach(([name, msg]) => {
           const el = form.elements[name] || form.elements[name + '[]'];
           const f = (el?.length && !el.tagName ? el[0] : el)?.closest('.field');
@@ -280,7 +303,7 @@ document.querySelectorAll('form[data-form]').forEach((form) => {
         form.dispatchEvent(new CustomEvent('form:error', { detail: data }));
       }
     } catch {
-      if (status) { status.textContent = 'Bağlantı kurulamadı. Lütfen telefonla ulaşın.'; status.className = 'form-status is-error'; }
+      if (status) { status.textContent = T('formlar.durum.baglanti'); status.className = 'form-status is-error'; }
     } finally {
       form.classList.remove('is-busy');
       const free = () => delete form.dataset.busy;
@@ -291,7 +314,7 @@ document.querySelectorAll('form[data-form]').forEach((form) => {
 
 // JavaScript olmadan gönderilen formdan dönüş
 const durum = new URLSearchParams(location.search).get('durum');
-if (durum) toast(durum === 'tamam' ? 'Mesajınız bize ulaştı. Teşekkürler.' : 'Gönderilemedi. Lütfen telefonla ulaşın.');
+if (durum) toast(durum === 'tamam' ? T('formlar.donus.tamam') : T('formlar.donus.hata'));
 
 /* ---------- Kopyala ---------- */
 
@@ -301,7 +324,7 @@ document.addEventListener('click', async (e) => {
   const text = btn.dataset.copy;
   try {
     await navigator.clipboard.writeText(text);
-    toast(btn.dataset.copyMsg || 'Kopyalandı');
+    toast(btn.dataset.copyMsg || T('formlar.kopya.tamam'));
     btn.classList.add('is-copied');
     setTimeout(() => btn.classList.remove('is-copied'), 1800);
   } catch {
@@ -324,7 +347,7 @@ document.addEventListener('click', async (e) => {
 
 /* ---------- Sayfa betiği ---------- */
 
-const ctx = { gsap, ScrollTrigger, lenis, reduced, fine, toast };
+const ctx = { gsap, ScrollTrigger, lenis, reduced, fine, toast, t: T };
 window.__ctx = ctx;
 
 const pageScript = document.querySelector('script[data-page-script]')?.dataset.pageScript;

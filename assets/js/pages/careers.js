@@ -9,7 +9,7 @@
 const MAX = 5 * 1024 * 1024;
 const TYPES = ['pdf', 'docx'];
 
-export default function init({ gsap, lenis, reduced }) {
+export default function init({ gsap, lenis, reduced, t }) {
   const form = document.querySelector('[data-kd]');
   if (!form) return;
 
@@ -17,8 +17,8 @@ export default function init({ gsap, lenis, reduced }) {
   form.noValidate = true;
 
   who(form);
-  messages(form);
-  const cv = attach(form);
+  messages(form, t);
+  const cv = attach(form, t);
 
   form.addEventListener('form:error', (e) => {
     // Sunucu bir alan için hata döndürdüyse dosya seçimi geçersiz sayılmış olabilir
@@ -50,17 +50,17 @@ function who(form) {
 /* ---------- Türkçe doğrulama mesajları ---------- */
 
 const MSG = {
-  ad: { valueMissing: 'Adınızı yazın.' },
-  soyad: { valueMissing: 'Soyadınızı yazın.' },
-  email: { valueMissing: 'E-posta adresinizi yazın.', typeMismatch: 'Geçerli bir e-posta adresi yazın.' },
-  telefon: { valueMissing: 'Telefon numaranızı yazın.', patternMismatch: 'Telefonu 0532 000 00 00 gibi yazın.' },
-  sehir: { valueMissing: 'Şehrinizi seçin.' },
-  linkedin: { typeMismatch: 'Adres https:// ile başlamalı.' },
-  kvkk: { valueMissing: 'Devam etmek için Aydınlatma Metni onayı gerekli.' },
-  cv: { valueMissing: 'Özgeçmişinizi ekleyin.' },
+  ad: { valueMissing: 'kariyerform.dogrulama.ad' },
+  soyad: { valueMissing: 'kariyerform.dogrulama.soyad' },
+  email: { valueMissing: 'kariyerform.dogrulama.eposta_bos', typeMismatch: 'kariyerform.dogrulama.eposta_hatali' },
+  telefon: { valueMissing: 'kariyerform.dogrulama.telefon_bos', patternMismatch: 'kariyerform.dogrulama.telefon_hatali' },
+  sehir: { valueMissing: 'kariyerform.dogrulama.sehir' },
+  linkedin: { typeMismatch: 'kariyerform.dogrulama.linkedin' },
+  kvkk: { valueMissing: 'kariyerform.dogrulama.kvkk' },
+  cv: { valueMissing: 'kariyerform.dogrulama.cv' },
 };
 
-function messages(form) {
+function messages(form, t) {
   form.querySelectorAll('input, select, textarea').forEach((el) => {
     const table = MSG[el.name];
     if (!table) return;
@@ -70,7 +70,7 @@ function messages(form) {
       el.setCustomValidity('');
       const v = el.validity;
       const key = Object.keys(table).find((k) => v[k]);
-      if (key) el.setCustomValidity(table[key]);
+      if (key) el.setCustomValidity(t(table[key]));
     });
     const clear = () => {
       if (el.dataset.custom) return;
@@ -90,7 +90,7 @@ function messages(form) {
 
 /* ---------- Özgeçmiş ---------- */
 
-function attach(form) {
+function attach(form, t) {
   const root = form.querySelector('[data-attach]');
   const drop = root.querySelector('[data-drop]');
   const input = root.querySelector('.drop__input');
@@ -119,12 +119,12 @@ function attach(form) {
     const ext = (f.name.split('.').pop() || '').toLowerCase();
     if (!TYPES.includes(ext)) {
       reset();
-      showError('Yalnızca PDF ya da DOCX dosyası yükleyebilirsiniz.');
+      showError(t('kariyerform.dosya_ileti.tur'));
       return;
     }
     if (f.size > MAX) {
       reset();
-      showError('Dosya en fazla 5 MB olabilir. Seçtiğiniz dosya ' + size(f.size) + '.');
+      showError(t('kariyerform.dosya_ileti.boyut', { boyut: size(f.size) }));
       return;
     }
     nameEl.textContent = f.name;
@@ -151,7 +151,7 @@ function attach(form) {
       input.files = dt.files;
       check();
     } catch {
-      showError('Dosya sürüklenemedi. Lütfen tıklayarak seçin.');
+      showError(t('kariyerform.dosya_ileti.surukle'));
     }
   });
 

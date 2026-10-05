@@ -5,7 +5,7 @@
  * - Kartvizit tıklayınca (ya da klavye odağı arka yüze geçince) döner.
  */
 
-export default function init({ gsap, lenis, reduced }) {
+export default function init({ gsap, lenis, reduced, t }) {
   const form = document.querySelector('[data-letter]');
   if (!form) return;
 
@@ -18,7 +18,7 @@ export default function init({ gsap, lenis, reduced }) {
   });
 
   form.addEventListener('form:ok', (e) => {
-    const message = e.detail?.message || 'Dilekçeniz bize ulaştı.';
+    const message = e.detail?.message || t('iletisim.tamam.mesaj');
     form.inert = true;
     form.classList.add('is-received', 'is-stamped');
     const post = document.querySelector('[data-post]');

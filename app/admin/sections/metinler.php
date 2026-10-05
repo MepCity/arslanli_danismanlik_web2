@@ -1,8 +1,9 @@
 <?php
 /**
- * Sayfa metinleri: sitedeki başlık, paragraf ve düğme yazılarının düzenlenmesi.
+ * Sayfa metinleri: sitedeki başlık, paragraf, düğme ve uyarı yazılarının düzenlenmesi.
  * Kayıt: content 'texts' (yalnızca değiştirilen metinler: anahtar => metin).
- * Kayıt listesi: app/data/texts/*.php (texts_registry / texts_flat).
+ * Kayıt listesi: app/data/texts/*.php (texts_registry / texts_flat); türler, biçim işaretleri ve yer tutucular: app/texts.php.
+ * Doğrulama ve kaydetme texts_save() içindedir (MCP de aynısını kullanır); bu dosya yalnızca ekranı çizer.
  */
 
 $registry = texts_registry();
@@ -25,7 +26,7 @@ function txt_changed_map(array $registry, array $over): array
         $n = 0;
         foreach ($g['sections'] ?? [] as $items) {
             foreach ($items as $k => $it) {
-                if (isset($over[$k]) && trim((string) $over[$k]) !== '' && (string) $over[$k] !== (string) $it[1]) $n++;
+                if (isset($over[$k]) && is_string($over[$k]) && trim($over[$k]) !== '' && $over[$k] !== (string) $it[1]) $n++;
             }
         }
         $out[$gid] = $n;
@@ -33,27 +34,52 @@ function txt_changed_map(array $registry, array $over): array
     return $out;
 }
 
-function txt_field(string $key, array $item, string $current, string $context = ''): string
+/** Tür adı (alanın yanında küçük yazı). */
+function txt_type_name(string $type): string
+{
+    return ['line' => 'Tek satır', 'text' => 'Paragraf', 'lines' => 'Satır sonlu', 'rich' => 'Biçimli'][$type] ?? $type;
+}
+
+/** Düzenleme alanı: etiket, kutu, yer tutucu düğmeleri, sınır sayacı, hata ve özgün metin. $error: son kayıtta bu metin için verilen ret nedeni. */
+function txt_field(string $key, array $item, string $current, string $context = '', ?string $error = null): string
 {
     [$label, $default, $type] = [$item[0], (string) $item[1], $item[2] ?? 'line'];
     $help    = $item[3] ?? '';
+    $opts    = texts_opts($key);
     $name    = 't[' . $key . ']';
     $id      = ui_id($name);
     $changed = $current !== $default;
-    $len     = mb_strlen($current);
+    $len     = mb_strlen(text_strip_marks($current));
+    $o       = ['id' => $id, 'help' => ''];
 
-    if ($type === 'html') {
-        $ctl = ui_rich($name, '', $current);
-    } elseif ($type === 'text') {
-        $rows = max(2, min(9, (int) ceil($len / 68) + 1));
-        $ctl  = ui_textarea($name, '', $current, ['rows' => $rows]);
+    if ($type === 'line') {
+        $ctl = ui_text($name, '', $current, $o);
     } else {
-        $ctl = ui_text($name, '', $current);
+        $rows = $type === 'text' ? max(2, min(9, (int) ceil($len / 68) + 1)) : max(2, min(7, substr_count($current, "\n") + 2));
+        $ctl  = ui_textarea($name, '', $current, $o + ['rows' => $rows]);
     }
 
-    $orig = $type === 'html' ? '<div class="prose-admin">' . $default . '</div>' : '<p>' . nl2br(e($default)) . '</p>';
+    $tools = '';
+    if ($type === 'rich') {
+        $tools .= '<div class="txf__bar" role="group" aria-label="Biçim"><span class="txf__barl">Biçim</span>'
+            . '<button type="button" class="txf__fmt" data-fmt="kalın"><span><b>K</b>alın</span></button>'
+            . '<button type="button" class="txf__fmt" data-fmt="eğik"><span><em>E</em>ğik</span></button>'
+            . '<button type="button" class="txf__fmt" data-fmt="çizgi">Alt çizgi</button>'
+            . '<button type="button" class="txf__fmt txf__fmt--red" data-fmt="kırmızı-çizgi">Kırmızı çizgi</button>'
+            . '<button type="button" class="txf__fmt" data-fmt="halka">Halka</button></div>';
+    }
+    $chips = '';
+    foreach ($opts['vars'] as $v => $desc) {
+        $need = in_array($v, $opts['need'], true);
+        $chips .= '<button type="button" class="txf__var' . ($need ? ' is-need' : '') . '" data-ins="{' . e($v) . '}" title="' . e(($desc !== '' ? $desc : $v) . ($need ? ' (silinmemeli)' : '')) . '">{' . e($v) . '}'
+            . ($desc !== '' ? '<small>' . e($desc) . '</small>' : '') . '</button>';
+    }
+    if ($chips !== '') $tools .= '<div class="txf__vars"><span class="txf__barl">Yer tutucular</span>' . $chips . '</div>';
 
-    return '<div class="txf' . ($changed ? ' is-changed' : '') . '" data-txf data-type="' . e($type) . '" data-default="' . e($default) . '">'
+    $meta = '<p class="txf__meta"><span class="txf__type">' . e(txt_type_name($type)) . '</span>'
+        . '<span class="txf__cnt" data-cnt>' . $len . ' / ' . $opts['max'] . '</span></p>';
+
+    return '<div class="txf' . ($changed ? ' is-changed' : '') . ($error !== null ? ' has-error' : '') . '" data-txf data-type="' . e($type) . '" data-max="' . (int) $opts['max'] . '" data-lines="' . (int) $opts['lines'] . '" data-default="' . e($default) . '">'
         . '<input type="hidden" name="keys[]" value="' . e($key) . '">'
         . '<div class="txf__head">'
         .   '<label class="txf__label" for="' . e($id) . '">' . e($label) . '</label>'
@@ -61,9 +87,12 @@ function txt_field(string $key, array $item, string $current, string $context = 
         .   '<button class="txf__reset" type="button" data-txf-reset>' . ui_icon('arrow-counter-clockwise') . 'Özgün metne dön</button></span>'
         . '</div>'
         . ($context !== '' ? '<p class="txf__ctx">' . e($context) . '</p>' : '')
+        . $tools
         . $ctl
+        . $meta
+        . '<p class="txf__err" role="alert"' . ($error === null ? ' hidden' : '') . '>' . e((string) $error) . '</p>'
         . ($help !== '' ? '<p class="txf__help">' . e($help) . '</p>' : '')
-        . '<details class="txf__orig"><summary>Özgün metin</summary><div class="txf__origtext">' . $orig . '</div></details>'
+        . '<details class="txf__orig"><summary>Özgün metin</summary><div class="txf__origtext"><p>' . nl2br(e($default)) . '</p></div></details>'
         . '</div>';
 }
 
@@ -84,61 +113,49 @@ if (!$search && ($gid === '' || !isset($registry[$gid]))) {
 }
 
 /* ---------- Kaydet ---------- */
+$txErr = [];   // anahtar => ret nedeni (kayıt reddedilirse alanlar yazılanlarla yeniden çizilir)
+$txVal = [];
 if ($method === 'POST') {
-    $posted = $_POST['t'] ?? [];
-    $keys   = $_POST['keys'] ?? [];
-    $posted = is_array($posted) ? $posted : [];
-    $keys   = is_array($keys) ? $keys : [];
+    $posted = is_array($_POST['t'] ?? null) ? $_POST['t'] : [];
+    $keys   = is_array($_POST['keys'] ?? null) ? $_POST['keys'] : [];
 
     // Bu ekranın içerebileceği anahtarlar
     $allowed = [];
     if ($search) {
-        $allowed = $flat;
+        $allowed = array_keys($flat);
     } else {
-        foreach ($registry[$gid]['sections'] ?? [] as $items) foreach ($items as $k => $it) $allowed[$k] = $it;
+        foreach ($registry[$gid]['sections'] ?? [] as $items) foreach ($items as $k => $it) $allowed[] = $k;
     }
 
-    $new = $over;
+    $values = [];
     foreach ($keys as $k) {
-        if (!is_string($k) || !isset($allowed[$k])) continue;
-        $item = $allowed[$k];
-        $v    = $posted[$k] ?? '';
-        $v    = is_string($v) ? str_replace(["\r\n", "\r"], "\n", trim($v)) : '';
-        $v    = mb_substr($v, 0, 20000);
-        if (($item[2] ?? 'line') === 'html') {
-            $v = trim(sanitize_html($v));
-            // Editör özgün metni yeniden biçimlendirse bile içerik aynıysa değişiklik sayılmaz.
-            if (trim(strip_tags($v)) === '' || $v === trim(sanitize_html((string) $item[1]))) $v = '';
-        } elseif (($item[2] ?? 'line') === 'line') {
-            $v = trim((string) preg_replace('/\s*\n\s*/', ' ', $v));
-        }
-        if ($v === '' || $v === (string) $item[1]) {
-            unset($new[$k]);
-        } else {
-            $new[$k] = $v;
-        }
+        if (!is_string($k)) continue;
+        $v = $posted[$k] ?? '';
+        $values[$k] = is_string($v) ? $v : null;
     }
-    ksort($new);
-    $oldSorted = $over;
-    ksort($oldSorted);
-    if ($new === $oldSorted) {
-        adm_flash('Değişiklik yok.');
-    } elseif (content_put('texts', $new)) {
-        adm_flash('Metinler kaydedildi.');
-    } else {
-        adm_flash('Kaydedilemedi: storage klasörü yazılabilir mi?', 'err');
+    $res = texts_save($values, $allowed);
+    if ($res['ok']) {
+        adm_flash($res['changed'] ? count($res['changed']) . ' metin kaydedildi ve sitede yayınlandı.' : 'Değişiklik yok.');
+        adm_go($search ? 'metinler?ara=' . rawurlencode($query) : 'metinler/' . $gid);
     }
-    adm_go($search ? 'metinler?ara=' . rawurlencode($query) : 'metinler/' . $gid);
+    // Reddedildi: hiçbir şey kaydedilmedi; yazılanlar yerinde kalır, nedenler alanların altında görünür
+    $txErr = $res['errors'];
+    foreach ($values as $k => $v) if (is_string($v)) $txVal[$k] = $v;
+    $first = reset($txErr);
+    $n = count($txErr);
+    adm_flash('Kaydedilemedi: ' . $n . ' metinde sorun var; hiçbir değişiklik kaydedilmedi. ' . ($n === 1 ? (string) $first : 'Sorunlu alanlar işaretlendi.'), 'err');
 }
 
 /* ---------- Sol liste ---------- */
+$counts = [];
+foreach ($registry as $id => $g) { $counts[$id] = 0; foreach ($g['sections'] ?? [] as $items) $counts[$id] += count($items); }
 $nav = '<nav class="txn" aria-label="Sayfalar" data-txn>';
 foreach ($registry as $id => $g) {
     $n   = $changedBy[$id] ?? 0;
     $on  = !$search && $id === $gid;
     $nav .= '<a class="txn__item' . ($on ? ' is-on' : '') . '" href="' . adm_url('metinler/' . $id) . '"' . ($on ? ' aria-current="page"' : '') . '>'
         . ui_icon($g['icon'] ?? 'text-aa') . '<span class="txn__name">' . e($g['label']) . '</span>'
-        . ($n ? '<em class="txn__n">' . $n . ' değişti</em>' : '') . '</a>';
+        . ($n ? '<i class="txn__dot" role="img" title="' . $n . ' metin değiştirilmiş" aria-label="' . $n . ' metin değiştirilmiş"></i>' : '') . '<span class="txn__c" title="Bu sayfadaki metin sayısı">' . $counts[$id] . '</span></a>';
 }
 $nav .= '</nav>';
 
@@ -150,8 +167,7 @@ $searchBox = '<form class="txs" method="get" action="' . adm_url('metinler') . '
     . ($search ? '<a class="btn btn--ghost" href="' . adm_url('metinler/' . ($gid !== '' ? $gid : array_key_first($registry))) . '">Aramayı temizle</a>' : '')
     . '</form>';
 
-$seoDesc = 'Google sonuçlarında ve tarayıcı sekmesinde görünür; sayfanın kendisinde görünmez.';
-$note = '<p class="txt__note">' . ui_icon('sparkle') . '<span>Kaydettiğiniz metin sitede hemen yayınlanır. Bir kutuyu boş bırakırsanız özgün metin geri gelir. Önceki sürümleri Geçmiş bölümünden geri alabilirsiniz.</span></p>';
+$note = '<p class="txt__note">' . ui_icon('sparkle') . '<span>Kaydettiğiniz metin sitede hemen yayınlanır. Bir kutuyu boş bırakırsanız özgün metin geri gelir. Önceki sürümleri Değişiklik geçmişi bölümünden geri alabilirsiniz. Köşeli işaretler ([kalın]…[/kalın]) ve {süslü} yer tutucular yalnızca altında belirtilen yerlerde yazılabilir; HTML yazılamaz.</span></p>';
 
 $actions = '';
 $formHtml = '';
@@ -169,14 +185,14 @@ if ($search) {
             $cnt  = 0;
             foreach ($g['sections'] ?? [] as $secName => $items) {
                 foreach ($items as $k => $it) {
-                    $cur = isset($over[$k]) && trim((string) $over[$k]) !== '' ? (string) $over[$k] : (string) $it[1];
-                    $hay = txt_fold($it[0] . ' ' . $cur . ' ' . $it[1]);
+                    $cur = isset($over[$k]) && is_string($over[$k]) && trim($over[$k]) !== '' ? $over[$k] : (string) $it[1];
+                    $hay = txt_fold($k . ' ' . $it[0] . ' ' . text_strip_marks($cur) . ' ' . text_strip_marks((string) $it[1]));
                     if (strpos($hay, $q) === false) continue;
                     $keysAll++;
                     if ($shown >= $limit) continue;
                     $shown++;
                     $cnt++;
-                    $body .= txt_field($k, $it, $cur, preg_replace('/^\d+\.\s*/u', '', $secName));
+                    $body .= txt_field($k, $it, $txVal[$k] ?? $cur, preg_replace('/^\d+\.\s*/u', '', $secName), $txErr[$k] ?? null);
                 }
             }
             if ($body !== '') {
@@ -209,11 +225,11 @@ if ($search) {
     foreach ($g['sections'] ?? [] as $secName => $items) {
         $body = '';
         foreach ($items as $k => $it) {
-            $cur = isset($over[$k]) && trim((string) $over[$k]) !== '' ? (string) $over[$k] : (string) $it[1];
-            $body .= txt_field($k, $it, $cur);
+            $cur = isset($over[$k]) && is_string($over[$k]) && trim($over[$k]) !== '' ? $over[$k] : (string) $it[1];
+            $body .= txt_field($k, $it, $txVal[$k] ?? $cur, '', $txErr[$k] ?? null);
             $total++;
         }
-        $cards .= ui_card($secName, $body, ['class' => 'txc', 'desc' => $secName === 'Arama motorları' ? e($seoDesc) : '']);
+        $cards .= ui_card($secName, $body, ['class' => 'txc']);
     }
     $n = $changedBy[$gid] ?? 0;
     $head = '<header class="txg"><span class="txg__ic">' . ui_icon($g['icon'] ?? 'text-aa') . '</span><div><h2 class="txg__t">' . e($g['label']) . '</h2>'
@@ -233,26 +249,42 @@ $html = $searchBox . $note
   var nav = d.querySelector("[data-txn]");
   if (nav) { var on = nav.querySelector(".is-on"); if (on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, on.offsetLeft - 16); }
   var norm = function (s) { return String(s).replace(/\r\n?/g, "\n").trim(); };
-  var area = function (box) { return box.querySelector("[data-rt-area]") || box.querySelector("textarea, input.inp"); };
-  var current = function (box) {
-    var a = box.querySelector("[data-rt-area]");
-    if (a) return a.innerHTML.replace(/<p><br><\/p>/g, "");
-    var f = box.querySelector("textarea, input.inp");
-    return f ? f.value : "";
-  };
-  var same = function (a, b) { return norm(a).replace(/>\s+</g, "><") === norm(b).replace(/>\s+</g, "><"); };
+  var field = function (box) { return box.querySelector("textarea, input.inp"); };
+  var plainLen = function (s) { return s.replace(/\[\/?(?:kalın|eğik|çizgi|kırmızı-çizgi|halka|kırmızı-halka)\]/g, "").length; };
   d.querySelectorAll("[data-txf]").forEach(function (box) {
     var def = box.getAttribute("data-default");
-    var upd = function () { box.classList.toggle("is-changed", !same(current(box), def) && norm(current(box)) !== ""); };
-    box.addEventListener("input", upd);
+    var f = field(box);
+    var cnt = box.querySelector("[data-cnt]");
+    var max = parseInt(box.getAttribute("data-max"), 10) || 0;
+    var upd = function () {
+      var v = f.value;
+      box.classList.toggle("is-changed", norm(v) !== "" && norm(v) !== norm(def));
+      if (cnt) { var n = plainLen(v); cnt.textContent = n + " / " + max; cnt.classList.toggle("is-over", max > 0 && n > max); }
+    };
+    f.addEventListener("input", function () { box.classList.remove("has-error"); var e = box.querySelector(".txf__err"); if (e) e.hidden = true; upd(); });
     box.querySelector("[data-txf-reset]").addEventListener("click", function () {
-      var a = box.querySelector("[data-rt-area]");
-      if (a) { a.innerHTML = def; a.dispatchEvent(new Event("input", { bubbles: true })); }
-      else { var f = box.querySelector("textarea, input.inp"); f.value = def; f.dispatchEvent(new Event("input", { bubbles: true })); f.focus(); }
-      box.classList.remove("is-changed");
-      box.classList.add("is-reset");
+      f.value = def; f.dispatchEvent(new Event("input", { bubbles: true })); f.focus();
+      box.classList.remove("is-changed"); box.classList.add("is-reset");
     });
+    var put = function (before, after, replace) {
+      var a = f.selectionStart, b = f.selectionEnd, v = f.value;
+      var mid = replace ? "" : v.slice(a, b);
+      f.value = v.slice(0, a) + before + mid + after + v.slice(b);
+      var c = a + before.length;
+      f.focus();
+      if (replace) f.setSelectionRange(c, c); else f.setSelectionRange(c, c + mid.length);
+      f.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    box.querySelectorAll("[data-fmt]").forEach(function (btn) {
+      btn.addEventListener("click", function () { var t = btn.getAttribute("data-fmt"); put("[" + t + "]", "[/" + t + "]"); });
+    });
+    box.querySelectorAll("[data-ins]").forEach(function (btn) {
+      btn.addEventListener("click", function () { put(btn.getAttribute("data-ins"), "", true); });
+    });
+    upd();
   });
+  var bad = d.querySelector(".txf.has-error");
+  if (bad) bad.scrollIntoView({ block: "center" });
 })();
 </script>';
 

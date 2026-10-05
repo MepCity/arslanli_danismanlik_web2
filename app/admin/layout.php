@@ -16,9 +16,7 @@ if (!function_exists('adm_pending_sections')) {
     function adm_pending_sections(): array
     {
         return [
-            'metinler'    => '2B',   // Sayfa metinleri (kayıt defteri)
             'seo'         => '3A',   // SEO ve yapay zekâ
-            'mcp'         => '3B',   // Yapay zekâ erişimi
         ];
     }
 }

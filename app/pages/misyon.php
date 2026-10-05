@@ -2,8 +2,8 @@
 $m = site('mission');
 page([
     'id'          => 'mission',
-    'title'       => 'Misyonumuz',
-    'description' => 'Misyonumuz: ' . $m['statement'] . ' Bunu her dosyada yaptığımız beş işle yerine getiriyoruz.',
+    'title'       => pg_name('misyon'),
+    'description' => t('misyon.seo.description', ['misyon' => $m['statement']]),
     'folio'       => pg_folio('misyon'),
 ]);
 
@@ -25,19 +25,20 @@ $ticks = [
 <section class="ms pagehead" aria-labelledby="ms-title">
   <div class="wrap ms__in">
     <header class="ms__head">
-      <p class="docmeta"><span>Sayı: <b>ARS-<?= date('Y') ?>/008</b></span><span>Konu: <b>Misyonumuz</b></span></p>
-      <h1 class="display ms__h" id="ms-title">Misyonumuz</h1>
-      <p class="lead ms__lead">Misyonumuzu bir iş listesi olarak yazdık. Her dosyada bu beş işi yaparız; biri eksik kalırsa dosya bitmiş sayılmaz.</p>
+      <p class="docmeta"><span><?= th('misyon.hero.sayi') ?></span><span><?= th('misyon.hero.konu') ?></span></p>
+      <h1 class="display ms__h" id="ms-title"><?= e(t('misyon.hero.baslik')) ?></h1>
+      <p class="lead ms__lead"><?= e(t('misyon.hero.giris')) ?></p>
     </header>
 
     <div class="defter" data-defter>
       <div class="defter__spiral" aria-hidden="true"><?php for ($i = 0; $i < 22; $i++): ?><i></i><?php endfor; ?></div>
       <div class="defter__page">
-        <p class="defter__meta"><span>Tarih: <em><?= today_official() ?></em></span><span>Konu: <em>Misyon</em></span></p>
+        <p class="defter__meta"><span><?= th('misyon.defter.tarih') ?></span><span><?= th('misyon.defter.konu') ?></span></p>
 
-        <p class="defter__statement"><?= str_replace('kâğıt işine boğulmadan', annot('kâğıt işine boğulmadan', 'under', 'red'), e($m['statement'])) ?></p>
+        <?php $vurgu = e(t('misyon.defter.vurgu')); ?>
+        <p class="defter__statement"><?= $vurgu !== '' ? str_replace($vurgu, annot($vurgu, 'under', 'red'), e($m['statement'])) : e($m['statement']) ?></p>
 
-        <h2 class="defter__h">Yapılacaklar</h2>
+        <h2 class="defter__h"><?= e(t('misyon.defter.baslik')) ?></h2>
         <ol class="todo" role="list">
           <?php foreach ($m['items'] as $i => $item): ?>
             <li class="todo__i" data-on style="--delay:<?= 0.15 + ($i % 2) * 0.05 ?>s">
@@ -47,12 +48,12 @@ $ticks = [
                 <svg class="todo__tick" viewBox="0 -4 34 30"><path pathLength="1" d="<?= $ticks[$i % 4] ?>"/></svg>
               </span>
               <span class="todo__t"><?= e($item) ?></span>
-              <span class="sr-only">(her dosyada yapılır)</span>
+              <span class="sr-only"><?= e(t('misyon.defter.okuyucu')) ?></span>
             </li>
           <?php endforeach; ?>
         </ol>
 
-        <p class="defter__sign"><em><?= e(cfg('name')) ?></em><span>İstanbul</span></p>
+        <p class="defter__sign"><em><?= e(cfg('name')) ?></em><span><?= e(t('misyon.defter.imza')) ?></span></p>
       </div>
     </div>
   </div>
@@ -60,8 +61,8 @@ $ticks = [
 
 <div class="wrap">
   <a class="next" href="<?= url('kurumsal/vizyonumuz') ?>">
-    <span class="next__k">Sonraki evrak · <?= pg_no('vizyon') ?></span>
-    <span class="next__t"><span>Vizyonumuz</span></span>
+    <span class="next__k"><?= e(t('misyon.sonraki.etiket', ['no' => pg_no('vizyon')])) ?></span>
+    <span class="next__t"><span><?= e(pg_name('vizyon')) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>

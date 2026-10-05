@@ -10,7 +10,7 @@ $types  = ann_types();
 $today  = date('Y-m-d');
 $events = $spot['events'];
 $target = ann_target($spot);
-$untilLbl = $target ? ['son' => 'Son başvuruya kalan', 'baslangic' => 'Başvuruların açılmasına', 'sonuc' => 'Sonuçların açıklanmasına', 'diger' => 'Bir sonraki tarihe'][$target['type']] : '';
+$untilLbl = $target ? t('acilis.sayac.' . (in_array($target['type'], ['son', 'baslangic', 'sonuc'], true) ? $target['type'] : 'diger')) : '';
 
 // Tarih cetveli: ilk ve son tarih arasında orantılı konum (bayraklar). Etiketler cetvelin altında eşit sütunlarda durur,
 // bu yüzden tarihler ne kadar yakın olursa olsun üst üste binmez; spotlight.js bayraklardan etiketlere ince iplik çeker.
@@ -28,11 +28,11 @@ $key = substr(md5($spot['id'] . '|' . $spot['updated']), 0, 10);
   data-page="<?= e(page()['id']) ?>">
   <dialog class="spot" aria-labelledby="spot-t" aria-describedby="spot-s">
     <div class="spot__sheet">
-      <span class="spot__live"><i aria-hidden="true"></i>Canlı çağrı</span>
-      <button class="spot__close" type="button" data-spot-close aria-label="Kapat"><?= icon('x') ?></button>
+      <span class="spot__live"><i aria-hidden="true"></i><?= e(t('acilis.canli')) ?></span>
+      <button class="spot__close" type="button" data-spot-close aria-label="<?= e(t('acilis.kapat')) ?>"><?= icon('x') ?></button>
 
       <div class="spot__scroll" data-spot-scroll data-lenis-prevent>
-        <p class="docmeta spot__meta"><span>Kurum: <b><?= e($spot['kurum']) ?></b></span><span>Tarih: <b><?= today_official() ?></b></span></p>
+        <p class="docmeta spot__meta"><span><?= th('acilis.kurum', ['kurum' => $spot['kurum']]) ?></span><span><?= th('acilis.tarih') ?></span></p>
 
         <div class="spot__body">
           <div class="spot__text">
@@ -43,22 +43,22 @@ $key = substr(md5($spot['id'] . '|' . $spot['updated']), 0, 10);
           <div class="spot__count" data-spot-count>
             <p class="spot__count-l"><?= e($untilLbl) ?></p>
             <div class="spot__digits" role="timer" aria-label="<?= e($untilLbl) ?>">
-              <span><b data-u="d">00</b><small>gün</small></span>
-              <span><b data-u="h">00</b><small>saat</small></span>
-              <span><b data-u="m">00</b><small>dakika</small></span>
-              <span><b data-u="s">00</b><small>saniye</small></span>
+              <span><b data-u="d">00</b><small><?= e(t('acilis.sayac.gun')) ?></small></span>
+              <span><b data-u="h">00</b><small><?= e(t('acilis.sayac.saat')) ?></small></span>
+              <span><b data-u="m">00</b><small><?= e(t('acilis.sayac.dakika')) ?></small></span>
+              <span><b data-u="s">00</b><small><?= e(t('acilis.sayac.saniye')) ?></small></span>
             </div>
             <p class="spot__count-date"><?= e(tr_date($target['date'])) ?><?= $target['note'] !== '' ? ' · ' . e($target['note']) : '' ?></p>
-            <p class="spot__lastday" data-spot-lastday hidden>Bugün son gün</p>
+            <p class="spot__lastday" data-spot-lastday hidden><?= e(t('acilis.sayac.bugun')) ?></p>
           </div>
           <?php endif; ?>
         </div>
 
         <div class="spot__time<?= count($events) > 1 ? ' has-ruler' : '' ?>" data-spot-time>
-          <p class="label spot__time-h">Önemli tarihler</p>
+          <p class="label spot__time-h"><?= e(t('acilis.tarihler.baslik')) ?></p>
           <?php if (count($events) > 1): ?>
           <div class="spot__ruler" aria-hidden="true">
-            <?php if ($todayPos !== null): ?><i class="spot__today" style="--x:<?= $todayPos ?>%"><span>bugün</span></i><?php endif; ?>
+            <?php if ($todayPos !== null): ?><i class="spot__today" style="--x:<?= $todayPos ?>%"><span><?= e(t('acilis.tarihler.bugun')) ?></span></i><?php endif; ?>
             <?php foreach ($events as $ev): ?><i class="spot__flag spot__flag--<?= e($ev['type']) ?><?= $ev['date'] < $today ? ' is-past' : '' ?>" style="--x:<?= $pos($ev['date']) ?>%" data-flag></i><?php endforeach; ?>
           </div>
           <svg class="spot__ties" aria-hidden="true" focusable="false"></svg>
@@ -66,7 +66,7 @@ $key = substr(md5($spot['id'] . '|' . $spot['updated']), 0, 10);
           <ol class="spot__evs" style="--n:<?= count($events) ?>">
             <?php foreach ($events as $ev): ?>
             <li class="spot__ev spot__ev--<?= e($ev['type']) ?><?= $ev['date'] < $today ? ' is-past' : '' ?>" data-ev>
-              <span class="spot__ev-t"><?= e($types[$ev['type']] ?? 'Bilgilendirme') ?></span>
+              <span class="spot__ev-t"><?= e($types[$ev['type']] ?? t('acilis.tarihler.bilgi')) ?></span>
               <time class="spot__ev-d" datetime="<?= e($ev['date']) ?>"><?= e(tr_date($ev['date'])) ?></time>
               <?php if ($ev['note'] !== ''): ?><span class="spot__ev-n"><?= e($ev['note']) ?></span><?php endif; ?>
             </li>
@@ -75,14 +75,14 @@ $key = substr(md5($spot['id'] . '|' . $spot['updated']), 0, 10);
         </div>
 
         <div class="spot__acts">
-          <a class="btn btn--ink" href="<?= e(ann_url($spot)) ?>" data-spot-go>Duyuruyu aç <?= arrow() ?></a>
-          <a class="btn" href="<?= e($spot['link']) ?>" target="_blank" rel="noopener">Resmî kaynak <?= icon('arrow-up-right') ?></a>
-          <a class="link spot__ics" href="<?= url('duyurular/' . $spot['id'] . '.ics') ?>" type="text/calendar"><?= icon('calendar-blank') ?>Takvime ekle</a>
+          <a class="btn btn--ink" href="<?= e(ann_url($spot)) ?>" data-spot-go><?= e(t('acilis.dugme.ac')) ?> <?= arrow() ?></a>
+          <a class="btn" href="<?= e($spot['link']) ?>" target="_blank" rel="noopener"><?= e(t('acilis.dugme.kaynak')) ?> <?= icon('arrow-up-right') ?></a>
+          <a class="link spot__ics" href="<?= url('duyurular/' . $spot['id'] . '.ics') ?>" type="text/calendar"><?= icon('calendar-blank') ?><?= e(t('acilis.dugme.takvim')) ?></a>
         </div>
       </div>
     </div>
   </dialog>
   <button class="spot-chip" type="button" data-spot-chip aria-haspopup="dialog">
-    <i aria-hidden="true"></i><span class="spot-chip__l">Canlı çağrı</span><span class="spot-chip__t"><?= e($spot['title']) ?></span>
+    <i aria-hidden="true"></i><span class="spot-chip__l"><?= e(t('acilis.canli')) ?></span><span class="spot-chip__t"><?= e($spot['title']) ?></span>
   </button>
 </template>

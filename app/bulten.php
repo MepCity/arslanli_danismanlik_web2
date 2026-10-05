@@ -722,8 +722,8 @@ function bulten_html_sablon(string $konu, string $govde, string $ayril): string
     $a = 'style="text-decoration:underline"';
     $eposta = (string) cfg('email');
     $iletisim = array_filter([
-        cfg('phone') ? 'Telefon: <a ' . $a . ' href="tel:' . e((string) cfg('phone_href')) . '">' . e((string) cfg('phone')) . '</a>' : '',
-        $eposta !== '' ? 'E-posta: <a ' . $a . ' href="mailto:' . e($eposta) . '">' . e($eposta) . '</a>' : '',
+        cfg('phone') ? e(t('bulten.posta.telefon')) . ' <a ' . $a . ' href="tel:' . e((string) cfg('phone_href')) . '">' . e((string) cfg('phone')) . '</a>' : '',
+        $eposta !== '' ? e(t('bulten.posta.eposta')) . ' <a ' . $a . ' href="mailto:' . e($eposta) . '">' . e($eposta) . '</a>' : '',
     ]);
     $serif = "Georgia,'Times New Roman',Times,serif";
     $sans = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -747,26 +747,22 @@ function bulten_html_sablon(string $konu, string $govde, string $ayril): string
 }
 
 /**
- * E-postanın altbilgisindeki cümleler. TEK YERDE durur: Aşama 2B (Sayfa metinleri kayıt defteri) bunu t('ayril.posta.*')
- * anahtarlarına taşıyacaktır (kaynak sitede app/data/texts/72-bulten.php). Yasal bilgilendirmedir; cümleler kaldırılmamalıdır.
+ * E-postanın altbilgisindeki cümleler: Sayfa metinleri kayıt defterinden (bulten.posta.*). Yasal bilgilendirmedir; cümleler kaldırılmamalıdır.
  * @return array{neden:string, ayril:string, baglanti:string}
  */
 function bulten_posta_metinleri(): array
 {
     return [
-        // ayril.posta.neden: e-postanın neden geldiğini açıklayan cümle
-        'neden'    => 'Bu e-postayı, web sitemizdeki bülten formunu doldururken verdiğiniz onay nedeniyle alıyorsunuz.',
-        // ayril.posta.ayril: ayrılma bağlantısından önceki cümle (bağlantı hemen ardına eklenir)
-        'ayril'    => 'Bu e-postaları artık almak istemiyorsanız abonelikten ücretsiz olarak ayrılabilirsiniz:',
-        // ayril.posta.baglanti: ayrılma bağlantısının yazısı
-        'baglanti' => 'Abonelikten ayrıl',
+        'neden'    => t('bulten.posta.neden'),     // e-postanın neden geldiğini açıklayan cümle
+        'ayril'    => t('bulten.posta.ayril'),     // ayrılma bağlantısından önceki cümle (bağlantı hemen ardına eklenir)
+        'baglanti' => t('bulten.posta.baglanti'),  // ayrılma bağlantısının yazısı
     ];
 }
 
 /** Düz metin sürümünün altbilgisi (HTML sürümündekiyle aynı bilgiler). */
 function bulten_metin_altbilgi(string $ayril): string
 {
-    $iletisim = array_filter([cfg('phone') ? 'Telefon: ' . cfg('phone') : '', cfg('email') ? 'E-posta: ' . cfg('email') : '']);
+    $iletisim = array_filter([cfg('phone') ? t('bulten.posta.telefon') . ' ' . cfg('phone') : '', cfg('email') ? t('bulten.posta.eposta') . ' ' . cfg('email') : '']);
     return "\n\n" . str_repeat('-', 40) . "\n" . cfg('name') . "\n" . cfg('address') . ($iletisim ? "\n" . implode(' | ', $iletisim) : '')
         . "\n\n" . bulten_posta_metinleri()['neden'] . "\n" . bulten_posta_metinleri()['ayril'] . ' ' . $ayril . "\n";
 }

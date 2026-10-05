@@ -1,13 +1,23 @@
 <?php
 $v = site('vision');
+// Kuruluştan açılış yılına kaç yıl geçtiği; sıra sayısı olarak yazıyla ("otuzuncu") ve rakamla (30)
+$yilNo = (int) $v['open_year'] - (int) cfg('founded');
+$ones  = [1 => 'birinci', 'ikinci', 'üçüncü', 'dördüncü', 'beşinci', 'altıncı', 'yedinci', 'sekizinci', 'dokuzuncu'];
+$tens  = [10 => 'onuncu', 20 => 'yirminci', 30 => 'otuzuncu', 40 => 'kırkıncı', 50 => 'ellinci', 60 => 'altmışıncı', 70 => 'yetmişinci', 80 => 'sekseninci', 90 => 'doksanıncı'];
+$tenw  = [10 => 'on', 20 => 'yirmi', 30 => 'otuz', 40 => 'kırk', 50 => 'elli', 60 => 'altmış', 70 => 'yetmiş', 80 => 'seksen', 90 => 'doksan'];
+$yilSira = $yilNo % 10 === 0 && isset($tens[$yilNo]) ? $tens[$yilNo]
+    : (($yilNo > 10 && $yilNo < 100 && isset($ones[$yilNo % 10])) ? $tenw[$yilNo - $yilNo % 10] . ' ' . $ones[$yilNo % 10]
+    : ($ones[$yilNo] ?? $yilNo . '.'));
+$vp = ['acilis_yili' => $v['open_year'], 'mektup_yili_sirasi' => $yilSira, 'acilis_yil_sayisi' => $yilNo];
 page([
     'id'          => 'vision',
-    'title'       => 'Vizyonumuz',
-    'description' => 'Vizyonumuzu, kuruluşumuzun otuzuncu yılında, ' . $v['open_year'] . '’de açılmak üzere bir mektuba yazdık: işletmelerin Ar-Ge ve yenilik kapasitesi, zamanında bilgi ve yeni nesil destek programları.',
+    'title'       => pg_name('vizyon'),
+    'description' => t('vizyon.seo.description', $vp),
     'folio'       => pg_folio('vizyon'),
 ]);
 $seal = 'M93.2 46.3Q94.0 50.0 93.9 53.9Q93.8 57.7 93.6 61.8Q93.4 65.8 90.8 68.9Q88.1 72.0 86.0 75.2Q83.9 78.4 82.3 82.5Q80.7 86.6 76.8 88.2Q72.9 89.7 69.0 90.7Q65.1 91.6 61.5 92.9Q57.8 94.1 53.9 94.9Q50.0 95.6 46.3 93.6Q42.7 91.6 38.9 91.1Q35.2 90.6 32.0 88.6Q28.9 86.6 24.8 85.8Q20.6 85.0 18.0 82.0Q15.4 79.0 14.5 75.0Q13.6 71.0 10.0 68.5Q6.3 65.9 5.3 62.0Q4.3 58.1 4.7 54.0Q5.1 50.0 3.9 45.8Q2.8 41.7 6.4 38.6Q10.0 35.4 11.9 32.3Q13.7 29.1 14.9 25.3Q16.0 21.5 19.5 19.6Q22.9 17.8 25.8 15.4Q28.6 13.0 32.0 11.3Q35.3 9.6 39.0 9.2Q42.7 8.7 46.4 5.7Q50.0 2.8 54.1 3.2Q58.2 3.6 61.9 5.3Q65.7 6.9 68.9 9.3Q72.1 11.6 75.5 13.6Q78.8 15.6 81.4 18.6Q83.9 21.6 86.4 24.5Q89.0 27.5 90.1 31.2Q91.3 35.0 91.9 38.7Q92.5 42.5 93.2 46.3Z';
-$openNote = tr_upper($v['open_year'] . '’de açılacaktır');
+$openNote = tr_upper(t('vizyon.zarf.kase_ust', $vp));
+$openSub  = tr_upper(t('vizyon.zarf.kase_alt', $vp));
 ?>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -33,9 +43,9 @@ $openNote = tr_upper($v['open_year'] . '’de açılacaktır');
 <section class="vz pagehead" data-vz data-year="<?= $v['open_year'] ?>" aria-labelledby="vz-title">
   <div class="wrap vz__wrap">
     <header class="vz__head">
-      <p class="docmeta"><span>Sayı: <b>ARS-<?= date('Y') ?>/009</b></span><span>Konu: <b>Vizyonumuz</b></span><span>Açılış: <b><?= $v['open_year'] ?></b></span></p>
-      <h1 class="display vz__h" id="vz-title">Vizyonumuz</h1>
-      <p class="lead vz__lead">Vizyonumuzu, kuruluşumuzun otuzuncu yılında, <?= $v['open_year'] ?>’de açılmak üzere bir mektuba yazdık. Beklemek istemezseniz şimdi açabilirsiniz.</p>
+      <p class="docmeta"><span><?= th('vizyon.hero.sayi') ?></span><span><?= th('vizyon.hero.konu') ?></span><span><?= th('vizyon.hero.acilis', $vp) ?></span></p>
+      <h1 class="display vz__h" id="vz-title"><?= e(t('vizyon.hero.baslik')) ?></h1>
+      <p class="lead vz__lead"><?= e(t('vizyon.hero.giris', $vp)) ?></p>
     </header>
 
     <div class="vz__stage" data-stage>
@@ -49,8 +59,8 @@ $openNote = tr_upper($v['open_year'] . '’de açılacaktır');
           <path d="M0 0L512 352M1000 0L488 352" fill="none" stroke="rgba(90,70,30,.1)" stroke-width="2"/>
         </svg>
         <p class="env__to" aria-hidden="true">
-          <span>Alıcı:</span> <em><?= e(cfg('name')) ?></em><br>
-          <span>Adres:</span> <em>İstanbul, <?= $v['open_year'] ?></em>
+          <span><?= e(t('vizyon.zarf.alici')) ?></span> <em><?= e(cfg('name')) ?></em><br>
+          <span><?= e(t('vizyon.zarf.adres')) ?></span> <em><?= e(t('vizyon.zarf.adres_deger', $vp)) ?></em>
         </p>
         <div class="env__flap" data-flap aria-hidden="true">
           <i class="env__flap-out"></i>
@@ -65,20 +75,20 @@ $openNote = tr_upper($v['open_year'] . '’de açılacaktır');
             <rect x="4" y="4" width="322" height="84" rx="8" fill="none" stroke="currentColor" stroke-width="3.4"/>
             <rect x="11" y="11" width="308" height="70" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
             <text x="165" y="50" text-anchor="middle" font-size="27" font-weight="800" style="font-stretch:66%;letter-spacing:.03em"><?= e($openNote) ?></text>
-            <text x="165" y="70" text-anchor="middle" font-size="13" font-weight="650" style="font-stretch:82%;letter-spacing:.12em">KURULUŞUMUZUN 30. YILI</text>
+            <text x="165" y="70" text-anchor="middle" font-size="13" font-weight="650" style="font-stretch:82%;letter-spacing:.12em"><?= e($openSub) ?></text>
           </svg>
         </div></div>
       </div>
-      <button class="btn btn--ink vz__open" type="button" data-open aria-controls="mektup" aria-expanded="false">Mektubu şimdi açın <?= arrow() ?></button>
+      <button class="btn btn--ink vz__open" type="button" data-open aria-controls="mektup" aria-expanded="false"><?= e(t('vizyon.zarf.dugme')) ?> <?= arrow() ?></button>
     </div>
 
-    <article class="letter" id="mektup" tabindex="-1" aria-label="Vizyon mektubu" data-letter>
+    <article class="letter" id="mektup" tabindex="-1" aria-label="<?= e(t('vizyon.mektup.etiket')) ?>" data-letter>
       <div class="letter__in">
         <header class="letter__head">
           <span class="letter__logo"><?php require APP . '/partials/logo.php'; ?></span>
-          <span class="letter__date">İstanbul, Ekim 2026</span>
+          <span class="letter__date"><?= e(t('vizyon.mektup.tarih')) ?></span>
         </header>
-        <p class="letter__subj">Konu: <b>Vizyonumuz</b> · Açılış tarihi: <b><?= $v['open_year'] ?></b></p>
+        <p class="letter__subj"><?= th('vizyon.mektup.konu', $vp) ?></p>
         <p class="letter__greet"><?= e($v['greeting']) ?></p>
         <p class="letter__p"><?= e($v['intro']) ?></p>
         <ol class="letter__list" role="list">
@@ -87,7 +97,7 @@ $openNote = tr_upper($v['open_year'] . '’de açılacaktır');
           <?php endforeach; ?>
         </ol>
         <p class="letter__p letter__close"><?= e($v['closing']) ?></p>
-        <p class="letter__sign"><em><?= e(cfg('name')) ?></em><span>İstanbul, Ekim 2026</span></p>
+        <p class="letter__sign"><em><?= e(cfg('name')) ?></em><span><?= e(t('vizyon.mektup.imza_tarih')) ?></span></p>
       </div>
     </article>
   </div>
@@ -95,8 +105,8 @@ $openNote = tr_upper($v['open_year'] . '’de açılacaktır');
 
 <div class="wrap">
   <a class="next" href="<?= url('kurumsal/mihenk-taslarimiz') ?>">
-    <span class="next__k">Sonraki evrak · <?= pg_no('mihenk') ?></span>
-    <span class="next__t"><span>Mihenk Taşlarımız</span></span>
+    <span class="next__k"><?= e(t('vizyon.sonraki.etiket', ['no' => pg_no('mihenk')])) ?></span>
+    <span class="next__t"><span><?= e(pg_name('mihenk')) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>

@@ -4,7 +4,7 @@
  * Animasyon gerçek mektubun kopyalarıyla yapılır; sonunda gerçek (erişilebilir) mektup yerine geçer.
  */
 
-export default function init({ gsap, ScrollTrigger, lenis, reduced }) {
+export default function init({ gsap, ScrollTrigger, lenis, reduced, t }) {
   const root = document.querySelector('[data-vz]');
   if (!root) return;
   const stage = root.querySelector('[data-stage]');
@@ -74,7 +74,7 @@ export default function init({ gsap, ScrollTrigger, lenis, reduced }) {
       if (i !== 1) {
         const back = document.createElement('div');
         back.className = 'fold__face fold__back';
-        if (i === 0) back.innerHTML = '<em>' + year + '’de açılacak</em>';
+        if (i === 0) { const em = document.createElement('em'); em.textContent = t('vizyon.zarf.arka', { acilis_yili: year }); back.appendChild(em); }
         p.appendChild(back);
       }
       return { p, shade };

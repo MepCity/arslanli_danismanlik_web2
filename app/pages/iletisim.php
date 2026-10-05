@@ -6,15 +6,16 @@
  */
 page([
     'id'          => 'contact',
-    'title'       => 'İletişim',
-    'description' => 'Arslanlı Yatırım & Danışmanlık’a yazın: telefon, e-posta, WhatsApp ve adres. Hibe, teşvik ve Ar-Ge desteklerine dair sorunuzu kısa bir dilekçeyle iletin.',
+    'title'       => pg_name('iletisim'),
+    'description' => t('iletisim.seo.description'),
     'folio'       => pg_folio('iletisim'),
 ]);
 
 $topics = array_map(fn($s) => $s['nav'], services());
-$topics[] = 'Genel bilgi';
+$general = t('iletisim.dilekce.konu_genel');
+$topics[] = $general;
 $wanted = (string) ($_GET['konu'] ?? '');
-$chosen = in_array($wanted, $topics, true) ? $wanted : 'Genel bilgi';
+$chosen = in_array($wanted, $topics, true) ? $wanted : $general;
 
 $durum = (string) ($_GET['durum'] ?? '');
 $date  = today_official();
@@ -22,11 +23,11 @@ $date  = today_official();
 
 <section class="dk-head pagehead wrap" aria-labelledby="contact-title">
   <p class="label" data-rise><?= e(pg_label('iletisim')) ?></p>
-  <h1 class="display dk-head__h" id="contact-title" data-rise style="--delay:.05s">Bize bir dilekçe yazın.</h1>
-  <p class="lead dk-head__lead" data-rise style="--delay:.12s">Form doldurmuyorsunuz; boşlukları olan kısa bir dilekçe yazıyorsunuz. Adınızı, konunuzu ve size nasıl ulaşacağımızı yazmanız yeterli. Acelesi olan işler için telefon ve WhatsApp hemen yanında.</p>
+  <h1 class="display dk-head__h" id="contact-title" data-rise style="--delay:.05s"><?= e(t('iletisim.hero.baslik')) ?></h1>
+  <p class="lead dk-head__lead" data-rise style="--delay:.12s"><?= th('iletisim.hero.giris') ?></p>
 </section>
 
-<section class="dk wrap" aria-label="Dilekçe ve iletişim bilgileri">
+<section class="dk wrap" aria-label="<?= e(t('iletisim.dilekce.alan_etiket')) ?>">
   <div class="dk__desk" data-desk>
 
     <form class="letter<?= $durum === 'tamam' ? ' is-received' : '' ?>" data-form data-letter action="<?= url('form') ?>" method="post" novalidate aria-labelledby="dk-subject">
@@ -36,39 +37,40 @@ $date  = today_official();
       <div class="hp" aria-hidden="true"><label>Web sitesi <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
       <?php if ($durum === 'tamam'): ?>
-        <p class="letter__notice is-ok" role="status">Dilekçeniz bize ulaştı. Teşekkür ederiz.</p>
+        <p class="letter__notice is-ok" role="status"><?= e(t('iletisim.durum.tamam')) ?></p>
       <?php elseif ($durum === 'hata'): ?>
-        <p class="letter__notice is-error" role="alert">Dilekçeniz gönderilemedi. Lütfen alanları kontrol edip yeniden deneyin ya da bizi telefonla arayın.</p>
+        <p class="letter__notice is-error" role="alert"><?= e(t('iletisim.durum.hata')) ?></p>
       <?php endif; ?>
 
       <p class="letter__date"><time datetime="<?= date('Y-m-d') ?>"><?= e($date) ?></time></p>
 
       <p class="letter__to">
-        <span><?= e(tr_upper(cfg('name'))) ?>’A</span>
-        <span><?= e(tr_upper('İstanbul')) ?></span>
+        <span><?= e(t('iletisim.dilekce.hitap')) ?></span>
+        <span><?= e(tr_upper(t('iletisim.dilekce.sehir'))) ?></span>
       </p>
 
       <p class="letter__subject" id="dk-subject">
-        <span class="letter__k">Konu:</span>
-        <span data-mirror="konu"><?= e($chosen) ?></span> hakkında görüşme talebi.
+        <span class="letter__k"><?= e(t('iletisim.dilekce.konu_etiket')) ?></span>
+        <span data-mirror="konu"><?= e($chosen) ?></span>
+        <?= e(t('iletisim.dilekce.konu_son')) ?>
       </p>
 
       <div class="letter__body">
         <p>
-          Ben
+          <?= e(t('iletisim.paragraf1.ben')) ?>
           <span class="field blank" style="--w:15ch">
-            <label class="sr-only" for="dk-name">Adınız ve soyadınız (zorunlu)</label>
-            <input class="in" id="dk-name" name="namesurname" type="text" required maxlength="120" autocomplete="name" placeholder="adınız soyadınız" data-mirror-src="name">
+            <label class="sr-only" for="dk-name"><?= e(t('iletisim.paragraf1.ad_etiket')) ?></label>
+            <input class="in" id="dk-name" name="namesurname" type="text" required maxlength="120" autocomplete="name" placeholder="<?= e(t('iletisim.paragraf1.ad_ornek')) ?>" data-mirror-src="name">
             <span class="field__err" aria-live="polite"></span>
           </span>,
           <span class="field blank" style="--w:13ch">
-            <label class="sr-only" for="dk-firm">Firmanızın adı (isteğe bağlı)</label>
-            <input class="in" id="dk-firm" name="firma" type="text" maxlength="160" autocomplete="organization" placeholder="firmanızın adı">
+            <label class="sr-only" for="dk-firm"><?= e(t('iletisim.paragraf1.firma_etiket')) ?></label>
+            <input class="in" id="dk-firm" name="firma" type="text" maxlength="160" autocomplete="organization" placeholder="<?= e(t('iletisim.paragraf1.firma_ornek')) ?>">
             <span class="field__err" aria-live="polite"></span>
           </span>
-          adına yazıyorum.
+          <?= e(t('iletisim.paragraf1.adina')) ?>
           <span class="field blank blank--select">
-            <label class="sr-only" for="dk-topic">Konu</label>
+            <label class="sr-only" for="dk-topic"><?= e(t('iletisim.paragraf1.konu_etiket')) ?></label>
             <select class="in" id="dk-topic" name="konu" data-mirror-src="konu">
               <?php foreach ($topics as $t): ?>
                 <option<?= $t === $chosen ? ' selected' : '' ?>><?= e($t) ?></option>
@@ -76,66 +78,66 @@ $date  = today_official();
             </select>
             <span class="field__err" aria-live="polite"></span>
           </span>
-          hakkında sizinle görüşmek istiyorum.
+          <?= e(t('iletisim.paragraf1.konu_son')) ?>
         </p>
 
         <div class="field letter__msg">
-          <label for="dk-msg">Kısaca durumumuz şöyle:</label>
-          <textarea class="in" id="dk-msg" name="message" required maxlength="5000" rows="5" placeholder="Ne yapmak istiyorsunuz, hangi aşamadasınız, elinizde bir çağrı metni var mı?"></textarea>
+          <label for="dk-msg"><?= e(t('iletisim.mesaj.etiket')) ?></label>
+          <textarea class="in" id="dk-msg" name="message" required maxlength="5000" rows="5" placeholder="<?= e(t('iletisim.mesaj.ornek')) ?>"></textarea>
           <span class="field__err" aria-live="polite"></span>
         </div>
 
         <p>
-          Bana
+          <?= e(t('iletisim.paragraf3.bana')) ?>
           <span class="field blank" style="--w:14ch">
-            <label class="sr-only" for="dk-phone">Telefon numaranız</label>
-            <input class="in" id="dk-phone" name="phone" type="tel" maxlength="20" pattern="[0-9 +\(\)\-]{7,20}" autocomplete="tel" inputmode="tel" placeholder="05xx xxx xx xx">
+            <label class="sr-only" for="dk-phone"><?= e(t('iletisim.paragraf3.telefon_etiket')) ?></label>
+            <input class="in" id="dk-phone" name="phone" type="tel" maxlength="20" pattern="[0-9 +\(\)\-]{7,20}" autocomplete="tel" inputmode="tel" placeholder="<?= e(t('iletisim.paragraf3.telefon_ornek')) ?>">
             <span class="field__err" aria-live="polite"></span>
           </span>
-          numarasından ya da
+          <?= e(t('iletisim.paragraf3.numara')) ?>
           <span class="field blank" style="--w:17ch">
-            <label class="sr-only" for="dk-mail">E-posta adresiniz (zorunlu)</label>
-            <input class="in" id="dk-mail" name="email" type="email" required maxlength="160" autocomplete="email" inputmode="email" placeholder="ornek@firma.com">
+            <label class="sr-only" for="dk-mail"><?= e(t('iletisim.paragraf3.eposta_etiket')) ?></label>
+            <input class="in" id="dk-mail" name="email" type="email" required maxlength="160" autocomplete="email" inputmode="email" placeholder="<?= e(t('iletisim.paragraf3.eposta_ornek')) ?>">
             <span class="field__err" aria-live="polite"></span>
           </span>
-          adresinden ulaşabilirsiniz.
+          <?= e(t('iletisim.paragraf3.adres')) ?>
         </p>
 
-        <p class="letter__arz">Gereğini arz ederim.</p>
+        <p class="letter__arz"><?= e(t('iletisim.paragraf3.arz')) ?></p>
       </div>
 
       <div class="letter__sign" aria-hidden="true">
         <span class="letter__sdate"><?= e($date) ?></span>
-        <span class="letter__sname" data-mirror="name" data-empty="Ad Soyad">Ad Soyad</span>
-        <span class="letter__sline">Ad Soyad · İmza</span>
+        <span class="letter__sname" data-mirror="name" data-empty="<?= e(t('iletisim.imza.ad')) ?>"><?= e(t('iletisim.imza.ad')) ?></span>
+        <span class="letter__sline"><?= e(t('iletisim.imza.cizgi')) ?></span>
       </div>
 
       <div class="letter__foot">
         <p class="form-status" role="status" aria-live="polite"></p>
-        <button class="btn sendbtn" type="submit">Dilekçeyi gönder <?= arrow() ?></button>
+        <button class="btn sendbtn" type="submit"><?= e(t('iletisim.gonder.dugme')) ?> <?= arrow() ?></button>
       </div>
 
       <div class="alindi" aria-hidden="true" data-alindi>
         <svg viewBox="0 0 260 130">
           <rect x="4" y="4" width="252" height="122" rx="10" fill="none" stroke="currentColor" stroke-width="4"/>
           <rect x="12" y="12" width="236" height="106" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          <text x="130" y="68" text-anchor="middle" font-size="50" font-weight="900" style="font-stretch:64%;letter-spacing:.06em">ALINDI</text>
-          <text x="130" y="96" text-anchor="middle" font-size="16" font-weight="700" style="font-stretch:78%"><?= e($date) ?> · ARSLANLI</text>
+          <text x="130" y="68" text-anchor="middle" font-size="50" font-weight="900" style="font-stretch:64%;letter-spacing:.06em"><?= e(tr_upper(t('iletisim.kase.baslik'))) ?></text>
+          <text x="130" y="96" text-anchor="middle" font-size="16" font-weight="700" style="font-stretch:78%"><?= e(t('iletisim.kase.alt')) ?></text>
         </svg>
       </div>
     </form>
 
     <div class="dk__post" data-post hidden>
       <div class="dk__done" tabindex="-1" data-done>
-        <p class="label">Dilekçe <?= e($date) ?></p>
-        <p class="dk__done-h serif-display">Dilekçeniz yola çıktı.</p>
-        <p class="dk__done-msg" data-done-msg>Dilekçeniz bize ulaştı.</p>
-        <a class="btn" href="<?= url('iletisim') ?>">Yeni bir dilekçe yazın</a>
+        <p class="label"><?= e(t('iletisim.tamam.etiket')) ?></p>
+        <p class="dk__done-h serif-display"><?= e(t('iletisim.tamam.baslik')) ?></p>
+        <p class="dk__done-msg" data-done-msg><?= e(t('iletisim.tamam.mesaj')) ?></p>
+        <a class="btn" href="<?= url('iletisim') ?>"><?= e(t('iletisim.tamam.yeni')) ?></a>
       </div>
     </div>
   </div>
 
-  <aside class="dk__side" aria-label="Doğrudan iletişim">
+  <aside class="dk__side" aria-label="<?= e(t('iletisim.yan.etiket')) ?>">
     <div class="kv" data-kv>
       <div class="kv__in">
         <div class="kv__face kv__front">
@@ -150,33 +152,33 @@ $date  = today_official();
         </div>
         <div class="kv__face kv__back">
           <span class="kv__id">
-            <span class="kv__k">Adres</span>
+            <span class="kv__k"><?= e(t('iletisim.kart.adres')) ?></span>
             <a class="kv__addr" href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank"><?= e(cfg('address')) ?></a>
           </span>
           <span class="kv__rows">
-            <a href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank">Haritada aç</a>
-            <a href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank">WhatsApp’tan yazın</a>
+            <a href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank"><?= e(t('iletisim.kart.harita')) ?></a>
+            <a href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank"><?= e(t('iletisim.kart.whatsapp')) ?></a>
           </span>
         </div>
       </div>
-      <button class="kv__flip" type="button" data-kv-flip aria-pressed="false">Kartı çevirin</button>
+      <button class="kv__flip" type="button" data-kv-flip aria-pressed="false"><?= e(t('iletisim.kart.cevir')) ?></button>
     </div>
 
     <dl class="dk__direct">
       <div>
-        <dt>Telefon</dt>
+        <dt><?= e(t('iletisim.liste.telefon')) ?></dt>
         <dd><a href="tel:<?= e(cfg('phone_href')) ?>"><?= e(cfg('phone')) ?></a></dd>
       </div>
       <div>
-        <dt>E-posta</dt>
+        <dt><?= e(t('iletisim.liste.eposta')) ?></dt>
         <dd><a href="mailto:<?= e(cfg('email')) ?>"><?= e(cfg('email')) ?></a></dd>
       </div>
       <div>
-        <dt>WhatsApp</dt>
-        <dd><a href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank">Mesaj yazın</a></dd>
+        <dt><?= e(t('iletisim.liste.whatsapp')) ?></dt>
+        <dd><a href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank"><?= e(t('iletisim.liste.whatsapp_yaz')) ?></a></dd>
       </div>
       <div>
-        <dt>Adres</dt>
+        <dt><?= e(t('iletisim.liste.adres')) ?></dt>
         <dd><a href="<?= e(cfg('maps_url')) ?>" rel="noopener" target="_blank"><?= e(cfg('address')) ?></a></dd>
       </div>
     </dl>
@@ -186,7 +188,7 @@ $date  = today_official();
 <?php if ($nx = pg_next('iletisim')): ?>
 <div class="wrap">
   <a class="next" href="<?= url($nx['path']) ?>">
-    <span class="next__k">Sonraki evrak · <?= e($nx['nn']) ?></span>
+    <span class="next__k"><?= e(t('iletisim.sonraki.etiket', ['no' => $nx['nn']])) ?></span>
     <span class="next__t"><span><?= e($nx['label']) ?></span></span>
     <?= arrow() ?>
   </a>

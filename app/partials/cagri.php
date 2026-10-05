@@ -24,11 +24,11 @@ $shown    = $mode === 'home' ? array_slice($upcoming, 0, 6) : $upcoming;
 /** Tarihin türü: [damga yazısı, sınıf]. "Bilgilendirme" tarihlerinden ön kayıt olanı ayrı basılır. */
 $kind = function (array $e): array {
     switch ($e['type']) {
-        case 'baslangic': return ['Başvuru açılışı', 'open'];
-        case 'son':       return ['Son başvuru', 'deadline'];
-        case 'sonuc':     return ['Sonuç', 'result'];
+        case 'baslangic': return [t('cagri.tur.baslangic'), 'open'];
+        case 'son':       return [t('cagri.tur.son'), 'deadline'];
+        case 'sonuc':     return [t('cagri.tur.sonuc'), 'result'];
     }
-    return mb_stripos((string) $e['note'], 'ön kayıt') !== false ? ['Ön kayıt', 'pre'] : ['Önemli tarih', 'info'];
+    return mb_stripos((string) $e['note'], 'ön kayıt') !== false ? [t('cagri.tur.on_kayit'), 'pre'] : [t('cagri.tur.onemli'), 'info'];
 };
 
 // Aya göre grupla (tarih sırası korunur)
@@ -43,23 +43,23 @@ $i = 0;
 <section class="cg cg--<?= $mode ?><?= $mode === 'home' ? ' section' : '' ?>" id="cagri-takvimi" aria-labelledby="cg-title">
   <div class="wrap">
     <header class="cg__head" data-rise>
-      <p class="label">Çağrı takvimi</p>
-      <h2 class="display h2 cg__h" id="cg-title">Önümüzdeki tarihler.</h2>
-      <p class="cg__lead"><?= $shown ? 'Açık çağrıların başlangıç, ön kayıt, son başvuru ve sonuç günleri, tarih sırasıyla. Hangisine ne kadar süre kaldığı yanında yazar; bir satıra tıklarsanız çağrının duyurusuna gidersiniz.' : 'Açık çağrıların başlangıç, ön kayıt, son başvuru ve sonuç günleri burada tarih sırasıyla toplanır.' ?></p>
+      <p class="label"><?= e(t('cagri.baslik.etiket')) ?></p>
+      <h2 class="display h2 cg__h" id="cg-title"><?= e(t('cagri.baslik.baslik')) ?></h2>
+      <p class="cg__lead"><?= th($shown ? 'cagri.baslik.giris' : 'cagri.baslik.giris_bos') ?></p>
     </header>
 
     <div class="cg__form" data-rise style="--delay:.08s">
       <div class="cg__sheet">
         <p class="cg__run" aria-hidden="true">
-          <span>Çağrı çizelgesi<?= $total ? ' · ' . $total . ' tarih' : '' ?></span>
-          <span>Düzenleme: <?= e(today_official()) ?></span>
+          <span><?= e($total ? t('cagri.cizelge.baslik_sayili', ['n' => $total]) : t('cagri.cizelge.baslik')) ?></span>
+          <span><?= e(t('cagri.cizelge.duzenleme')) ?></span>
         </p>
 
         <?php if (!$shown): ?>
           <div class="cg__empty">
-            <p class="cg__stars" aria-hidden="true">*** yaklaşan tarih yok ***</p>
-            <p class="cg__none">Şu anda takvimde yaklaşan bir tarih görünmüyor. Yeni bir çağrı açıldığında başlangıç, son başvuru ve sonuç günleri bu çizelgeye işlenir.</p>
-            <?php if (feature('bulten')): ?><p class="cg__none"><a class="link" href="<?= url('haberdarol') ?>" data-nl-open>Yeni çağrılardan haberdar olmak için bültene kayıt olun</a></p><?php endif; ?>
+            <p class="cg__stars" aria-hidden="true"><?= e(t('cagri.bos.yildiz')) ?></p>
+            <p class="cg__none"><?= th('cagri.bos.metin') ?></p>
+            <?php if (feature('bulten')): ?><p class="cg__none"><a class="link" href="<?= url('haberdarol') ?>" data-nl-open><?= e(t('cagri.bos.bulten')) ?></a></p><?php endif; ?>
           </div>
         <?php else: ?>
           <?php foreach ($groups as $ym => $rows): ?>
@@ -70,32 +70,32 @@ $i = 0;
                   $n    = ann_days_left($e['date']);
                   $t    = strtotime($e['date']);
                   $soon = $n <= 7;
-                  $left = $n === 0 ? 'Bugün' : ($n === 1 ? 'Yarın' : $n . ' gün kaldı');
+                  $left = $n === 0 ? t('cagri.kalan.bugun') : ($n === 1 ? t('cagri.kalan.yarin') : t('cagri.kalan.gun', ['n' => $n]));
                   $i++; ?>
                 <li class="cg__row cg__row--<?= $kClass ?><?= $soon ? ' is-soon' : '' ?>" data-on style="--delay:<?= round(0.05 * (($i - 1) % 4), 2) ?>s">
-                  <a class="cg__a" href="<?= e(ann_url($e)) ?>" aria-label="<?= e(tr_date($e['date']) . ', ' . $wdays[(int) date('w', $t)] . ': ' . $kLabel . '. ' . $e['kurum'] . ', ' . $e['title'] . '. ' . $left) ?>">
+                  <a class="cg__a" href="<?= e(ann_url($e)) ?>" aria-label="<?= e(t('cagri.satir.aria', ['tarih_uzun' => tr_date($e['date']), 'haftagunu' => $wdays[(int) date('w', $t)], 'tur' => $kLabel, 'kurum' => $e['kurum'], 'baslik' => $e['title'], 'kalan' => $left])) ?>">
                     <time class="cg__date" datetime="<?= e($e['date']) ?>"><b><?= (int) date('j', $t) ?></b><span><?= e(tr_upper($short[(int) date('n', $t) - 1])) ?></span><i><?= e(mb_substr($wdays[(int) date('w', $t)], 0, 3)) ?></i></time>
                     <span class="cg__kind"><?= e(tr_upper($kLabel)) ?></span>
                     <span class="cg__body">
                       <span class="cg__t"><?= e($e['title']) ?></span>
                       <span class="cg__org"><?= e($e['kurum']) ?><?= $e['note'] !== '' ? ' · ' . e($e['note']) : '' ?></span>
                     </span>
-                    <span class="cg__left"><?php if ($n > 1): ?><b><?= $n ?></b><span>gün kaldı</span><?php else: ?><b><?= $left ?></b><?php endif; ?></span>
+                    <span class="cg__left"><?php if ($n > 1): ?><b><?= $n ?></b><span><?= e(t('cagri.kalan.birim')) ?></span><?php else: ?><b><?= $left ?></b><?php endif; ?></span>
                     <?= arrow('arw cg__arw') ?>
                   </a>
                 </li>
               <?php endforeach; ?>
             </ol>
           <?php endforeach; ?>
-          <p class="cg__stars" aria-hidden="true">*** <?= $mode === 'home' && $total > count($shown) ? 'devamı duyurular sayfasında' : 'liste sonu' ?> ***</p>
+          <p class="cg__stars" aria-hidden="true"><?= e(t($mode === 'home' && $total > count($shown) ? 'cagri.son.devam' : 'cagri.son.bitti')) ?></p>
         <?php endif; ?>
 
         <p class="cg__foot">
-          <a class="btn btn--sm" href="<?= url('duyurular.ics') ?>" type="text/calendar"><?= icon('calendar-blank') ?>Tüm tarihleri takvime ekle</a>
+          <a class="btn btn--sm" href="<?= url('duyurular.ics') ?>" type="text/calendar"><?= icon('calendar-blank') ?><?= e(t('cagri.son.takvim')) ?></a>
           <?php if ($mode === 'home'): ?>
-            <a class="link ui" href="<?= url('duyurular') ?>">Duyuruların tamamı<?= $total > count($shown) ? ' (' . $total . ' tarih)' : '' ?></a>
+            <a class="link ui" href="<?= url('duyurular') ?>"><?= e($total > count($shown) ? t('cagri.son.tumu_sayili', ['n' => $total]) : t('cagri.son.tumu')) ?></a>
           <?php else: ?>
-            <span>Google, Apple ya da Outlook takviminize eklenir.</span>
+            <span><?= e(t('cagri.son.not')) ?></span>
           <?php endif; ?>
         </p>
       </div>

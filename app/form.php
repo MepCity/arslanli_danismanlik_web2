@@ -177,47 +177,47 @@ $forms = [
     'iletisim' => [
         'subject' => 'Web sitesi: dilekçe',
         'fields'  => [
-            'namesurname' => ['Ad Soyad', 'required|max:120'],
-            'firma'       => ['Firma', 'max:160'],
-            'konu'        => ['Konu', 'max:120'],
-            'message'     => ['Mesaj', 'required|max:5000'],
-            'phone'       => ['Telefon', 'phone'],
-            'email'       => ['E-posta', 'required|email'],
+            'namesurname' => [t('formlar.alan.adsoyad'), 'required|max:120'],
+            'firma'       => [t('formlar.alan.firma'), 'max:160'],
+            'konu'        => [t('formlar.alan.konu'), 'max:120'],
+            'message'     => [t('formlar.alan.mesaj'), 'required|max:5000'],
+            'phone'       => [t('formlar.alan.telefon'), 'phone'],
+            'email'       => [t('formlar.alan.eposta'), 'required|email'],
         ],
     ],
     // Bülten kaydı: her sayfadaki "Bültene kayıt ol" penceresi ve Haberdar Ol kuponu aynı formu gönderir
     'bulten' => [
         'subject' => 'Web sitesi: bülten kaydı',
         'fields'  => [
-            'ad'      => ['Ad', 'required|max:80'],
-            'soyad'   => ['Soyad', 'required|max:80'],
-            'email'   => ['E-posta', 'required|email'],
-            'telefon' => ['Telefon', 'required|phone'],
-            'il'      => ['İl', 'required|in:iller'],
-            'sektor'  => ['Sektör', 'required|in:sektorler'],
-            'mesaj'   => ['İlgilendiği konular', 'max:5000'],
-            'kvkk'    => ['Aydınlatma metni', 'accepted'],
-            'etk'     => ['Ticari elektronik ileti onayı', 'accepted'],
+            'ad'      => [t('formlar.alan.ad'), 'required|max:80'],
+            'soyad'   => [t('formlar.alan.soyad'), 'required|max:80'],
+            'email'   => [t('formlar.alan.eposta'), 'required|email'],
+            'telefon' => [t('formlar.alan.telefon'), 'required|phone'],
+            'il'      => [t('formlar.alan.il'), 'required|in:iller'],
+            'sektor'  => [t('formlar.alan.sektor'), 'required|in:sektorler'],
+            'mesaj'   => [t('formlar.alan.konular'), 'max:5000'],
+            'kvkk'    => [t('formlar.alan.kvkk'), 'accepted'],
+            'etk'     => [t('formlar.alan.etk'), 'accepted'],
         ],
     ],
     // İş başvurusu (sayfası ayrı; özgeçmiş dosyası $_FILES['cv'] ile gelir)
     'kariyer' => [
         'subject' => 'Web sitesi: iş başvurusu',
         'fields'  => [
-            'ad'       => ['Ad', 'required|max:80'],
-            'soyad'    => ['Soyad', 'required|max:80'],
-            'email'    => ['E-posta', 'required|email'],
-            'telefon'  => ['Telefon', 'required|phone'],
-            'sehir'    => ['Şehir', 'required|in:sehirler'],
-            'linkedin' => ['LinkedIn', 'url|max:200'],
-            'pozisyon' => ['İlgilenilen alan / pozisyon', 'max:120'],
-            'deneyim'  => ['Deneyim süresi', 'in:deneyim'],
-            'mesaj'    => ['Ön yazı', 'max:5000'],
-            'kvkk'     => ['Aydınlatma metni', 'accepted'],
-            'saklama'  => ['Gelecek pozisyonlar için saklama izni', 'bool'],
+            'ad'       => [t('formlar.alan.ad'), 'required|max:80'],
+            'soyad'    => [t('formlar.alan.soyad'), 'required|max:80'],
+            'email'    => [t('formlar.alan.eposta'), 'required|email'],
+            'telefon'  => [t('formlar.alan.telefon'), 'required|phone'],
+            'sehir'    => [t('formlar.alan.sehir'), 'required|in:sehirler'],
+            'linkedin' => [t('formlar.alan.linkedin'), 'url|max:200'],
+            'pozisyon' => [t('formlar.alan.pozisyon'), 'max:120'],
+            'deneyim'  => [t('formlar.alan.deneyim'), 'in:deneyim'],
+            'mesaj'    => [t('formlar.alan.onyazi'), 'max:5000'],
+            'kvkk'     => [t('formlar.alan.kvkk'), 'accepted'],
+            'saklama'  => [t('formlar.alan.saklama'), 'bool'],
         ],
     ],
-    // Eski form: artık gönderim kabul etmez (aşağıda reddedilir). Tanımı, eski kayıtların alan adları için durur.
+    // Eski form: artık gönderim kabul etmez (aşağıda reddedilir). Tanımı, eski kayıtların alan adları için durur (ziyaretçiye gösterilmez).
     'haberdarol' => [
         'subject' => 'Haberdar Ol kaydı',
         'fields'  => [
@@ -237,7 +237,7 @@ if (defined('FORM_DEFS_ONLY')) {
 }
 
 if (!$_POST && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-    respond(false, 'Gönderilen dosya çok büyük. Lütfen en fazla 5 MB boyutunda bir dosya seçin.', ['cv' => 'Dosya en fazla 5 MB olabilir.'], 413);
+    respond(false, t('formlar.sunucu.dosya_cok_buyuk'), ['cv' => t('formlar.hata.cv_boyut')], 413);
 }
 
 // Form adı metin değilse (ör. dizi olarak gönderilmişse) geçersiz sayılır.
@@ -246,12 +246,12 @@ if (!$_POST && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
 // yalnızca eski kayıtların alan adları (bildirim e-postası, "Spam değil") için durur.
 $type = is_string($_POST['_form'] ?? null) ? $_POST['_form'] : '';
 if (!isset($forms[$type]) || $type === 'haberdarol') {
-    respond(false, 'Geçersiz form.', [], 400);
+    respond(false, t('formlar.sunucu.gecersiz_form'), [], 400);
 }
 // Panelden kapatılan bölümlerin formları kabul edilmez (Görünürlük: Kariyer, Bülten)
 $formFeature = ['kariyer' => 'kariyer', 'bulten' => 'bulten'][$type] ?? null;
 if ($formFeature !== null && !feature($formFeature)) {
-    respond(false, 'Bu form şu an kullanıma kapalı. Bize telefon ya da e-posta ile ulaşabilirsiniz.', [], 410);
+    respond(false, t('formlar.sunucu.kapali'), [], 410);
 }
 
 // Bal küpü: insanlar bu alanı görmez, botlar doldurur. Dolu gelen gönderim atılmaz ve farklı bir yanıt almaz: olağan gönderim gibi
@@ -261,7 +261,7 @@ $honeypot = !empty($_POST['website']);
 // Belirteç geçersizse, süresi dolmuşsa ya da daha önce kullanılmışsa aynı yanıt verilir. Yanıt yeni bir belirteç taşır (bkz. respond):
 // tarayıcı onu forma yerleştirir, ziyaretçi sayfayı yenilemeden ve yazdıklarını kaybetmeden yeniden gönderir.
 $token   = is_string($_POST['_token'] ?? null) ? $_POST['_token'] : null;
-$expired = 'Oturum süresi dolduğu için form yenilendi; yazdıklarınız duruyor. Lütfen birkaç saniye sonra yeniden gönderin.';
+$expired = t('formlar.sunucu.oturum');
 if (!verify_form_token($token) || spam_token_used($token)) {
     respond(false, $expired, [], 419);
 }
@@ -272,7 +272,7 @@ $ilan = null;
 if ($type === 'kariyer' && array_key_exists('ilan', $_POST)) {
     $ilan = is_string($_POST['ilan']) && trim($_POST['ilan']) !== '' ? ilan_find(trim($_POST['ilan'])) : null;
     if ($ilan === null || !ilan_active($ilan)) {
-        respond(false, 'Bu ilan artık başvuruya açık değil ya da bulunamadı. Genel başvuru formunu kullanarak özgeçmişinizi bırakabilirsiniz.', [], 410);
+        respond(false, t('formlar.sunucu.ilan_kapali'), [], 410);
     }
     $_POST['pozisyon'] = (string) $ilan['title'];   // pozisyon her zaman ilanın başlığıdır; gönderilen değer yok sayılır
 }
@@ -280,9 +280,9 @@ if ($type === 'kariyer' && array_key_exists('ilan', $_POST)) {
 // Hız sınırı (bkz. form_rate): sınır zaten dolmuşsa alanlara ve dosyaya bakılmadan geri çevrilir.
 $ip      = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 $rlMsg   = [
-    'ip'   => 'Kısa sürede çok fazla gönderim yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.',
-    'site' => 'Şu anda çok fazla gönderim alınıyor. Lütfen bir süre sonra tekrar deneyin.',
-    'cv'   => 'Şu anda çok fazla başvuru alınıyor. Lütfen bir süre sonra tekrar deneyin ya da özgeçmişinizi e-posta ile gönderin.',
+    'ip'   => t('formlar.sunucu.cok_gonderim_ip'),
+    'site' => t('formlar.sunucu.cok_gonderim_site'),
+    'cv'   => t('formlar.sunucu.cok_basvuru'),
 ];
 if (($rl = form_rate($ip, $type === 'kariyer', false)) !== null) {
     respond(false, $rlMsg[$rl], [], 429);
@@ -297,7 +297,7 @@ foreach ($forms[$type]['fields'] as $name => [$label, $rules]) {
     $rules = explode('|', $rules);
     if (in_array('accepted', $rules, true)) {
         if ($value !== '1') {
-            $errors[$name] = 'Devam etmek için bu onayı vermeniz gerekiyor.';
+            $errors[$name] = t('formlar.hata.onay');
         }
         $data[$name] = $value === '1' ? 'Evet (' . date('d.m.Y H:i') . ')' : '';
         continue;
@@ -307,7 +307,7 @@ foreach ($forms[$type]['fields'] as $name => [$label, $rules]) {
         continue;
     }
     if (in_array('required', $rules, true) && $value === '') {
-        $errors[$name] = $label . ' alanı zorunludur.';
+        $errors[$name] = t('formlar.hata.zorunlu', ['alan' => $label]);
         continue;
     }
     if ($value === '') {
@@ -317,19 +317,19 @@ foreach ($forms[$type]['fields'] as $name => [$label, $rules]) {
     foreach ($rules as $rule) {
         // Sıkı denetim: adres bildirim e-postasının Yanıtla başlığına girer; tırnaklı, boşluklu ya da satır sonu içeren adres kabul edilmez
         if ($rule === 'email' && !mail_address_ok($value)) {
-            $errors[$name] = 'Geçerli bir e-posta adresi yazın.';
+            $errors[$name] = t('formlar.hata.eposta');
         }
         if ($rule === 'phone' && !preg_match('/^[0-9 +()\-]{7,20}$/', $value)) {
-            $errors[$name] = 'Geçerli bir telefon numarası yazın.';
+            $errors[$name] = t('formlar.hata.telefon');
         }
         if ($rule === 'url' && (!filter_var($value, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $value))) {
-            $errors[$name] = 'http:// ya da https:// ile başlayan geçerli bir adres yazın.';
+            $errors[$name] = t('formlar.hata.adres');
         }
         if (str_starts_with($rule, 'in:') && !in_array($value, (array) site(substr($rule, 3)), true)) {
-            $errors[$name] = 'Listeden bir seçim yapın.';
+            $errors[$name] = t('formlar.hata.liste');
         }
         if (str_starts_with($rule, 'max:') && mb_strlen($value) > (int) substr($rule, 4)) {
-            $errors[$name] = $label . ' çok uzun.';
+            $errors[$name] = t('formlar.hata.uzun', ['alan' => $label]);
         }
     }
     $data[$name] = $value;
@@ -348,11 +348,11 @@ if ($type === 'kariyer') {
     $f = $_FILES['cv'] ?? null;
     $err = is_array($f) ? (int) $f['error'] : UPLOAD_ERR_NO_FILE;
     if ($err === UPLOAD_ERR_NO_FILE) {
-        $errors['cv'] = 'Özgeçmişinizi ekleyin.';
+        $errors['cv'] = t('formlar.hata.cv_yok');
     } elseif ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE || (int) $f['size'] > 5 * 1024 * 1024) {
-        $errors['cv'] = 'Dosya en fazla 5 MB olabilir.';
+        $errors['cv'] = t('formlar.hata.cv_boyut');
     } elseif ($err !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
-        $errors['cv'] = 'Dosya yüklenemedi. Lütfen tekrar deneyin.';
+        $errors['cv'] = t('formlar.hata.cv_yuklenemedi');
     } else {
         // Uzantıya değil dosyanın içeriğine bakılır
         $ext  = strtolower(pathinfo((string) $f['name'], PATHINFO_EXTENSION));
@@ -360,7 +360,7 @@ if ($type === 'kariyer') {
         $pdf  = $ext === 'pdf' && str_starts_with($raw, '%PDF-');
         $docx = $ext === 'docx' && str_starts_with($raw, "PK\x03\x04") && str_contains($raw, 'word/document.xml');
         if (!$pdf && !$docx) {
-            $errors['cv'] = 'Yalnızca PDF ya da DOCX dosyası yükleyebilirsiniz.';
+            $errors['cv'] = t('formlar.hata.cv_tur');
         } else {
             $cv = [
                 'tmp'  => $f['tmp_name'],
@@ -374,7 +374,7 @@ if ($type === 'kariyer') {
 }
 
 if ($errors) {
-    respond(false, 'Lütfen işaretli alanları kontrol edin.', $errors, 422);
+    respond(false, t('formlar.durum.kontrol'), $errors, 422);
 }
 
 // Geçerli gönderim, dosya saklanmadan ve e-posta gönderilmeden önce sayılır (denetim ve kayıt aynı kilit altında).
@@ -396,7 +396,7 @@ if ($cv) {
     $stored = date('Ymd-His') . '-' . bin2hex(random_bytes(6)) . '.' . $cv['ext'];
     if (!@move_uploaded_file($cv['tmp'], $dir . '/' . $stored)) {
         spam_token_used($token, false);   // gönderim alınamadı: ziyaretçi aynı belirteçle yeniden deneyebilsin
-        respond(false, 'Dosya kaydedilemedi. Lütfen daha sonra tekrar deneyin ya da e-posta ile gönderin.', [], 500);
+        respond(false, t('formlar.sunucu.dosya_kaydedilemedi'), [], 500);
     }
     $data['cv']      = $stored;
     $data['cv_name'] = $cv['name'];
@@ -418,11 +418,11 @@ $suspect = $spam['score'] >= SPAM_LIMIT;
 /* ---------- Kaydet ve gönder ---------- */
 
 $done = match ($type) {
-    'bulten'  => 'Kaydınız alındı. Yeni çağrılar ve programlar açıldığında sizi haberdar edeceğiz.',
+    'bulten'  => t('formlar.sunucu.bulten_tamam'),
     'kariyer' => $ilan !== null
-        ? 'Başvurunuz “' . $ilan['title'] . '” ilanına bağlanarak bize ulaştı. Değerlendirmenin ardından sizinle iletişime geçeceğiz.'
-        : 'Başvurunuz bize ulaştı. Değerlendirmenin ardından sizinle iletişime geçeceğiz.',
-    default   => 'Dilekçeniz bize ulaştı. En kısa sürede dönüş yapacağız.',
+        ? t('formlar.sunucu.kariyer_ilan_tamam', ['ilan' => (string) $ilan['title']])
+        : t('formlar.sunucu.kariyer_tamam'),
+    default   => t('formlar.sunucu.iletisim_tamam'),
 };
 
 // İş başvuruları panelde listelendiği, bülten kayıtları abone listesinin kaynağı olduğu, şüpheli gönderimler de incelenebilsin diye
@@ -489,7 +489,7 @@ if (mt_rand(1, 50) === 1) {
 // Ne kayıt saklanabildi ne e-posta gönderilebildi: gönderim alınamadı, ziyaretçiye açıkça söylenir
 if (!$sent && !$saved) {
     spam_token_used($token, false);   // ziyaretçi aynı belirteçle yeniden deneyebilsin
-    respond(false, 'Mesajınız şu anda iletilemedi. Lütfen telefonla ya da e-posta ile ulaşın.', [], 500);
+    respond(false, t('formlar.sunucu.iletilemedi'), [], 500);
 }
 
 respond(true, $done);

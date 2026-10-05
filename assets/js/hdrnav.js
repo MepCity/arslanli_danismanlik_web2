@@ -17,7 +17,7 @@
     ev.className = 'hdr__ev';
     const w = document.createElement('span');
     w.className = 'hdr__w';
-    w.textContent = 'Evrak ';
+    w.textContent = (label.dataset.word || '') + ' ';   // "Evrak" sözcüğü sunucudan gelir (data-word; kayıt defteri genel.folio.word)
     ev.append(w, no);
     const nm = document.createElement('span');
     nm.className = 'hdr__nm';

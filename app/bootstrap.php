@@ -142,26 +142,17 @@ function next_page(array $candidates): array
 function site_pages_all(): array
 {
     $path = array_flip(site_static_routes_all());
+    // Sayfa adları kayıt defterindedir (panel > Sayfa metinleri > "Sayfa adları"): bir sayfa orada yeniden adlandırılınca Fihristte,
+    // üst bilgideki dizinde, alt bilgide ve sayfa etiketlerinde birlikte değişir. Şablonlar ad için pg_name() kullanır, yazmaz.
     $def = [
-        ['home', 'Ana sayfa', 'menu'],
-        ['hakkimizda', 'Hakkımızda', 'menu'],
-        ['hizmetler', 'Hizmetler', 'menu'],
-        ['referans', 'Referanslar', 'menu'],
-        ['blog', 'Makaleler', 'menu'],
-        ['duyurular', 'Duyurular', 'menu'],
-        ['kariyer', 'Kariyer', 'menu'],
-        ['iletisim', 'İletişim', 'menu'],
-        ['haberdarol', 'Haberdar Ol', 'corp'],
-        ['misyon', 'Misyonumuz', 'corp'],
-        ['vizyon', 'Vizyonumuz', 'corp'],
-        ['mihenk', 'Mihenk Taşlarımız', 'corp'],
-        ['hesap', 'Hesap Numaralarımız', 'corp'],
-        ['cerez', 'Çerez Politikası', 'legal'],
-        ['kvkk', 'KVKK Aydınlatma Metni', 'legal'],
+        ['home', 'menu'], ['hakkimizda', 'menu'], ['hizmetler', 'menu'], ['referans', 'menu'], ['blog', 'menu'], ['duyurular', 'menu'],
+        ['kariyer', 'menu'], ['iletisim', 'menu'],
+        ['haberdarol', 'corp'], ['misyon', 'corp'], ['vizyon', 'corp'], ['mihenk', 'corp'], ['hesap', 'corp'],
+        ['cerez', 'legal'], ['kvkk', 'legal'],
     ];
     $out = [];
-    foreach ($def as [$key, $name, $group]) {
-        $out[$key] = ['key' => $key, 'path' => (string) $path[$key], 'label' => $name, 'group' => $group];
+    foreach ($def as [$key, $group]) {
+        $out[$key] = ['key' => $key, 'path' => (string) $path[$key], 'label' => t('genel.sayfa.' . $key), 'group' => $group];
     }
     return $out;
 }
@@ -205,16 +196,27 @@ function pg_name(string $key): string
     return site_pages_all()[$key]['label'] ?? '';
 }
 
-/** Üst bilgideki etiket (HTML): "Evrak 06 · <b>İletişim</b>". $name verilirse sayfa adının yerine geçer. */
+/** Sayfa etiketindeki "Evrak" sözcüğü (kayıt defteri: genel.folio.word). */
+function folio_word(): string
+{
+    return t('genel.folio.word');
+}
+
+/** Üst bilgideki etiket (HTML): "Evrak 06 · <b>İletişim</b>". $name verilirse sayfa adının yerine geçer; $no verilirse numaranın ("06" ya da "—"). */
+function folio_html(string $no, string $name): string
+{
+    return e(folio_word()) . ' ' . e($no) . ' · <b>' . e($name) . '</b>';
+}
+
 function pg_folio(string $key, ?string $name = null): string
 {
-    return 'Evrak ' . pg_no($key) . ' · <b>' . e($name ?? pg_name($key)) . '</b>';
+    return folio_html(pg_no($key), $name ?? pg_name($key));
 }
 
 /** Sayfa başlığındaki küçük etiket (düz metin, kaçırılmamış): "Evrak 06 · İletişim". */
 function pg_label(string $key, ?string $name = null): string
 {
-    return 'Evrak ' . pg_no($key) . ' · ' . ($name ?? pg_name($key));
+    return folio_word() . ' ' . pg_no($key) . ' · ' . ($name ?? pg_name($key));
 }
 
 /** Sıradaki açık sayfa (menu, corp, legal sırasıyla); son sayfadaysa ya da sayfa kapalıysa null. */
@@ -433,7 +435,7 @@ function render(string $view, array $vars = []): void
 function not_found(): void
 {
     http_response_code(404);
-    page(['id' => 'notfound', 'title' => 'Sayfa bulunamadı', 'folio' => 'Eksik evrak']);
+    page(['id' => 'notfound', 'title' => t('notfound.seo.title'), 'folio' => t('notfound.folio')]);
     render('404');
     exit;
 }

@@ -10,49 +10,24 @@
  * @var string $aksiyon onay formunun gönderileceği adres
  * @var int    $tarih   (isteğe bağlı) adresin abonelikten ayrıldığı an; yoksa bugünün tarihi yazılır
  *
- * Bu sayfanın metinleri Aşama 2B için ayrıca kayıt defterine taşınabilir; şimdilik burada, aşağıdaki tek dizide düz Türkçe olarak durur.
+ * Bu sayfanın yazıları kayıt defterindedir (grup "ayril"; panelde Sayfa metinleri): durum başına bir blok.
  */
-$metin = [
-    'onay' => [
-        'etiket' => 'Evrak · Terkin şerhi',
-        'baslik' => 'Bültenden ayrılmak üzeresiniz.',
-        'giris'  => 'Onayladığınızda aşağıdaki adrese artık bülten ve bilgilendirme e-postası göndermeyiz.',
-        'durum'  => 'Kayıtlı',
-        'dugme'  => 'Abonelikten ayrıl',
-        'vazgec' => 'Vazgeçtim, ana sayfaya dön',
-    ],
-    'tamam' => [
-        'etiket' => 'Evrak · Terkin şerhi',
-        'baslik' => 'Abonelikten ayrıldınız.',
-        'giris'  => 'Bu adrese artık bülten e-postası göndermeyeceğiz. Fikriniz değişirse bize e-posta ya da telefonla haber verin; aboneliğinizi yeniden açarız.',
-        'durum'  => 'Terkin edildi',
-        'dugme'  => 'Ana sayfaya dön',
-    ],
-    'zaten' => [
-        'etiket' => 'Evrak · Terkin şerhi',
-        'baslik' => 'Bu adres zaten ayrılmış.',
-        'giris'  => 'Kaydınız daha önce terkin edilmiş; yapılacak bir işlem yok ve bu adrese bülten e-postası gönderilmiyor. Yeniden almak isterseniz bize e-posta ya da telefonla haber verin.',
-        'durum'  => 'Terkin edilmiş',
-        'dugme'  => 'Ana sayfaya dön',
-    ],
-    'gecersiz' => [
-        'etiket' => 'Evrak · Terkin şerhi',
-        'baslik' => 'Bu bağlantı geçerli değil.',
-        'giris'  => 'Bağlantı eksik kopyalanmış ya da bozulmuş olabilir. Aldığınız iletideki bağlantıya yeniden tıklayın ya da abonelikten ayrılmak istediğinizi bize şu adresten yazın:',
-        'durum'  => 'Bulunamadı',
-        'dugme'  => 'Ana sayfaya dön',
-    ],
+$durum = in_array($durum ?? '', ['onay', 'tamam', 'zaten', 'gecersiz'], true) ? $durum : 'gecersiz';
+$m = [
+    'etiket' => folio_word() . ' · ' . t('ayril.sayfa.ad'),
+    'baslik' => t('ayril.' . $durum . '.baslik'),
+    'giris'  => t('ayril.' . $durum . '.giris'),
+    'durum'  => t('ayril.' . $durum . '.durum'),
+    'dugme'  => t('ayril.' . $durum . '.dugme'),
 ];
-$durum = isset($metin[$durum ?? '']) ? $durum : 'gecersiz';
-$m     = $metin[$durum];
 $kapali = in_array($durum, ['tamam', 'zaten'], true);
 $gun    = $kapali && !empty($tarih) ? date('d/m/Y', (int) $tarih) : today_official();
 
 page([
     'id'          => 'unsub',
-    'title'       => 'Bültenden ayrıl',
-    'description' => 'Bülten aboneliğinden ayrılma.',
-    'folio'       => 'Evrak — · <b>Terkin şerhi</b>',
+    'title'       => t('ayril.seo.baslik'),
+    'description' => t('ayril.seo.description'),
+    'folio'       => folio_html('—', t('ayril.sayfa.ad')),
     'noindex'     => true,
 ]);
 ?>
@@ -62,19 +37,19 @@ page([
   <h1 class="display us__h" id="us-title" data-rise style="--delay:.05s"><?= e($m['baslik']) ?></h1>
   <p class="lead us__lead" data-rise style="--delay:.12s"><?= e($m['giris']) ?></p>
 
-  <article class="sicil us__card is-<?= e($durum) ?>" data-rise style="--delay:.2s" aria-label="Sicil kartı">
+  <article class="sicil us__card is-<?= e($durum) ?>" data-rise style="--delay:.2s" aria-label="<?= e(t('ayril.kart.etiket')) ?>">
     <header class="sicil__top">
-      <p class="sicil__title">Bülten kayıt defteri</p>
-      <p class="sicil__form">Form: <b>ARS-B/02</b></p>
+      <p class="sicil__title"><?= e(t('ayril.kart.baslik')) ?></p>
+      <p class="sicil__form"><?= th('ayril.kart.form') ?></p>
     </header>
 
     <dl class="sicil__rows">
       <div class="sicil__row sicil__row--mail">
-        <dt>E-posta</dt>
+        <dt><?= e(t('ayril.kart.eposta')) ?></dt>
         <dd>
           <?php if ($durum === 'gecersiz'): ?>
             <span class="sicil__blank" aria-hidden="true"></span>
-            <span class="sr-only">Kayıt bulunamadı</span>
+            <span class="sr-only"><?= e(t('ayril.gecersiz.bos')) ?></span>
           <?php else: ?>
             <span class="sicil__mail"><?= e($adres) ?></span>
             <?php if ($kapali): ?>
@@ -84,17 +59,17 @@ page([
         </dd>
       </div>
       <div class="sicil__row">
-        <dt>Durum</dt>
+        <dt><?= e(t('ayril.kart.durum')) ?></dt>
         <dd class="sicil__state"><?= e($m['durum']) ?></dd>
       </div>
       <div class="sicil__row">
-        <dt>Tarih</dt>
+        <dt><?= e(t('ayril.kart.tarih')) ?></dt>
         <dd class="sicil__date"><?= e($gun) ?></dd>
       </div>
     </dl>
 
     <?php if ($kapali): ?>
-      <p class="sicil__note" aria-hidden="true">terkin edildi · <?= e($gun) ?></p>
+      <p class="sicil__note" aria-hidden="true"><?= e(t('ayril.kart.terkin', ['kayit_tarihi' => $gun])) ?></p>
     <?php endif; ?>
 
     <?php if ($durum === 'gecersiz'): ?>
@@ -104,7 +79,7 @@ page([
     <?php if ($durum === 'onay'): ?>
       <form class="sicil__act" method="post" action="<?= e($aksiyon) ?>">
         <button class="btn btn--ink" type="submit"><?= e($m['dugme']) ?> <?= arrow() ?></button>
-        <a class="link sicil__cancel" href="<?= url() ?>"><?= e($m['vazgec']) ?></a>
+        <a class="link sicil__cancel" href="<?= url() ?>"><?= e(t('ayril.onay.vazgec')) ?></a>
       </form>
     <?php else: ?>
       <div class="sicil__act">

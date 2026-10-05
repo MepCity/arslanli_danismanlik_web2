@@ -7,7 +7,7 @@
 const GAP_Z = 74;    // dosyalar arası derinlik (px)
 const SPAN = 0.55;   // dosya başına kaydırma (ekran yüksekliği oranı)
 
-export default function init({ gsap, ScrollTrigger, lenis, reduced }) {
+export default function init({ gsap, ScrollTrigger, lenis, reduced, t: metin }) {
   const root = document.querySelector('[data-dolap]');
   if (!root) return;
   const files = [...root.querySelectorAll('[data-file]')];
@@ -120,7 +120,8 @@ export default function init({ gsap, ScrollTrigger, lenis, reduced }) {
 
   /* ---------- Eleme ---------- */
 
-  const join = (arr) => (arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' ve ' + arr[arr.length - 1]);
+  const join = (arr) => (arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' ' + metin('hizmetler.eleme.ve') + ' ' + arr[arr.length - 1]);
+  const kac = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   opts.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -142,7 +143,9 @@ export default function init({ gsap, ScrollTrigger, lenis, reduced }) {
       });
       if (out) {
         const links = hits.map((i) => `<a href="#${files[i].id}" data-go="${i}">${titles[i]}</a>`);
-        out.innerHTML = `${hits.length === 1 ? 'Bakmanız gereken dosya' : hits.length + ' dosya öne çıktı'}: ${join(links)}.`;
+        // Metin düz yazıdır: kaçırılır, {dosyalar} yerine bağlantılar (HTML) konur
+        const sablon = kac(metin(hits.length === 1 ? 'hizmetler.eleme.sonuc_tek' : 'hizmetler.eleme.sonuc_cok', { n: hits.length, dosyalar: '\u0000' }));
+        out.innerHTML = sablon.replace('\u0000', () => join(links));
       }
       if (st && hits.length && !hits.includes(front)) goTo(hits[0]);
     });

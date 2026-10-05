@@ -3,8 +3,23 @@ Options -Indexes
 DirectoryIndex index.php
 AddDefaultCharset UTF-8
 
+# Yapay zekâ erişimi (/mcp): "Authorization: Bearer ..." başlığı CGI/FastCGI/FPM'de PHP'ye ulaşmayabilir; üç yol birden açık.
+# 1) Apache 2.4.13+: başlığı PHP'ye ilet. (Barındırma firmanız bu satır yüzünden 500 hatası verirse bu bloğu silin; aşağıdaki iki yol yeterlidir.)
+<IfModule mod_version.c>
+  <IfVersion >= 2.4.13>
+    CGIPassAuth On
+  </IfVersion>
+</IfModule>
+# 2) Eski yöntem: başlığı ortam değişkenine kopyala (PHP'de HTTP_AUTHORIZATION ya da REDIRECT_HTTP_AUTHORIZATION olarak okunur)
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # 3) Aynı işi mod_rewrite ile yapan yaygın yedek
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
   # HTTPS'e ve www'siz adrese yönlendirme (yerel geliştirmede uygulanmaz).
   # Sunucuda SSL kurulu değilse (ör. geçici deneme adresi) bu altı satırın başına # koyun; yoksa site açılmaz.
   RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$
