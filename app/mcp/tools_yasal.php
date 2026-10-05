@@ -53,8 +53,9 @@ function mcp_tools_yasal(): array
                 'fikralar' => sc_list($leafSchema, 'Fıkralar (1-10). Sayfada sırayla basılır.', ['minItems' => 1, 'maxItems' => 10]),
                 'liste' => sc_list(sc_str('Harfli liste maddesi.', ['maxLength' => 3000]), 'İsteğe bağlı harfli liste (en çok 14); a), b)… harfleri kendiliğinden verilir.', ['maxItems' => 14]),
                 'sade' => sc_list($leafSchema, 'İsteğe bağlı “sade Türkçesi” (en çok 3; koşula uyan ilki görünür).', ['maxItems' => 3]),
-                'kimlik' => sc_str('yasal_metin_getir sonucundaki kimlik (varsa aynen geri yazın; yeni maddede yazmayın).', ['maxLength' => 60]),
-            ], ['baslik', 'fikralar']), 'Belgenin yeni, tam madde listesi (sıra sayfadaki sıradır).', ['minItems' => 3, 'maxItems' => 20]),
+                'kimlik' => sc_str('yasal_metin_getir sonucundaki kimlik (varsa aynen geri yazın; yeni maddede yazmayın). Kimlikleri yalnızca sistem verir: tanınmayan bir kimlik yazılırsa yok sayılır (madde kimliksiz kaydedilir).', ['maxLength' => 60]),
+                'no' => sc_int('Yalnızca okuma çıktısında gelen sıra numarası; yazarken gerekmez, yazılırsa yok sayılır (sıra listedeki sıradır).', ['minimum' => 1, 'maximum' => 20]),
+            ], ['baslik', 'fikralar']), 'Belgenin yeni, tam madde listesi (sıra sayfadaki sıradır). yasal_metin_getir çıktısındaki maddeler olduğu gibi geri yazılabilir.', ['minItems' => 3, 'maxItems' => 20]),
         ], ['belge', 'maddeler']), [false, true, true], function (array $a): array {
             $doc = $a['belge'];
             $raw = [];

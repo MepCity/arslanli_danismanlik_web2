@@ -104,7 +104,7 @@ function mcp_tools_texts(): array
                 }
             }
             return mcp_ok(['sorgu' => $a['sorgu'], 'toplam_eslesen' => $total, 'gosterilen' => count($hits), 'sonuclar' => $hits],
-                $total === 0 ? 'Eşleşen metin bulunamadı. Daha kısa ya da farklı bir kelime deneyin; hizmet dosyaları, yazılar, duyurular, iş ilanları ve kurumsal listeler bu aramada çıkmaz (kendi araçları vardır).' : '');
+                $total === 0 ? 'Eşleşen metin bulunamadı. Daha kısa ya da farklı bir kelime deneyin; hizmet dosyaları, yazılar, duyurular, iş ilanları ve kurumsal listeler ve yasal metinler (KVKK, çerez politikası) bu aramada çıkmaz (kendi araçları vardır: yasal_metin_getir).' : '');
         });
 
     $T[] = mcp_def('metin_getir', 'okuma', 'Sayfa metnini getir',
@@ -122,7 +122,7 @@ function mcp_tools_texts(): array
 
     if (function_exists('texts_save')) {
         $T[] = mcp_def('metin_guncelle', 'icerik', 'Sayfa metnini güncelle',
-            'Sitedeki bir sayfa metnini (başlık, paragraf, düğme yazısı, form iletisi) değiştirir; değişiklik sitede hemen yayınlanır. Anahtarı metin_ara ile bulun; mevcut metni, türünü ve sınırlarını metin_getir ile okuyun. Panelin Sayfa metinleri bölümüyle aynı denetim uygulanır: en çok karakter ve satır sınırı (tasarım buna göre kuruludur), yalnızca o metne tanımlı yer tutucular ({firma}, {n|yazı} gibi; silinmemesi gerekenler korunur) ve HTML yazılamaz. '
+            'Sitedeki bir sayfa metnini (başlık, paragraf, düğme yazısı, form iletisi) değiştirir; değişiklik sitede hemen yayınlanır. Anahtarı metin_ara ile bulun; mevcut metni, türünü ve sınırlarını metin_getir ile okuyun. Panelin Sayfa metinleri bölümüyle aynı denetim uygulanır: en çok karakter ve satır sınırı (tasarım buna göre kuruludur), yalnızca o metne tanımlı yer tutucular ({firma}, {n|yazı}, {n|sıra}, {n|iyelik} gibi; hangilerinin yazılabildiği metin_getir sonucundaki sinirlar.yer_tutucular alanındadır, silinmemesi gerekenler korunur) ve HTML yazılamaz. '
             . 'Türler: line = tek satır (satır sonları boşluğa çevrilir); text = paragraf; lines = her satır sonu sayfada satır sonu olur; rich = biçimli metin, biçim için köşeli işaretler kullanılır: ' . $marks . ' (iç içe kullanım kuralları aracın hata iletisinde yazar). Boş metin ("") ya da özgün metnin aynısı verilirse metin özgün haline döner. Uzunluğu özgün metne yakın tutun. Yeni metinde tarih, tutar ya da kanun alıntısı uydurmayın.',
             sc_obj([
                 'anahtar' => sc_str('Metin anahtarı, örneğin "genel.sayfa.home".', ['minLength' => 1, 'maxLength' => 120]),

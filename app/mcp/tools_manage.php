@@ -256,8 +256,13 @@ function mcp_list_input(string $liste, $ic): array
             $val = $rows('Banka hesapları', ['banka' => 'bank', 'hesap_sahibi' => 'holder', 'hesap_no' => 'account', 'iban' => 'iban']);
             break;
         case 'mission':
-            if (!$isObj($ic) || array_diff(array_keys($ic), ['cumle', 'maddeler'])) {
-                $err[] = 'Misyon: icerik {cumle, maddeler} nesnesi olmalı.';
+            // cumle_duz yalnızca okuma içindir (işaretsiz sürüm); kurumsal_listeleri_getir çıktısı olduğu gibi geri yazılabilsin diye kabul edilir ve yok sayılır
+            if (!$isObj($ic) || array_diff(array_keys($ic), ['cumle', 'cumle_duz', 'maddeler'])) {
+                $err[] = 'Misyon: icerik {cumle, maddeler} nesnesi olmalı (cumle_duz yalnızca okumadır, yazmak gerekmez). Örnek: {"cumle": "İşletmelere, [kırmızı-çizgi]kâğıt işine boğulmadan[/kırmızı-çizgi] destek bulmak.", "maddeler": ["...", "...", "...", "...", "..."]}. Kırmızı çizgi işareti isteğe bağlıdır; işaretsiz düz cümle de yazılabilir.';
+                break;
+            }
+            if (isset($ic['cumle']) && !is_string($ic['cumle'])) {
+                $err[] = 'Misyon: cumle metin olmalı.';
                 break;
             }
             $val = ['statement' => mcp_line((string) ($ic['cumle'] ?? '')), 'items' => $strs('Misyon maddeleri', $ic['maddeler'] ?? null)];
@@ -302,13 +307,13 @@ function mcp_list_help(): string
     return 'process = ana sayfadaki çalışma süreci, ' . $n('process') . ' adım: [{asama, baslik, biz, siz}] (aşama etiketi, adım başlığı, "Biz yaparız" ve "Siz yaparsınız" metinleri); '
         . 'timeline = Hakkımızda raf sayfasındaki mevzuat zaman çizelgesi, ' . $n('timeline') . ' kayıt: [{yil (dört haneli, her yıl bir kez), tur ("mevzuat" ya da "biz"), baslik, metin, kaynak}]; yıla göre sıralanır; mevzuat kayıtlarında kaynak Resmî Gazete künyesidir, yalnızca doğrulanmış bilgiyle yazın; '
         . 'principles = Mihenk Taşlarımız, ' . $n('principles') . ' ilke: [{baslik, aciklama}]; '
-        . 'mission = Misyonumuz, bir NESNE: {cumle, maddeler: [metin]} (' . $n('mission') . ' madde); '
+        . 'mission = Misyonumuz, bir NESNE: {cumle (isteğe bağlı kırmızı çizgi işaretiyle), maddeler: [metin]} (' . $n('mission') . ' madde; okumada gelen cumle_duz işaretsiz sürümdür, yazarken gerekmez ama gönderilirse yok sayılır); '
         . 'vision = Vizyonumuz mektubu, bir NESNE: {acilis_yili (gelecekte bir yıl), selamlama, giris, maddeler: [metin] (' . $n('vision') . ' madde), kapanis}; '
         . 'banks = Hesap Numaralarımız, ' . $n('banks') . ' hesap: [{banka, hesap_sahibi, hesap_no, iban}], IBAN geçerli olmalı (TR + 24 rakam, mod-97 sağlaması) ve tekrarlanmaz; '
         . 'sektorler = bülten formundaki sektör seçenekleri, metin listesi, ' . $n('sektorler') . ' madde (adı "İmalat" ile başlayanlar bülten süzgecinde "İmalat (tümü)" kısayoluna girer; bir adı değiştirirseniz eski adla kaydolmuş aboneler yeni adın süzgecine girmez); '
         . 'deneyim = kariyer formu deneyim seçenekleri, metin listesi, ' . $n('deneyim') . ' madde; '
         . 'goals = Hizmetler sayfasındaki "Ne yapmak istiyorsunuz?" eşleştiricisi, ' . $n('goals') . ' hedef: [{secenek (ziyaretçinin gördüğü yazı), hizmetler: [hizmet adresi, ...] (seçilince öne çıkacak hizmet dosyaları; adresler hizmetleri_listele sonucundadır)}]. '
-        . 'mission.cumle içinde [kırmızı-çizgi]…[/kırmızı-çizgi] işareti sayfada kırmızı kalemle altı çizilecek ifadeyi gösterir (en çok bir; başka işaret yazılamaz). ';
+        . 'mission.cumle içinde [kırmızı-çizgi]…[/kırmızı-çizgi] işareti sayfada kırmızı kalemle altı çizilecek ifadeyi gösterir (isteğe bağlı, en çok bir; başka işaret yazılamaz). Önce kurumsal_listeleri_getir ile cumle alanını okuyun: işaret orada yazılıdır ve silerseniz sayfadaki kırmızı çizgi kalkar. ';
 }
 
 /* =========================================================================
@@ -386,7 +391,13 @@ function mcp_tools_manage(): array
                 mcp_fail('Hizmet silinmedi: ' . implode(' ', $r['errors']));
             }
             $msg = 'Hizmet dosyası silindi: "' . $title . '". Geri almak için geri_al (bolum: services) kullanılabilir.';
-            return mcp_ok(['mesaj' => $msg, 'silinen' => ['adres' => $slug, 'baslik' => $title], 'kalan_hizmet_sayisi' => count(mcp_services())], $msg);
+            $warn = [];
+            foreach ((array) site('goals') as $gl) {
+                if (in_array($slug, (array) ($gl['services'] ?? []), true)) {
+                    $warn[] = 'Hizmetler sayfasındaki hedef eşleştiricide "' . (string) ($gl['label'] ?? '') . '" hedefi bu dosyayı öne çıkarıyordu; sayfa silinen dosyayı göstermez ama hedefin listesinde artık yok sayılır. Gerekirse kurumsal_liste_guncelle (liste: goals) ile hedefi güncelleyin.';
+                }
+            }
+            return mcp_ok(['mesaj' => $msg, 'silinen' => ['adres' => $slug, 'baslik' => $title], 'kalan_hizmet_sayisi' => count(mcp_services()), 'uyarilar' => $warn], $msg);
         });
 
     $T[] = mcp_def('hizmetleri_sirala', 'icerik', 'Hizmetleri sırala',
@@ -430,7 +441,7 @@ function mcp_tools_manage(): array
         });
 
     $T[] = mcp_def('yazi_gorseli_ayarla', 'icerik', 'Yazı görselini ayarla',
-        'Bir yazının kapak görselini ekler, değiştirir ya da kaldırır. Görsel yazı listesinde ve yazının başında görünür; en fazla 1600 piksel genişliğe küçültülür ve WebP\'ye çevrilir. Görseli gorsel_url (herkese açık https adresi; sunucu indirir) ya da gorsel_base64 ile verin; kaldırmak için kaldir: true verin. Telif hakkı size ya da firmaya ait olan, kullanıcının verdiği görselleri kullanın.',
+        'Bir yazının kapak görselini ekler, değiştirir ya da kaldırır. Görsel yazı listesinde ve yazının başında görünür; en fazla 1600 piksel genişliğe küçültülür ve WebP\'ye çevrilir. Kapak kuralları panelle aynıdır: en az 800×450 piksel ve en/boy oranı 1,2 ile 2,4 arası olmalı (liste 3:2, yazı başı 21:9 kutuya kırpar); küçük ya da çok dar/uzun görsel reddedilir. Görseli gorsel_url (herkese açık https adresi; sunucu indirir) ya da gorsel_base64 ile verin; kaldırmak için kaldir: true verin. Telif hakkı size ya da firmaya ait olan, kullanıcının verdiği görselleri kullanın.',
         sc_obj(['adres' => $ADRES('Yazının')] + mcp_image_fields('Yazı görseli') + ['kaldir' => sc_bool('true: yazının görselini kaldır.')], ['adres']),
         [false, true, true], function (array $a): array {
             $all = mcp_posts();
@@ -533,7 +544,7 @@ function mcp_tools_manage(): array
         . 'Ana sayfadaki kanun metni (hero_law) ve il listeleri bu araçla değiştirilemez (resmî metindir). Banka bilgilerini yalnızca kullanıcının verdiği doğru bilgiyle yazın; banks listesini değiştirmek için ayrıca "Ayarlar" izni gerekir.',
         sc_obj([
             'liste'  => sc_enum(array_keys(lists_keys()), 'Değiştirilecek liste: ' . implode('; ', array_map(fn($k, $v) => $k . ' = ' . $v, array_keys(lists_keys()), lists_keys())) . '.'),
-            'icerik' => ['description' => 'Listenin yeni, tam içeriği (eskisinin yerine geçer). Biçim liste türüne göre değişir: process, timeline, principles, banks için nesne listesi; mission ve vision için tek nesne; sektorler ve deneyim için metin listesi. Ayrıntı aracın açıklamasında.'],
+            'icerik' => ['description' => 'Listenin yeni, tam içeriği (eskisinin yerine geçer). Biçim liste türüne göre değişir: process, timeline, principles, banks, goals için nesne listesi; mission ve vision için tek nesne; sektorler ve deneyim için metin listesi. kurumsal_listeleri_getir çıktısındaki aynı alanın değeri olduğu gibi geri yazılabilir. Ayrıntı aracın açıklamasında.'],
         ], ['liste', 'icerik']), [false, true, true], function (array $a, array $ctx): array {
             if ($a['liste'] === 'banks' && !in_array('ayarlar', $ctx['principal']['scopes'], true)) {
                 mcp_fail('Banka hesaplarını (banks) değiştirmek için ayrıca "Ayarlar" izni gerekir; bu erişim anahtarında yok.');

@@ -19,9 +19,9 @@ const MCP_LOG_KEEP = 2000;
 function mcp_scopes(): array
 {
     return [
-        'okuma'        => ['Okuma', 'Siteyi, sayfaları, duyuruları, yayınlanmış iş ilanlarını, hizmetleri, yazıları, referansları, kurumsal listeleri, sayfa metinlerini, ayarları, ziyaretçi sayılarını ve değişiklik geçmişini okur; arama motoru taraması yapar.', false],
+        'okuma'        => ['Okuma', 'Siteyi, sayfaları, duyuruları, yayınlanmış iş ilanlarını, hizmetleri, yazıları, referansları, kurumsal listeleri, yasal metinleri, sayfa metinlerini, ayarları, ziyaretçi sayılarını ve değişiklik geçmişini okur; arama motoru taraması yapar.', false],
         'duyurular'    => ['Duyurular', 'Duyuru ekler, günceller, siler ve açılışta öne çıkarır.', false],
-        'icerik'       => ['Sayfa içerikleri', 'Sayfa metinlerini, hizmet dosyalarını, yazıları, referansları ve kurumsal listeleri (süreç, zaman çizelgesi, ilkeler, misyon, vizyon, form seçenekleri) değiştirir; hizmet, yazı, referans ve iş ilanı ekler, günceller ya da siler (iş ilanını yayınlar, kapatır); görsel indirir; değişiklikleri geri alır. Banka hesaplarını değiştirmek için ayrıca Ayarlar izni gerekir.', false],
+        'icerik'       => ['Sayfa içerikleri', 'Sayfa metinlerini, hizmet dosyalarını, yazıları, referansları ve kurumsal listeleri (süreç, zaman çizelgesi, ilkeler, misyon, vizyon, form seçenekleri, hizmet hedef eşleştiricisi) ve yasal metinleri (KVKK, çerez politikası maddeleri) değiştirir; hizmet, yazı, referans ve iş ilanı ekler, günceller ya da siler (iş ilanını yayınlar, kapatır); görsel indirir; değişiklikleri geri alır. Banka hesaplarını değiştirmek için ayrıca Ayarlar izni gerekir.', false],
         'ayarlar'      => ['Ayarlar', 'Bölümleri sitede açıp kapatır; iletişim ve şirket bilgilerini, e-posta gönderim ayarlarını, bülten saatlik sınırını ve arama motoru ayarlarını değiştirir. Form bildirimlerinin gittiği adresi değiştirmek için ayrıca Gelen kutusu izni gerekir.', false],
         'gelen_kutusu' => ['Gelen kutusu', 'Form kayıtlarını, bülten abonelerini ve iş başvurularını okur; form kaydı ve iş başvurusu siler, şüpheli kayıtları ayıklar ya da gelen kutusuna alır, aboneyi abonelikten çıkarır. Sayfa içerikleri izniyle birlikte bülten e-postası taslağı hazırlar ve düzenler (e-posta gönderemez; gönderimi yönetici panelden başlatır). Kişisel veri içerir.', true],
     ];

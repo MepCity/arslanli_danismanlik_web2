@@ -640,7 +640,7 @@ function mcp_page_hint(string $path): array
         $by = [
             'home'       => ['kurumsal_liste_guncelle (liste: process, çalışma süreci)', 'hizmet_guncelle (dosya kartları)', 'referans_ekle / referanslari_sirala (kaşe şeridi)', 'duyuru_ekle / duyuru_one_cikar (takvim ve açılış penceresi)', 'ana sayfadaki kanun metni (hero_law) resmî metindir, salt okunurdur'],
             'hakkimizda' => ['kurumsal_liste_guncelle (liste: timeline, mevzuat zaman çizelgesi)', 'referans_ekle / referans_guncelle'],
-            'hizmetler'  => ['hizmet_ekle / hizmet_guncelle / hizmet_sil / hizmetleri_sirala'],
+            'hizmetler'  => ['hizmet_ekle / hizmet_guncelle / hizmet_sil / hizmetleri_sirala', 'kurumsal_liste_guncelle (liste: goals, "Ne yapmak istiyorsunuz?" eşleştiricisi)'],
             'referans'   => ['referans_ekle / referans_guncelle / referans_sil / referanslari_sirala'],
             'blog'       => ['yazi_kaydet / yazi_sil / yazi_gorseli_ayarla'],
             'duyurular'  => ['duyuru_ekle / duyuru_guncelle / duyuru_sil / duyuru_one_cikar'],
@@ -651,8 +651,8 @@ function mcp_page_hint(string $path): array
             'vizyon'     => ['kurumsal_liste_guncelle (liste: vision)'],
             'mihenk'     => ['kurumsal_liste_guncelle (liste: principles)'],
             'hesap'      => ['kurumsal_liste_guncelle (liste: banks; "Sayfa içerikleri" ve "Ayarlar" izinleri birlikte)', 'iletisim_bilgilerini_guncelle (yetkili, vergi bilgileri)'],
-            'cerez'      => ['yasal metin: şirket bilgileri iletisim_bilgilerini_guncelle ile gelir'],
-            'kvkk'       => ['yasal metin: şirket bilgileri iletisim_bilgilerini_guncelle ile gelir'],
+            'cerez'      => ['yasal_metin_getir / yasal_metin_guncelle (belge: cerez)', 'şirket bilgileri iletisim_bilgilerini_guncelle ile gelir'],
+            'kvkk'       => ['yasal_metin_getir / yasal_metin_guncelle (belge: kvkk)', 'şirket bilgileri iletisim_bilgilerini_guncelle ile gelir'],
         ];
         $hint = $by[$key] ?? [];
     }
@@ -892,7 +892,7 @@ function mcp_lists_public(): array
         'banks'      => array_values(array_map(fn($b) => ['banka' => (string) ($b['bank'] ?? ''), 'hesap_sahibi' => (string) ($b['holder'] ?? ''), 'hesap_no' => (string) ($b['account'] ?? ''), 'iban' => (string) ($b['iban'] ?? '')], (array) ($s['banks'] ?? []))),
         'sektorler'  => array_values(array_map('strval', (array) ($s['sektorler'] ?? []))),
         'deneyim'    => array_values(array_map('strval', (array) ($s['deneyim'] ?? []))),
-        'goals'      => array_values(array_map(fn($g) => ['secenek' => (string) ($g['label'] ?? ''), 'hizmetler' => array_values(array_map('strval', (array) ($g['services'] ?? [])))], (array) ($s['goals'] ?? []))),
+        'goals'      => array_values(array_map(fn($g) => ['secenek' => (string) ($g['label'] ?? ''), 'hizmetler' => array_values(array_filter(array_map('strval', (array) ($g['services'] ?? [])), fn($sl) => isset(mcp_services()[$sl])))], (array) ($s['goals'] ?? []))),   // silinmiş hizmet adresleri sayfada da görünmez; okuma çıktısı geri yazılabilsin diye süzülür
         'hero_law'   => ['salt_okunur' => true, 'baslik' => (string) ($law['title'] ?? ''), 'kunye' => array_values(array_map('strval', (array) ($law['meta'] ?? []))),
             'bloklar' => array_values(array_map(fn($b) => ['madde' => (string) ($b['ref'] ?? ''), 'kanun_metni' => (string) ($b['law'] ?? ''), 'sade_turkce' => (string) ($b['plain'] ?? '')], (array) ($law['blocks'] ?? [])))],
         'iller'      => ['salt_okunur' => true, 'liste' => array_values(array_map('strval', (array) ($s['iller'] ?? [])))],
@@ -1059,7 +1059,7 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('sayfalari_listele', 'okuma', 'Sayfaları listele',
-        'Sitenin herkese açık sayfalarını listeler (tek sayfa kaydından üretilir): yol, başlık, "Evrak" numarası (üst bilgide "Evrak 06 · İletişim" diye görünür; numaralar kendiliğinden verilir, elle değiştirilmez), bölüm (menu, corp, legal), HTML adresi ve sayfanın içeriğinin hangi araçla düzenlendiği (nasil_duzenlenir); sayfa metinleri kayıt defteri kuruluysa hangi "Sayfa metinleri" grubunda olduğu da gelir. Hizmet dosyaları, yazılar, yazı kategorileri ve açık iş ilanı sayfaları da listededir. Sitede kapalı olan bölümlerin sayfaları listede yer almaz. Bir sayfanın şu anki metnini okumak için sayfa_oku kullanın.',
+        'Sitenin herkese açık sayfalarını listeler (tek sayfa kaydından üretilir): yol, başlık, "Evrak" numarası (üst bilgide "Evrak 06 · İletişim" diye görünür; numaralar kendiliğinden verilir, elle değiştirilmez), bölüm (menu, corp, legal), HTML adresi, Markdown adresi (markdown_url) ve sayfanın içeriğinin hangi araçla düzenlendiği (nasil_duzenlenir); sayfa metinleri kayıt defteri kuruluysa hangi "Sayfa metinleri" grubunda olduğu da gelir. Hizmet dosyaları, yazılar, yazı kategorileri ve açık iş ilanı sayfaları da listededir. Sitede kapalı olan bölümlerin sayfaları listede yer almaz. Bir sayfanın şu anki metnini okumak için sayfa_oku kullanın.',
         $noArgs, $RO, function (array $a): array {
             $pages = mcp_pages();
             return mcp_ok(['adet' => count($pages), 'sayfalar' => $pages]);
@@ -1146,8 +1146,8 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('kurumsal_listeleri_getir', 'okuma', 'Kurumsal listeleri getir',
-        'Sitenin ortak listelerini getirir; her biri sitede şu sayfalarda görünür: process (ana sayfadaki çalışma süreci, tam 8 adım), timeline (Hakkımızda raf sayfasındaki mevzuat zaman çizelgesi), principles (Mihenk Taşlarımız, tam 6 ilke), mission (Misyonumuz: bir cümle ve tam 5 madde), vision (Vizyonumuz mektubu), banks (Hesap Numaralarımız), sektorler (bülten formu sektör seçenekleri) ve deneyim (kariyer formu deneyim seçenekleri). Ayrıca SALT OKUNUR iki alan gelir: hero_law (ana sayfadaki kanun metni; resmî mevzuattan kelimesi kelimesine alıntıdır, bu sunucudan değiştirilemez) ve iller. Her listeyi değiştirmenin tek yolu kurumsal_liste_guncelle\'dir (listenin tamamını yazar). Hizmet dosyaları için hizmetleri_listele, referanslar için referanslari_listele kullanılır.',
-        sc_obj(['liste' => sc_enum(['process', 'timeline', 'principles', 'mission', 'vision', 'banks', 'sektorler', 'deneyim', 'hero_law', 'iller'], 'İsteğe bağlı: yalnızca bu liste. Verilmezse hepsi gelir.')]),
+        'Sitenin ortak listelerini getirir; her biri sitede şu sayfalarda görünür: process (ana sayfadaki çalışma süreci, tam 8 adım), timeline (Hakkımızda raf sayfasındaki mevzuat zaman çizelgesi), principles (Mihenk Taşlarımız, tam 6 ilke), mission (Misyonumuz: cumle, işaretsiz sürümü cumle_duz ve tam 5 madde; cumle içindeki [kırmızı-çizgi]…[/kırmızı-çizgi] işareti sayfada kırmızı kalemle çizilen ifadedir), vision (Vizyonumuz mektubu), banks (Hesap Numaralarımız), sektorler (bülten formu sektör seçenekleri) ve deneyim (kariyer formu deneyim seçenekleri) ve goals (Hizmetler sayfasındaki "Ne yapmak istiyorsunuz?" eşleştiricisi: her hedefin ziyaretçiye görünen yazısı ve seçilince öne çıkan hizmet dosyalarının adresleri). Ayrıca SALT OKUNUR iki alan gelir: hero_law (ana sayfadaki kanun metni; resmî mevzuattan kelimesi kelimesine alıntıdır, bu sunucudan değiştirilemez) ve iller. Her listeyi değiştirmenin tek yolu kurumsal_liste_guncelle\'dir (listenin tamamını yazar). Hizmet dosyaları için hizmetleri_listele, referanslar için referanslari_listele kullanılır.',
+        sc_obj(['liste' => sc_enum(['process', 'timeline', 'principles', 'mission', 'vision', 'banks', 'sektorler', 'deneyim', 'goals', 'hero_law', 'iller'], 'İsteğe bağlı: yalnızca bu liste. Verilmezse hepsi gelir.')]),
         $RO, function (array $a): array {
             $all = mcp_lists_public();
             if (isset($a['liste'])) {

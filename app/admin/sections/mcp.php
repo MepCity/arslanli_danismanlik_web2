@@ -149,7 +149,7 @@ $permHtml = '';
 foreach ($scopeDefs as $sid => [$stitle, $sdesc, $personal]) {
     $always = $sid === 'okuma';
     $extra  = '';
-    if ($sid === 'icerik') $sdesc = 'Hizmet dosyalarını, yazıları, referansları, sayfa metinlerini ve kurumsal listeleri (süreç, zaman çizelgesi, ilkeler, misyon, vizyon, form seçenekleri) değiştirir; hizmet, yazı, referans ve iş ilanı ekler, günceller ve siler (iş ilanını yayınlar ve kapatır); logo ve görselleri adresten indirir. İçerik değişikliklerini geri alabilir. Banka hesaplarını değiştirmek için Ayarlar izni de gerekir.';
+    if ($sid === 'icerik') $sdesc = 'Hizmet dosyalarını, yazıları, referansları, sayfa metinlerini, yasal metinleri ve kurumsal listeleri (süreç, zaman çizelgesi, ilkeler, misyon, vizyon, form seçenekleri, hizmet hedef eşleştiricisi) değiştirir; hizmet, yazı, referans ve iş ilanı ekler, günceller ve siler (iş ilanını yayınlar ve kapatır); logo ve görselleri adresten indirir. İçerik değişikliklerini geri alabilir. Banka hesaplarını değiştirmek için Ayarlar izni de gerekir.';
     if ($sid === 'ayarlar') $sdesc = 'Bölümleri sitede açıp kapatır; iletişim ve şirket bilgilerini, e-posta gönderim ayarlarını, bülten saatlik sınırını ve arama motoru ayarlarını değiştirir. Form bildirimlerinin gittiği e-posta adresini ya da kayıtların panelde saklanmasını değiştirmek için Gelen kutusu izni de gerekir.';
     if ($sid === 'okuma') $sdesc = 'Siteyi, sayfaları, duyuruları, yayınlanmış iş ilanlarını, hizmetleri, referansları, kurumsal listeleri, ziyaretçi sayılarını ve değişiklik geçmişini okur. Hiçbir şeyi değiştiremez.';
     if ($sid === 'gelen_kutusu') {
