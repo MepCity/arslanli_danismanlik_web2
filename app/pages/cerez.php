@@ -24,7 +24,7 @@ $storagePages = $scan['storage_pages'];
 $embeds       = $scan['embeds'];
 $external     = $scan['external'];
 $pageNames = [];
-foreach (['app', 'home', 'about', 'services', 'service', 'refs', 'blog', 'post', 'contact', 'signup', 'bank', 'mission', 'vision', 'stones'] as $id) {
+foreach (['app', 'spotlight', 'home', 'about', 'services', 'service', 'refs', 'blog', 'post', 'contact', 'signup', 'bank', 'mission', 'vision', 'stones'] as $id) {
     $pageNames[$id] = t('cerez.depolama.' . $id);
 }
 $storageWhere = implode(', ', array_map(fn($p) => $pageNames[$p] ?? $p, array_unique($storagePages)));
