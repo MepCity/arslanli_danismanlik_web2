@@ -31,7 +31,11 @@ $sent  = $durum === 'tamam';
           <p class="label">Alındı · <?= e(today_official()) ?></p>
           <p class="kp__slip-h serif-display">Kuponunuz bize ulaştı.</p>
           <p class="kp__slip-msg" data-kp-msg>Sizi ilgilendiren bir çağrı açıldığında haber vereceğiz.</p>
-          <p class="kp__slip-more">O zamana kadar <a class="link" href="<?= url(blog_on() ? 'blog' : 'duyurular') ?>"><?= blog_on() ? 'makalelere' : 'açık çağrılara' ?></a> göz atabilir ya da bir sorunuz varsa <a class="link" href="<?= url('iletisim') ?>">bize yazabilirsiniz</a>.</p>
+          <?php if (feature('blog') || feature('duyurular')): ?>
+          <p class="kp__slip-more">O zamana kadar <a class="link" href="<?= url(feature('blog') ? 'blog' : 'duyurular') ?>"><?= feature('blog') ? 'makalelere' : 'açık çağrılara' ?></a> göz atabilir ya da bir sorunuz varsa <a class="link" href="<?= url('iletisim') ?>">bize yazabilirsiniz</a>.</p>
+          <?php else: ?>
+          <p class="kp__slip-more">Bir sorunuz varsa <a class="link" href="<?= url('iletisim') ?>">bize yazabilirsiniz</a>.</p>
+          <?php endif; ?>
         </div>
       </div>
 

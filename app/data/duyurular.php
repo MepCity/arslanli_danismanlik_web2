@@ -1,49 +1,22 @@
 <?php
 /**
- * Duyurular: resmî kurumların açık çağrıları ve tarihleri.
+ * Duyurular: resmî kurumların açık çağrıları ve tarihleri (varsayılan içerik).
  * Başlık, tarih, kurum, özet ve bağlantılar resmî kaynaklarla karşılaştırılmıştır (Ekim 2026); olduğu gibi korunur.
+ *
+ * Bu dosya yalnızca veridir: sitenin okuduğu yer app/announcements.php'dir. Panelden ilk değişiklik yapılana kadar
+ * (storage/duyurular.json yokken) duyurular buradan okunur; ilk kayıtta aşağıdaki liste dosyaya taşınır ve
+ * "sitenin ilk hali" olarak değişiklik geçmişinde saklanır. Panelden değişen duyuru bu dosyaya yazılmaz.
  *
  * Bir duyuru:
  *  id, title, kurum, summary, link, updated,
  *  featured (bool): sitenin açılışında öne çıkan duyuru; süresi son başvuru gününde (yoksa son tarihte) dolar,
  *  events: [ { date: YYYY-MM-DD, type: baslangic|son|sonuc|diger, note } ]
+ *  (published yazılmamışsa yayında sayılır; panelde kaydedilen duyurularda 'published', 'sample', 'featured_until', 'created' da bulunur.)
  *
- * Bu dosya hem veriyi (require ile dizi döner) hem de sayfa, açılış penceresi ve takvim dosyası için yardımcıları içerir.
  * Yeni duyuru: aşağıdaki listeye bir blok ekleyin; kapanan çağrılar listede kalır ve "Süresi doldu" olarak görünür.
  */
 
-/** Makaleler bölümü açık mı? (app/config.php 'blog'; ayar yoksa açık sayılır) */
-function blog_on(): bool
-{
-    return (bool) cfg('blog', true);
-}
-
-function ann_types(): array
-{
-    return [
-            'baslangic' => 'Başvuru başlangıcı',
-            'son'       => 'Son başvuru günü',
-            'sonuc'     => 'Sonuç açıklanması',
-            'diger'     => 'Bilgilendirme',
-    ];
-}
-
-function ann_data(): array
-{
-    static $data = null;
-    if ($data === null) {
-        $data = ann_items();
-        foreach ($data as &$a) {
-            usort($a['events'], fn($x, $y) => strcmp($x['date'], $y['date']));
-        }
-        unset($a);
-    }
-    return $data;
-}
-
-function ann_items(): array
-{
-    return [
+return [
     [
         'id'       => '5283b275ae',
         'title'    => 'TÜBİTAK 1832 Sanayide Yeşil Dönüşüm 2026-2 çağrısı 12 Ekim\'de kapanıyor',
@@ -140,190 +113,4 @@ function ann_items(): array
             ['date' => '2026-11-04', 'type' => 'diger', 'note' => 'Tam başvuru (2. adım) kesim tarihi, Brüksel saatiyle 17.00'],
         ],
     ],
-    ];
-}
-
-/* ---------- Sıralama ve durum ---------- */
-
-/** En yakın gelecek tarihi (yoksa en son geçmiş tarihi) sıralama anahtarı olarak döndürür. */
-function ann_sort_key(array $a): string
-{
-    $today = date('Y-m-d');
-    foreach (array_column($a['events'], 'date') as $d) {
-        if ($d >= $today) {
-            return '0' . $d;                                   // yaklaşanlar önce, en yakını en üstte
-        }
-    }
-    $last = $a['events'] ? end($a['events'])['date'] : '0000-00-00';
-    return '1' . (string) (99999999 - (int) str_replace('-', '', $last)); // geçmişler sonra, en yenisi önce
-}
-
-/** Ziyaretçi için sıralı duyurular. */
-function ann_published(): array
-{
-    $items = ann_data();
-    usort($items, fn($x, $y) => strcmp(ann_sort_key($x), ann_sort_key($y)));
-    return $items;
-}
-
-/** Hiçbir tarihi kalmamış çağrı: süresi dolmuştur. */
-function ann_is_past(array $a): bool
-{
-    return !$a['events'] || end($a['events'])['date'] < date('Y-m-d');
-}
-
-/** Bugünden verilen güne kaç gün var (geçmişse negatif). */
-function ann_days_left(string $ymd): int
-{
-    return (int) round((strtotime($ymd) - strtotime(date('Y-m-d'))) / 86400);
-}
-
-function ann_left_text(string $ymd): string
-{
-    $n = ann_days_left($ymd);
-    return $n < 0 ? 'Geçti' : ($n === 0 ? 'Bugün' : ($n === 1 ? 'Yarın' : $n . ' gün kaldı'));
-}
-
-/** "12 Ekim" */
-function ann_short_date(string $ymd): string
-{
-    $months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    $t = strtotime($ymd);
-    return date('j', $t) . ' ' . $months[(int) date('n', $t) - 1];
-}
-
-/** Geri sayım ve damga için hedef olay: son başvuru günü; geçtiyse ya da yoksa bugünden sonraki ilk tarih. */
-function ann_target(array $a): ?array
-{
-    $today = date('Y-m-d');
-    foreach ($a['events'] as $ev) {
-        if ($ev['type'] === 'son' && $ev['date'] >= $today) return $ev;
-    }
-    foreach ($a['events'] as $ev) {
-        if ($ev['date'] >= $today) return $ev;
-    }
-    return null;
-}
-
-/** Öne çıkarmanın bitiş günü: son başvuru günü, o da yoksa en son tarih. */
-function ann_featured_until(array $a): string
-{
-    $son = array_column(array_filter($a['events'], fn($e) => $e['type'] === 'son'), 'date');
-    if ($son) return max($son);
-    $all = array_column($a['events'], 'date');
-    return $all ? max($all) : '';
-}
-
-/** Sitenin açılışında öne çıkan duyuru (öne çıkarılmış, süresi dolmamış); birden fazlaysa en son güncellenen. */
-function ann_featured(): ?array
-{
-    $today = date('Y-m-d');
-    $list  = array_filter(ann_data(), fn($a) => !empty($a['featured']) && ann_featured_until($a) >= $today);
-    usort($list, fn($x, $y) => strcmp($y['updated'], $x['updated']));
-    return $list[0] ?? null;
-}
-
-function ann_find(string $id): ?array
-{
-    foreach (ann_data() as $a) {
-        if ($a['id'] === $id) return $a;
-    }
-    return null;
-}
-
-function ann_url(array $a): string
-{
-    return url('duyurular') . '#duyuru-' . $a['id'];
-}
-
-/* ---------- iCalendar (RFC 5545) ---------- */
-
-/** TEXT değeri kaçışı */
-function ann_ics_text(string $s): string
-{
-    $s = str_replace(["\r\n", "\r"], "\n", $s);
-    $s = str_replace(['\\', ';', ',', "\n"], ['\\\\', '\;', '\\,', '\\n'], $s);
-    return (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $s);
-}
-
-/** 75 sekizli satır katlama; UTF-8 karakterini ortasından bölmez. */
-function ann_ics_fold(string $line): string
-{
-    if (strlen($line) <= 75) return $line;
-    $out = '';
-    $cur = '';
-    foreach (preg_split('//u', $line, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
-        if (strlen($cur) + strlen($ch) > 75) {
-            $out .= $cur . "\r\n";
-            $cur = ' ';
-        }
-        $cur .= $ch;
-    }
-    return $out . $cur;
-}
-
-function ann_ics_calendar(array $anns, string $name): string
-{
-    $types = ann_types();
-    $host  = (string) parse_url((string) cfg('url'), PHP_URL_HOST) ?: 'localhost';
-    $lines = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//' . ann_ics_text((string) cfg('name')) . '//Duyurular//TR',
-        'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH',
-        'X-WR-CALNAME:' . ann_ics_text($name),
-        'X-WR-TIMEZONE:Europe/Istanbul',
-        'REFRESH-INTERVAL;VALUE=DURATION:P1D',
-        'X-PUBLISHED-TTL:P1D',
-    ];
-    foreach ($anns as $a) {
-        $stamp = gmdate('Ymd\THis\Z', (int) strtotime($a['updated']));
-        foreach ($a['events'] as $ev) {
-            $label = $types[$ev['type']] ?? 'Bilgilendirme';
-            $desc  = array_filter([$a['summary'], $ev['note'], 'Resmi bağlantı: ' . $a['link'], 'Duyuru: ' . absolute_url('duyurular') . '#duyuru-' . $a['id']]);
-            array_push($lines,
-                'BEGIN:VEVENT',
-                'UID:' . preg_replace('/[^A-Za-z0-9._-]/', '', $a['id'] . '-' . $ev['date'] . '-' . $ev['type']) . '@' . $host,
-                'DTSTAMP:' . $stamp,
-                'LAST-MODIFIED:' . $stamp,
-                'DTSTART;VALUE=DATE:' . str_replace('-', '', $ev['date']),
-                'DTEND;VALUE=DATE:' . (new DateTimeImmutable($ev['date']))->modify('+1 day')->format('Ymd'),
-                'SUMMARY:' . ann_ics_text($label . ': ' . $a['title']),
-                'DESCRIPTION:' . ann_ics_text(implode("\n", $desc)),
-                'URL:' . absolute_url('duyurular') . '#duyuru-' . $a['id'],
-                'CATEGORIES:' . ann_ics_text($a['kurum']),
-                'TRANSP:TRANSPARENT',
-                'STATUS:CONFIRMED',
-                'END:VEVENT'
-            );
-        }
-    }
-    $lines[] = 'END:VCALENDAR';
-    return implode("\r\n", array_map('ann_ics_fold', $lines)) . "\r\n";
-}
-
-/** /duyurular.ics (hepsi) ya da /duyurular/{id}.ics (tek duyuru) */
-function ann_serve_ics(?string $id): void
-{
-    if ($id !== null) {
-        $a = ann_find($id);
-        if (!$a) {
-            http_response_code(404);
-            header('Content-Type: text/plain; charset=utf-8');
-            echo "Duyuru bulunamadı.\n";
-            exit;
-        }
-        $body = ann_ics_calendar([$a], $a['title']);
-        $file = 'duyuru-' . $id . '.ics';
-    } else {
-        $body = ann_ics_calendar(ann_published(), cfg('name') . ': Duyurular');
-        $file = 'duyurular.ics';
-    }
-    header('Content-Type: text/calendar; charset=utf-8');
-    header('Content-Disposition: inline; filename="' . $file . '"');
-    echo $body;
-    exit;
-}
-
-return ann_data();
+];

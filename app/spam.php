@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * İstenmeyen gönderim (spam) süzgeci: puanlama, JavaScript kanıtı, tek kullanımlık belirteç ve karantina.
  * Hiçbir gönderim sessizce silinmez: puanı SPAM_LIMIT ve üzerinde olan kayıt "spam" anahtarıyla saklanır,
- * bildirim e-postası gönderilmez ve SPAM_DAYS gün boyunca storage/submissions.jsonl dosyasında durur (bkz. app/form.php).
+ * bildirim e-postası gönderilmez ve panelde "Şüpheli" altında SPAM_DAYS gün bekler (bkz. app/form.php).
  * Şüpheli kayıtlar sınırlıdır (toplu gönderimle dosya şişirilemesin diye): serbest metinleri SPAM_TEXT_MAX karaktere
  * kısaltılarak saklanır ve yalnızca en yeni SPAM_MAX tanesi tutulur.
  *
@@ -25,6 +25,7 @@ function spam_fields(string $type): array
         'iletisim'   => ['name' => ['namesurname'], 'org' => null, 'phone' => 'phone', 'text' => ['konu', 'message']],
         'bulten'     => ['name' => ['ad', 'soyad'], 'org' => 'sektor', 'phone' => 'telefon', 'text' => ['sektor', 'mesaj']],
         'kariyer'    => ['name' => ['ad', 'soyad'], 'org' => null, 'phone' => 'telefon', 'text' => ['pozisyon', 'mesaj']],
+        'haberdarol' => ['name' => ['isimsoyisim', 'isimsoyisim2'], 'org' => 'unvan', 'phone' => 'telefon', 'text' => ['unvan', 'mesaj']],
     ][$type] ?? ['name' => [], 'org' => null, 'phone' => null, 'text' => []];
 }
 
@@ -33,6 +34,10 @@ function spam_text(string $type, array $data): string
 {
     $out = [];
     foreach (spam_fields($type)['text'] as $k) {
+        // İlana başvuruda pozisyon ilanın başlığıdır (sunucu yazar, aday değil): aynı ilana başvuranların metni birbirine benzemesin
+        if ($k === 'pozisyon' && !empty($data['ilan'])) {
+            continue;
+        }
         $out[] = (string) ($data[$k] ?? '');
     }
     return trim(implode(' ', $out));
@@ -128,7 +133,7 @@ function spam_score(string $type, array $data, array $ctx = []): array
     };
 
     /* ---------- İstek: tarayıcıdan mı geliyor? ---------- */
-    // Bal küpü: gizli alanı botlar doldurur. Tek başına şüpheli saymaya yeter; kayıt atılmaz, "spam" anahtarıyla saklanır
+    // Bal küpü: gizli alanı botlar doldurur. Tek başına şüpheli saymaya yeter; kayıt atılmaz, panelde "Şüpheli" altında bekler
     // (tarayıcının otomatik doldurması yüzünden gerçek bir ziyaretçi de buraya düşebilir).
     if ($ctx['honeypot']) {
         $add(SPAM_LIMIT, 'Gizli alan dolduruldu');
@@ -224,7 +229,7 @@ function spam_score(string $type, array $data, array $ctx = []): array
     $digits = (string) preg_replace('/\D+/', '', (string) ($f['phone'] !== null ? ($data[$f['phone']] ?? '') : ''));
     // Türkiye numarası: isteğe bağlı 0090 / 90 / 0 önekinden sonra 2, 3, 4, 5 ya da 8 ile başlayan on hane; ya da yedi haneli 444 hattı
     if ($digits !== '' && !preg_match('/^(?:0090|90|0)?[2-58]\d{9}$|^444\d{4}$/D', $digits)) {
-        $add($type === 'bulten' ? 3 : 1, 'Telefon Türkiye numarasına benzemiyor');
+        $add(in_array($type, ['bulten', 'haberdarol'], true) ? 3 : 1, 'Telefon Türkiye numarasına benzemiyor');
     }
 
     $disposable = ['mailinator.com', 'guerrillamail.com', 'guerrillamail.net', 'sharklasers.com', 'grr.la', '10minutemail.com', '10minutemail.net', 'tempmail.com', 'temp-mail.org', 'temp-mail.io',
@@ -318,8 +323,8 @@ function spam_token_used(string $token, ?bool $mark = null): bool
 
 /**
  * Form gönderimleri (storage/submissions.jsonl), en yeni sonda. Dosya paylaşımlı kilitle okunur: o sırada yeniden yazılıyorsa
- * (şüpheli kayıt temizliği) yazma bitene kadar beklenir, yarım dosya hiçbir zaman okunmaz.
- * Kayıt dosyasını okuyan her kod bunu kullanmalıdır.
+ * (kayıt silme, "Spam değil", temizlik) yazma bitene kadar beklenir, yarım dosya hiçbir zaman okunmaz.
+ * Panel (adm_records) ve bülten aboneleri (bulten_aboneler) de dosyayı bununla okur.
  */
 function spam_records(): array
 {

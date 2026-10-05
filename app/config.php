@@ -44,11 +44,14 @@ return [
         'smtp'      => null,
     ],
 
-    // Makaleler (blog) bölümü: false iken /blog adresleri 404 verir, menü, site haritası ve ana sayfadan makale bağlantıları kalkar.
-    'blog' => false,
-
     // Gönderimler ayrıca storage/ klasörüne kaydedilsin mi? (e-posta iletilemezse kayıp olmaz)
     'store_submissions' => true,
+
+    // Yönetim paneli (/yonetim). İlk şifrenin karşılığıdır; panelden "Güvenlik ve yedek" sayfasıyla değiştirin.
+    // Değiştirilen şifre storage/admin.json dosyasına yazılır ve bunun yerine geçer.
+    'admin' => [
+        'password_hash' => '$2y$12$MM9u4i5p170LROlZqFH2aO3tRyjX87Wl/cpxSeSKaKM1um2UJ42E.',
+    ],
 
     // Form güvenlik anahtarı (yedek değer). Gerçek anahtar storage/secret.key dosyasında tutulur ve ilk istekte kendiliğinden
     // oluşturulur; dosya varken bu değer kullanılmaz. Bu değeri değiştirmenize gerek yok.

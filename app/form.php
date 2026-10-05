@@ -4,7 +4,8 @@ declare(strict_types=1);
 /**
  * İletişim, bülten (Haberdar Ol kuponu dahil) ve iş başvurusu (kariyer) formlarının ortak işleyicisi.
  * JSON döndürür; JavaScript kapalıysa kullanıcıyı sayfaya geri yönlendirir.
- * İstenmeyen gönderimler app/spam.php ile puanlanır; şüpheli olanlar reddedilmez, e-posta gönderilmeden saklanır.
+ * İstenmeyen gönderimler app/spam.php ile puanlanır; şüpheli olanlar reddedilmez, e-posta gönderilmeden saklanır
+ * ve panelde "Şüpheli" altında bekler.
  */
 
 require_once APP . '/spam.php';
@@ -143,12 +144,14 @@ function form_rate_site_undo(): void
 
 /**
  * Bildirim e-postası: şirkete gider, ziyaretçiye gönderilmez. Özgeçmiş dosyası varsa eklenir.
+ * Panelde "Spam değil" ile gelen kutusuna alınan şüpheli kaydın bekletilen e-postası da bununla gönderilir.
  * $form: aşağıdaki tanımlardan biri; $time: gönderimin yapıldığı an.
  */
 function form_notify(array $form, string $type, array $data, string $ip, int $time): bool
 {
-    $labels = array_map(fn($f) => $f[0], $form['fields']) + ['cv' => 'Özgeçmiş dosyası', 'cv_name' => 'Özgeçmiş (özgün ad)'];
-    $body = $form['subject'] . "\n" . str_repeat('-', 40) . "\n";
+    $labels = array_map(fn($f) => $f[0], $form['fields']) + ['cv' => 'Özgeçmiş dosyası', 'cv_name' => 'Özgeçmiş (özgün ad)', 'ilan' => 'İlan kimliği', 'ilan_baslik' => 'Başvurulan ilan'];
+    $ilanTitle = $type === 'kariyer' ? trim((string) preg_replace('/\s+/u', ' ', (string) ($data['ilan_baslik'] ?? ''))) : '';
+    $body = $form['subject'] . ($ilanTitle !== '' ? ' (ilana başvuru: ' . $ilanTitle . ')' : '') . "\n" . str_repeat('-', 40) . "\n";
     foreach ($data as $k => $v) {
         $body .= ($labels[$k] ?? $k) . ': ' . ($v === '' ? '-' : $v) . "\n";
     }
@@ -156,7 +159,9 @@ function form_notify(array $form, string $type, array $data, string $ip, int $ti
 
     $subject = $form['subject'];
     if ($type === 'kariyer') {
-        $subject .= ': ' . ($data['ad'] ?? '') . ' ' . ($data['soyad'] ?? '') . (($data['pozisyon'] ?? '') !== '' ? ' (' . $data['pozisyon'] . ')' : '');
+        // İlana başvuruda konuya ilanın adı yazılır: "…, ilan "Teşvik Danışmanı": Ad Soyad"; genel başvuruda konu eskisi gibidir
+        $subject .= ($ilanTitle !== '' ? ', ilan "' . $ilanTitle . '"' : '') . ': ' . ($data['ad'] ?? '') . ' ' . ($data['soyad'] ?? '')
+            . ($ilanTitle === '' && ($data['pozisyon'] ?? '') !== '' ? ' (' . $data['pozisyon'] . ')' : '');
     }
     $attachments = [];
     $cv = (string) ($data['cv'] ?? '');
@@ -212,20 +217,45 @@ $forms = [
             'saklama'  => ['Gelecek pozisyonlar için saklama izni', 'bool'],
         ],
     ],
+    // Eski form: artık gönderim kabul etmez (aşağıda reddedilir). Tanımı, eski kayıtların alan adları için durur.
+    'haberdarol' => [
+        'subject' => 'Haberdar Ol kaydı',
+        'fields'  => [
+            'isimsoyisim'  => ['Ad', 'required|max:80'],
+            'isimsoyisim2' => ['Soyad', 'required|max:80'],
+            'telefon'      => ['Telefon', 'required|phone'],
+            'email'        => ['E-posta', 'required|email'],
+            'unvan'        => ['Ticari ünvan', 'required|max:160'],
+            'mesaj'        => ['Mesaj', 'max:5000'],
+        ],
+    ],
 ];
+
+// Yönetim paneli bu dosyayı yalnızca tanımlar ve form_notify() için yükler (bkz. adm_record_release); gönderim işlenmez.
+if (defined('FORM_DEFS_ONLY')) {
+    return $forms;
+}
 
 if (!$_POST && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
     respond(false, 'Gönderilen dosya çok büyük. Lütfen en fazla 5 MB boyutunda bir dosya seçin.', ['cv' => 'Dosya en fazla 5 MB olabilir.'], 413);
 }
 
-// Form adı metin değilse (ör. dizi olarak gönderilmişse) geçersiz sayılır. Eski "haberdarol" formu artık yoktur: kupon da "bulten" gönderir.
+// Form adı metin değilse (ör. dizi olarak gönderilmişse) geçersiz sayılır.
+// "haberdarol" eski formdur ve artık gönderim kabul etmez: kupon da "bulten" gönderir. Sitede hiçbir sayfa onu kullanmıyor ve ileti
+// onayı kutusu olmadığı için, kabul edilseydi herkes başkasının adresiyle onaysız bir bülten kaydı bırakabilirdi. Tanımı yukarıda
+// yalnızca eski kayıtların alan adları (bildirim e-postası, "Spam değil") için durur.
 $type = is_string($_POST['_form'] ?? null) ? $_POST['_form'] : '';
-if (!isset($forms[$type])) {
+if (!isset($forms[$type]) || $type === 'haberdarol') {
     respond(false, 'Geçersiz form.', [], 400);
+}
+// Panelden kapatılan bölümlerin formları kabul edilmez (Görünürlük: Kariyer, Bülten)
+$formFeature = ['kariyer' => 'kariyer', 'bulten' => 'bulten'][$type] ?? null;
+if ($formFeature !== null && !feature($formFeature)) {
+    respond(false, 'Bu form şu an kullanıma kapalı. Bize telefon ya da e-posta ile ulaşabilirsiniz.', [], 410);
 }
 
 // Bal küpü: insanlar bu alanı görmez, botlar doldurur. Dolu gelen gönderim atılmaz ve farklı bir yanıt almaz: olağan gönderim gibi
-// denetlenir, puanlamada tek başına şüpheli sayılır (bkz. spam_score), e-posta gönderilmeden storage/submissions.jsonl dosyasında saklanır.
+// denetlenir, puanlamada tek başına şüpheli sayılır (bkz. spam_score) ve panelde "Şüpheli" altında bekler.
 $honeypot = !empty($_POST['website']);
 
 // Belirteç geçersizse, süresi dolmuşsa ya da daha önce kullanılmışsa aynı yanıt verilir. Yanıt yeni bir belirteç taşır (bkz. respond):
@@ -234,6 +264,18 @@ $token   = is_string($_POST['_token'] ?? null) ? $_POST['_token'] : null;
 $expired = 'Oturum süresi dolduğu için form yenilendi; yazdıklarınız duruyor. Lütfen birkaç saniye sonra yeniden gönderin.';
 if (!verify_form_token($token) || spam_token_used($token)) {
     respond(false, $expired, [], 419);
+}
+
+// İlana başvuru: "ilan" alanı varsa açık bir ilanın kimliği olmalı. Taslak, kapalı, süresi dolmuş, silinmiş ya da hiç olmamış ilan için aynı yanıt verilir
+// (taslağın var olup olmadığı sezdirilmez). Reddedilen gönderim hız sınırına sayılmaz ve belirteci tüketmez. Alan yoksa başvuru genel başvurudur (aday havuzu).
+// Aşama 2D: ilan sayfası ve Kariyer'deki açık pozisyonlar eklenene dek sitedeki hiçbir form "ilan" alanı göndermez.
+$ilan = null;
+if ($type === 'kariyer' && array_key_exists('ilan', $_POST)) {
+    $ilan = is_string($_POST['ilan']) && trim($_POST['ilan']) !== '' ? ilan_find(trim($_POST['ilan'])) : null;
+    if ($ilan === null || !ilan_active($ilan)) {
+        respond(false, 'Bu ilan artık başvuruya açık değil ya da bulunamadı. Genel başvuru formunu kullanarak özgeçmişinizi bırakabilirsiniz.', [], 410);
+    }
+    $_POST['pozisyon'] = (string) $ilan['title'];   // pozisyon her zaman ilanın başlığıdır; gönderilen değer yok sayılır
 }
 
 // Hız sınırı (bkz. form_rate): sınır zaten dolmuşsa alanlara ve dosyaya bakılmadan geri çevrilir.
@@ -292,6 +334,12 @@ foreach ($forms[$type]['fields'] as $name => [$label, $rules]) {
         }
     }
     $data[$name] = $value;
+}
+
+// İlana başvuruda kayıt ilanın kimliğini ve başlığın bir kopyasını taşır (ilan sonradan silinse ya da yeniden adlandırılsa da başvuru okunur kalır)
+if ($ilan !== null) {
+    $data['ilan']        = (string) $ilan['id'];
+    $data['ilan_baslik'] = (string) $ilan['title'];
 }
 
 /* ---------- Özgeçmiş dosyası (yalnızca kariyer formu) ---------- */
@@ -376,8 +424,8 @@ $done = match ($type) {
     default   => 'Dilekçeniz bize ulaştı. En kısa sürede dönüş yapacağız.',
 };
 
-// İş başvuruları ve bülten kayıtları, şüpheli gönderimler de incelenebilsin diye her zaman saklanır
-// (config.php'de "store_submissions" kapalı olsa bile). Şüpheli kaydın serbest metinleri kısaltılarak saklanır.
+// İş başvuruları panelde listelendiği, bülten kayıtları abone listesinin kaynağı olduğu, şüpheli gönderimler de incelenebilsin diye
+// her zaman saklanır ("kayıtları sakla" ayarı kapalı olsa bile). Şüpheli kaydın serbest metinleri kısaltılarak saklanır.
 $saved = false;
 if (cfg('store_submissions') || in_array($type, ['kariyer', 'bulten'], true) || $suspect) {
     // Geçersiz UTF-8 baytları kaydı bozmasın diye yer tutucuyla değiştirilir; kayıt yine de üretilemezse "saklanmadı" sayılır
@@ -409,7 +457,7 @@ $notify = function () use ($forms, $type, $data, $ip): bool {
     return $sent;
 };
 
-// Şüpheli gönderim: kayıt "spam" anahtarıyla saklanır, e-posta gönderilmez. Yanıt olağan gönderimle aynıdır (bot geri bildirim almaz).
+// Şüpheli gönderim: kayıt panelde "Şüpheli" altında bekler, e-posta gönderilmez. Yanıt olağan gönderimle aynıdır (bot geri bildirim almaz).
 // Site geneli saatlik sınıra sayılmaz; şüpheli kayıtlar en yeni SPAM_MAX kayıtla ve SPAM_DAYS günle sınırlanır (spam_purge).
 // Kayıt yazılamadıysa gönderim kaybolmasın diye aşağıda e-posta yine gönderilir.
 if ($suspect && $saved) {
@@ -423,7 +471,7 @@ if ($suspect && $saved) {
 }
 
 // Kayıt saklandıysa önce yanıt verilir, bildirim e-postası ardından gönderilir (sunucu destekliyorsa): gönderim zaten dosyada durduğu
-// için e-posta iletilemese de kaybolmaz; iletilemediği storage/mail-failures.log dosyasına yazılır.
+// için e-posta iletilemese de kaybolmaz; iletilemediği storage/mail-failures.log dosyasına ve panelin Genel bakış uyarısına düşer.
 if ($saved && $respondEarly($done)) {
     $notify();
     if (mt_rand(1, 50) === 1) {

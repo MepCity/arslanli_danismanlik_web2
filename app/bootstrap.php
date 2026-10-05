@@ -7,6 +7,10 @@ date_default_timezone_set('Europe/Istanbul');
 define('APP', __DIR__);
 define('ROOT', dirname(__DIR__));
 
+require APP . '/content.php';
+require APP . '/changelog.php';
+
+// Ayarların önceliği: app/config.php < storage/config.local.php < panelden kaydedilen ayarlar (storage/content/settings.json).
 $GLOBALS['config']   = require APP . '/config.php';
 
 // Sunucuya özel ayarlar (SMTP şifresi gibi): storage/config.local.php, app/config.php ile aynı biçimde bir dizi döndüren PHP dosyasıdır
@@ -25,6 +29,8 @@ if (is_file($_local)) {
     }
 }
 unset($_local, $_over, $_e);
+// Panelden kaydedilen ayarlar en üsttedir (yalnızca izin verilen alanlar: bkz. settings_apply)
+$GLOBALS['config'] = settings_apply($GLOBALS['config'], (array) content_get('settings', []));
 
 // Form güvenlik anahtarı: config.php'deki varsayılan değer herkesçe bilindiği için, siteye özel anahtar ilk açılışta
 // kendiliğinden oluşturulur ("x": dosya yalnızca yoksa açılır, aynı anda gelen iki istekten biri yazar).
@@ -39,9 +45,12 @@ if (is_file($_key) && ($_k = trim((string) file_get_contents($_key))) !== '') {
     $GLOBALS['config']['secret'] = $_k;
 }
 unset($_key, $_fh, $_k);
-$GLOBALS['services'] = require APP . '/data/services.php';
-$GLOBALS['posts']    = require APP . '/data/posts.php';
-$GLOBALS['site']     = require APP . '/data/site.php';
+// Varsayılanlar app/data/*.php dosyalarından gelir; panelden yapılan değişiklikler (storage/content/*.json) üzerine yazılır.
+$GLOBALS['services'] = content_get('services') ?? require APP . '/data/services.php';
+$GLOBALS['posts']    = content_get('posts') ?? require APP . '/data/posts.php';
+$GLOBALS['site']     = array_merge(require APP . '/data/site.php', (array) content_get('lists', []));
+require APP . '/announcements.php';   // duyurular: storage/duyurular.json, yoksa app/data/duyurular.php
+require APP . '/ilanlar.php';         // iş ilanları (veri katmanı; ilan sayfası ve panel ekranı Aşama 2D)
 
 function cfg(string $key, $default = null)
 {
@@ -67,9 +76,87 @@ function services(): array
 
 function posts(): array
 {
-    $posts = $GLOBALS['posts'];
+    // Yazılar bölümü kapalıysa sitede hiçbir yazı görünmez (panel $GLOBALS['posts'] ile tümünü görür);
+    // taslaklar ('draft' => true) sitede hiçbir yerde görünmez
+    if (!feature('blog')) {
+        return [];
+    }
+    $posts = array_filter($GLOBALS['posts'], fn($p) => empty($p['draft']));
     uasort($posts, fn($a, $b) => strcmp($b['date'], $a['date']));
     return $posts;
+}
+
+/** Türkçe karakterleri sadeleştirerek adres parçası üretir: "Bizden Haberler" → "bizden-haberler" */
+function slugify(string $text): string
+{
+    $map = ['ç' => 'c', 'Ç' => 'c', 'ğ' => 'g', 'Ğ' => 'g', 'ı' => 'i', 'I' => 'i', 'İ' => 'i', 'ö' => 'o', 'Ö' => 'o', 'ş' => 's', 'Ş' => 's', 'ü' => 'u', 'Ü' => 'u'];
+    $s = strtolower(strtr($text, $map));
+    return trim((string) preg_replace('/[^a-z0-9]+/', '-', $s), '-');
+}
+
+/** Statik sayfa adresleri → şablon adı; kapalı bölümlerin sayfaları çıkarılır (index.php yönlendirmesi bunu kullanır). */
+function site_static_routes(): array
+{
+    return array_filter(site_static_routes_all(), fn($path) => path_enabled((string) $path), ARRAY_FILTER_USE_KEY);
+}
+
+/** Tüm statik sayfalar (kapalı bölümler dahil). Aşama 3A'da app/seo.php eklenirken bu iki işlev oradan kaldırılır. */
+function site_static_routes_all(): array
+{
+    return [
+        ''                           => 'home',
+        'hakkimizda'                 => 'hakkimizda',
+        'hizmetler'                  => 'hizmetler',
+        'referans'                   => 'referans',
+        'blog'                       => 'blog',
+        'iletisim'                   => 'iletisim',
+        'haberdarol'                 => 'haberdarol',
+        'hesap-numaralarimiz'        => 'hesap',
+        'duyurular'                  => 'duyurular',
+        'kariyer'                    => 'kariyer',
+        'kurumsal/misyonumuz'        => 'misyon',
+        'kurumsal/vizyonumuz'        => 'vizyon',
+        'kurumsal/mihenk-taslarimiz' => 'mihenk',
+        'kurumsal/cerez-politikasi'  => 'cerez',
+        'kurumsal/kvkk-aydinlatma-metni' => 'kvkk',
+    ];
+}
+
+/** "Sonraki evrak" kartı için sayfa: adayların panelden kapatılmamış ilki. Adaylar: [[yol, ad, no], ...] */
+function next_page(array $candidates): array
+{
+    foreach ($candidates as $c) {
+        if (path_enabled((string) $c[0])) {
+            return $c;
+        }
+    }
+    return end($candidates);
+}
+
+/** Herkese açık, dizine eklenecek sayfa yolları (site haritası ve ziyaretçi sayacı); kapalı bölümler yoktur. */
+function site_public_paths(): array
+{
+    $paths = array_keys(site_static_routes());
+    foreach (array_keys(services()) as $slug) {
+        $paths[] = 'urunler/detay/' . $slug;
+    }
+    $cats = [];
+    foreach (posts() as $slug => $p) {
+        $paths[] = 'blog/' . $slug;
+        $cats[slugify((string) ($p['category'] ?? 'Genel'))] = true;
+    }
+    foreach (array_keys($cats) as $c) {
+        if ($c !== '') {
+            $paths[] = 'blog/category/' . $c;
+        }
+    }
+    // Aşama 2D: açık ilanlar da girer (ilan sayfası eklenince)
+    if (is_file(APP . '/pages/ilan.php')) {
+        foreach (ilan_published() as $x) {
+            $paths[] = ilan_path($x);
+        }
+    }
+    return $paths;
 }
 
 function e($value): string

@@ -309,6 +309,19 @@ document.addEventListener('click', async (e) => {
   }
 });
 
+/* ---------- Ziyaret sayacı: çerezsiz; sayfa açılınca /olc adresine tek bir bildirim (bkz. app/stats.php) ---------- */
+
+{
+  const send = () => {
+    try { if (localStorage.getItem('arsl-sayma') === '1') return; } catch { /* depolama kapalı: sayılır */ }   // yönetim panelini kullanan tarayıcı sayılmaz
+    const b = document.body;
+    if (!b || b.dataset.page === 'notfound' || !navigator.sendBeacon) return;
+    navigator.sendBeacon((b.dataset.base || '') + '/olc', new URLSearchParams({ p: location.pathname, r: document.referrer }));
+  };
+  // Tarayıcının arka planda önceden hazırladığı sayfa, ziyaretçi gerçekten açınca sayılır
+  if (document.prerendering) document.addEventListener('prerenderingchange', send, { once: true }); else send();
+}
+
 /* ---------- Sayfa betiği ---------- */
 
 const ctx = { gsap, ScrollTrigger, lenis, reduced, fine, toast };

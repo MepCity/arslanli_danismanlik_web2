@@ -148,6 +148,7 @@ $wall = function (string $mode) use ($law): void { ?>
   </div>
 </section>
 
+<?php if (feature('referanslar')): ?>
 <!-- 5 · Kaşeler -->
 <section class="kaseler section" aria-labelledby="kaseler-title">
   <div class="wrap">
@@ -162,8 +163,9 @@ $wall = function (string $mode) use ($law): void { ?>
     </ul>
   </div>
 </section>
+<?php endif; ?>
 
-<?php /* 6 · Bülten: makale sütunları yalnızca makaleler açıkken (app/config.php 'blog') */ if (blog_on()): ?>
+<?php /* 6 · Bülten: makale sütunları yalnızca Yazılar bölümü açıkken (panel, Görünürlük) */ if (feature('blog')): ?>
 <section class="bulten section" aria-labelledby="bulten-title">
   <div class="wrap">
     <header class="bulten__mast">

@@ -100,10 +100,11 @@ $tabs = [4, 22, 40, 58, 74, 13, 31, 49, 66];
   </div>
 </section>
 
+<?php [$nxPath, $nxLabel, $nxNo] = next_page([['referans', 'Referanslar', '04'], ['blog', 'Makaleler', '05'], ['duyurular', 'Duyurular', '05'], ['iletisim', 'İletişim', '06']]); ?>
 <div class="wrap">
-  <a class="next" href="<?= url('referans') ?>">
-    <span class="next__k">Sonraki evrak · 04</span>
-    <span class="next__t"><span>Referanslar</span></span>
+  <a class="next" href="<?= url($nxPath) ?>">
+    <span class="next__k">Sonraki evrak · <?= e($nxNo) ?></span>
+    <span class="next__t"><span><?= e($nxLabel) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>

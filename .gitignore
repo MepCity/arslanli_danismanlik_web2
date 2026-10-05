@@ -2,3 +2,7 @@
 storage/*
 !storage/.htaccess
 .DS_Store
+
+# Panelden yüklenen görseller (çalışma anı verisi)
+uploads/*
+!uploads/.htaccess

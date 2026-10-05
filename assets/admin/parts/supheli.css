@@ -1,0 +1,4 @@
+/* Şüpheli (spam süzgecine takılan) kayıtlar: neden listesi ve satır düğmeleri */
+
+.spam-why { display: grid; gap: 2px; margin-top: 6px; padding-left: 16px; list-style: disc; font-size: 13px; color: var(--text-2); }
+.spam-acts { display: flex; gap: 6px; align-items: center; white-space: nowrap; }

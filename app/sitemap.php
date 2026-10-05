@@ -3,17 +3,8 @@ declare(strict_types=1);
 
 header('Content-Type: application/xml; charset=utf-8');
 
-$paths = ['', 'hakkimizda', 'hizmetler', 'referans', 'iletisim', 'duyurular', 'kariyer', 'haberdarol', 'hesap-numaralarimiz',
-    'kurumsal/misyonumuz', 'kurumsal/vizyonumuz', 'kurumsal/mihenk-taslarimiz', 'kurumsal/cerez-politikasi', 'kurumsal/kvkk-aydinlatma-metni'];
-foreach (array_keys(services()) as $slug) {
-    $paths[] = 'urunler/detay/' . $slug;
-}
-if (blog_on()) {
-    $paths[] = 'blog';
-    foreach (array_keys(posts()) as $slug) {
-        $paths[] = 'blog/' . $slug;
-    }
-}
+// Adresler tek yerden gelir (bkz. site_public_paths): panelden kapatılan bölümlerin sayfaları listede yer almaz.
+$paths = site_public_paths();
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

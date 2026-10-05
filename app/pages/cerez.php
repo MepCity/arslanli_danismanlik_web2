@@ -30,6 +30,11 @@ $embeds = false;
 $external = false;
 foreach ($files as $f) {
     $src = (string) @file_get_contents($f);
+    if (basename($f) === 'app.js') {
+        // Ziyaret sayacı (bkz. app/stats.php) yalnızca yönetici tarayıcısındaki bir işareti okur; ziyaretçinin tarayıcısına bir şey yazmaz,
+        // bu yüzden "tarayıcı depolama alanı kullanılıyor" taramasına girmez
+        $src = (string) preg_replace('#/\* -+ Ziyaret sayacı.*?(?=/\* -+ Sayfa betiği)#su', '', $src);
+    }
     if (preg_match('/\bsetcookie\s*\(|\bsession_start\s*\(|document\.cookie/', $src)) {
         $usesCookies = true;
     }
@@ -139,7 +144,7 @@ $maddeler[] = [
         $embeds
             ? 'Bazı sayfalarda üçüncü taraflara ait gömülü içerikler (örneğin harita) bulunabilir. Bu içerikler kendi çerez politikalarına göre çerez kullanabilir.'
             : null,
-        'WhatsApp, Google Haritalar, ' . (blog_on() ? 'makalelerdeki paylaşım düğmeleri (LinkedIn, X, WhatsApp), ' : '') . 'sosyal medya hesaplarımız ve duyurulardaki kurum sayfalarına verilen bağlantılara tıkladığınızda ilgili sitenin kendi çerez ve gizlilik politikaları geçerli olur. Bu bağlantılara tıklamadığınız sürece o sitelere hiçbir bilgi gitmez.',
+        'WhatsApp, Google Haritalar, ' . (feature('blog') ? 'makalelerdeki paylaşım düğmeleri (LinkedIn, X, WhatsApp), ' : '') . 'sosyal medya hesaplarımız ve duyurulardaki kurum sayfalarına verilen bağlantılara tıkladığınızda ilgili sitenin kendi çerez ve gizlilik politikaları geçerli olur. Bu bağlantılara tıklamadığınız sürece o sitelere hiçbir bilgi gitmez.',
     ])),
     'sade' => 'Biz kimseye “şu kişi siteye girdi” diye haber vermiyoruz. Ama WhatsApp ya da Instagram bağlantısına tıklarsanız artık onların sitesindesiniz.',
 ];

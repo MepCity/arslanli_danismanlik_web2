@@ -104,11 +104,13 @@ $rest     = array_slice($list, 1, null, true);
                 <?php endforeach; ?>
               </ol>
             </div>
+<?php if (feature('bulten')): ?>
             <a class="np__ilan" href="<?= url('haberdarol') ?>">
               <span class="np__ilanh">İlan</span>
               <span class="np__ilant">Yeni bir hibe ya da teşvik çağrısı açıldığında haber almak isteyen işletmelere duyurulur.</span>
               <span class="np__ilanc">Kuponu doldurun <?= arrow() ?></span>
             </a>
+<?php endif; ?>
           </aside>
         </div>
         <footer class="np__foot"><span><?= e(cfg('name')) ?> yayınıdır.</span><span>Sayfa 1</span></footer>

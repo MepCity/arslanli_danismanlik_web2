@@ -26,10 +26,13 @@ $menu = [
     ['blog', 'Makaleler', '05'],
     ['iletisim', 'İletişim', '06'],
 ];
-if (!blog_on()) {
+if (!feature('blog')) {
     // Makaleler kapalıyken 05 numaralı sayfa Duyurular olur: fihristte ve sayfa üstündeki evrak numaralarında boşluk kalmaz
     array_splice($menu, 4, 1, [['duyurular', 'Duyurular', '05']]);
 }
+// Panelden kapatılan bölümler (Yazılar, Duyurular, Referanslar, Kariyer, Bülten) fihristten kalkar; kalan sayfaların numaraları değişmez
+// (numaraların tek kayıttan üretilmesi Aşama 2B'dedir)
+$menu = array_values(array_filter($menu, fn($m) => path_enabled($m[0])));
 $corp = [
     ['haberdarol', 'Haberdar Ol', '07'],
     ['kurumsal/misyonumuz', 'Misyonumuz', '08'],
@@ -38,9 +41,10 @@ $corp = [
     ['hesap-numaralarimiz', 'Hesap Numaralarımız', '11'],
     ['kariyer', 'Kariyer', '14'],
 ];
-if (blog_on()) {
+if (feature('blog')) {
     $corp[] = ['duyurular', 'Duyurular', '15'];   // 12 ve 13 yasal sayfaların numarası
 }
+$corp = array_values(array_filter($corp, fn($m) => path_enabled($m[0])));
 // Açılışta öne çıkan duyuru (varsa): pencere, çip ve kendi dosyaları yalnızca o zaman yüklenir
 $spot = function_exists('ann_featured') ? ann_featured() : null;
 ?><!doctype html>
@@ -86,7 +90,7 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
     'sameAs'   => array_values(cfg('social')),
 ], $p['schema']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 </head>
-<body data-page="<?= e($id) ?>" data-theme="<?= e($p['theme']) ?>">
+<body data-page="<?= e($id) ?>" data-theme="<?= e($p['theme']) ?>" data-base="<?= e(base_path()) ?>">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -193,22 +197,30 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
     <div class="ftr__base">
       <p>&copy; <?= cfg('founded') ?>–<?= date('Y') ?> <?= e(cfg('name')) ?></p>
       <nav aria-label="Yasal">
+        <?php if (path_enabled('duyurular')): ?>
         <a href="<?= url('duyurular') ?>">Duyurular</a>
+        <?php endif; ?>
+        <?php if (path_enabled('kariyer')): ?>
         <a href="<?= url('kariyer') ?>">Kariyer</a>
+        <?php endif; ?>
         <a href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>">KVKK Aydınlatma Metni</a>
         <a href="<?= url('kurumsal/cerez-politikasi') ?>">Çerez Politikası</a>
         <a href="<?= url('hesap-numaralarimiz') ?>">Hesap Numaralarımız</a>
+        <?php if (feature('bulten')): ?>
         <a href="<?= url('haberdarol') ?>" data-nl-open>Bültene kayıt ol</a>
+        <?php endif; ?>
       </nav>
     </div>
   </div>
 </footer>
 
+<?php if (feature('whatsapp')): ?>
 <a class="wa" href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank" aria-label="WhatsApp ile yazın">
   <?= icon('whatsapp-logo') ?><span>WhatsApp</span>
 </a>
+<?php endif; ?>
 
-<?php require APP . '/partials/bulten.php'; ?>
+<?php if (feature('bulten')) { require APP . '/partials/bulten.php'; } ?>
 <?php if ($spot) { require APP . '/partials/spotlight.php'; } ?>
 
 <div class="toast" role="status" aria-live="polite" data-toast></div>

@@ -183,10 +183,11 @@ $date  = today_official();
   </aside>
 </section>
 
+<?php [$nxPath, $nxLabel, $nxNo] = next_page([['haberdarol', 'Haberdar Ol', '07'], ['kurumsal/misyonumuz', 'Misyonumuz', '08']]); ?>
 <div class="wrap">
-  <a class="next" href="<?= url('haberdarol') ?>">
-    <span class="next__k">Sonraki evrak · 07</span>
-    <span class="next__t"><span>Haberdar Ol</span></span>
+  <a class="next" href="<?= url($nxPath) ?>">
+    <span class="next__k">Sonraki evrak · <?= e($nxNo) ?></span>
+    <span class="next__t"><span><?= e($nxLabel) ?></span></span>
     <?= arrow() ?>
   </a>
 </div>

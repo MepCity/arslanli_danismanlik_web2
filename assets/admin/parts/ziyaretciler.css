@@ -1,0 +1,46 @@
+/* Ziyaretçiler: özet kutuları, günlük sütun grafiği, sıralı listeler */
+
+.vz-tiles { margin-bottom: 20px; }
+.vz-range { justify-self: start; display: inline-flex; margin-bottom: 14px; }
+.vz-cols { margin-top: 20px; align-items: start; }
+
+/* Grafik: tek seri; sütunlar panel lacivertinin bir açık tonu, eksen ve çizgiler geri planda */
+.vz-chart { --vz: #2c5aa0; position: relative; border-radius: var(--r); }
+.vz-chart:focus-visible { outline: 2px solid var(--navy); outline-offset: 4px; }
+.vz-chart svg { display: block; width: 100%; height: auto; }
+.vz-grid { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.vz-base { stroke: var(--line-2); }
+.vz-tick { fill: var(--muted); font: 11px var(--f); font-variant-numeric: tabular-nums; }
+.vz-bar { fill: var(--vz); transition: fill .15s; }
+.vz-bar.is-on { fill: var(--navy-d); }
+.vz-hit { fill: transparent; }
+.vz-tip {
+  position: absolute; z-index: 2; display: grid; gap: 1px; padding: 8px 11px; border-radius: 9px; pointer-events: none; white-space: nowrap;
+  background: var(--ink); color: #fff; font-size: 12.5px; box-shadow: 0 10px 24px -12px rgba(12, 24, 48, .6);
+}
+.vz-tip strong { font-size: 14px; font-weight: 650; }
+.vz-tip__d, .vz-tip__v { color: #b9c4d8; }
+
+.vz-details { font-size: 13.5px; }
+.vz-details summary { cursor: pointer; color: var(--navy); font-weight: 550; width: max-content; }
+.vz-details[open] summary { margin-bottom: 12px; }
+.vz-wrap { margin: 0 -22px -22px; border-top: 1px solid var(--line); max-height: 360px; overflow-y: auto; }
+.vz-num { text-align: right !important; font-variant-numeric: tabular-nums; }
+
+/* Sıralı liste: ad, sayı ve altında ince bir çubuk */
+.vz-rank { display: grid; gap: 14px; padding: 0; list-style: none; }
+.vz-rank li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline; }
+.vz-rank__l { font-weight: 550; overflow-wrap: anywhere; }
+.vz-rank__l small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.vz-rank__n { font-variant-numeric: tabular-nums; font-weight: 600; }
+.vz-rank__bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--navy-soft); overflow: hidden; }
+.vz-rank__bar i { display: block; height: 100%; border-radius: 0 3px 3px 0; background: #2c5aa0; }
+
+.vz-note { display: flex; gap: 10px; align-items: flex-start; margin-top: 20px; font-size: 13px; color: var(--muted); max-width: 90ch; }
+.vz-note .i { margin-top: 1px; color: #a0aabb; }
+
+/* Genel bakıştaki ziyaretçi kartı */
+.vz-mini { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.vz-mini div { display: grid; gap: 2px; }
+.vz-mini b { font: 650 26px/1.1 var(--fd); letter-spacing: -.02em; }
+.vz-mini span { font-size: 12.5px; color: var(--muted); }
