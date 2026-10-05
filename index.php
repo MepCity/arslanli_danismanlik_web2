@@ -10,6 +10,7 @@ if (PHP_SAPI === 'cli-server') {
 }
 
 require __DIR__ . '/app/bootstrap.php';
+require APP . '/data/duyurular.php';   // duyurular ve yardımcıları (sayfa, açılış penceresi, takvim dosyası)
 
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
@@ -41,10 +42,11 @@ $static = [
     'hakkimizda'                 => 'hakkimizda',
     'hizmetler'                  => 'hizmetler',
     'referans'                   => 'referans',
-    'blog'                       => 'blog',
     'iletisim'                   => 'iletisim',
     'haberdarol'                 => 'haberdarol',
     'hesap-numaralarimiz'        => 'hesap',
+    'duyurular'                  => 'duyurular',
+    'kariyer'                    => 'kariyer',
     'kurumsal/misyonumuz'        => 'misyon',
     'kurumsal/vizyonumuz'        => 'vizyon',
     'kurumsal/mihenk-taslarimiz' => 'mihenk',
@@ -74,7 +76,22 @@ if ($path === 'sitemap.xml') {
     exit;
 }
 
+// Takvim dosyası: tüm duyurular ya da tek duyuru (iCalendar)
+if ($path === 'duyurular.ics') {
+    ann_serve_ics(null);
+}
+if (preg_match('#^duyurular/([a-z0-9]+)\.ics$#', $path, $m)) {
+    ann_serve_ics($m[1]);
+}
+
+if (blog_on()) {
+    $static['blog'] = 'blog';
+}
+
 if (isset($static[$path])) {
+    if (!is_file(APP . '/pages/' . $static[$path] . '.php')) {
+        not_found();
+    }
     render($static[$path]);
     exit;
 }
@@ -90,12 +107,12 @@ if (preg_match('#^urunler/detay/([a-z0-9\-]+)$#', $path, $m)) {
     exit;
 }
 
-if (preg_match('#^blog/category/([a-z0-9\-]+)$#', $path, $m)) {
+if (blog_on() && preg_match('#^blog/category/([a-z0-9\-]+)$#', $path, $m)) {
     render('blog', ['category' => $m[1]]);
     exit;
 }
 
-if (preg_match('#^blog/([a-z0-9\-]+)$#', $path, $m)) {
+if (blog_on() && preg_match('#^blog/([a-z0-9\-]+)$#', $path, $m)) {
     $slug = $m[1];
     if (!isset(posts()[$slug])) {
         not_found();

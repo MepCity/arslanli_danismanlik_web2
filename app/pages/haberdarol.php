@@ -2,7 +2,7 @@
 /**
  * Haberdar Ol: dergi kuponu.
  * Kesik çizgili kupon; makas kenarında bekler. Gönderilince kuponu çevresinden keser,
- * kupon düşer ve sayfada kalan boşlukta alındı fişi görünür (app/form.php, 'haberdarol').
+ * kupon düşer ve sayfada kalan boşlukta alındı fişi görünür (app/form.php, 'bulten').
  */
 page([
     'id'          => 'signup',
@@ -18,7 +18,7 @@ $sent  = $durum === 'tamam';
 <section class="kp-head pagehead wrap" aria-labelledby="signup-title">
   <p class="label" data-rise>Evrak 07 · Haberdar Ol</p>
   <h1 class="display kp-head__h" id="signup-title" data-rise style="--delay:.05s">Kesip gönderin.</h1>
-  <p class="lead kp-head__lead" data-rise style="--delay:.12s">Sizi ilgilendiren bir destek çağrısı açıldığında, bir programın şartları değiştiğinde ya da takip ettiğiniz bir başvurunun son tarihi yaklaştığında e-postayla haber verelim. Kuponda ilgilendiğiniz konuları işaretlemeniz yeterli.</p>
+  <p class="lead kp-head__lead" data-rise style="--delay:.12s">Sizi ilgilendiren bir destek çağrısı açıldığında, bir programın şartları değiştiğinde ya da takip ettiğiniz bir başvurunun son tarihi yaklaştığında e-postayla haber verelim. Kuponu bir kez doldurmanız yeterli.</p>
 </section>
 
 <section class="kp wrap" aria-label="Haberdar Ol kuponu">
@@ -31,7 +31,7 @@ $sent  = $durum === 'tamam';
           <p class="label">Alındı · <?= e(today_official()) ?></p>
           <p class="kp__slip-h serif-display">Kuponunuz bize ulaştı.</p>
           <p class="kp__slip-msg" data-kp-msg>Sizi ilgilendiren bir çağrı açıldığında haber vereceğiz.</p>
-          <p class="kp__slip-more">O zamana kadar <a class="link" href="<?= url('blog') ?>">makalelere</a> göz atabilir ya da bir sorunuz varsa <a class="link" href="<?= url('iletisim') ?>">bize yazabilirsiniz</a>.</p>
+          <p class="kp__slip-more">O zamana kadar <a class="link" href="<?= url(blog_on() ? 'blog' : 'duyurular') ?>"><?= blog_on() ? 'makalelere' : 'açık çağrılara' ?></a> göz atabilir ya da bir sorunuz varsa <a class="link" href="<?= url('iletisim') ?>">bize yazabilirsiniz</a>.</p>
         </div>
       </div>
 
@@ -46,7 +46,7 @@ $sent  = $durum === 'tamam';
         </span>
 
         <form class="kupon__form" data-form data-kp-form action="<?= url('form') ?>" method="post" novalidate aria-labelledby="kp-title">
-          <input type="hidden" name="_form" value="haberdarol">
+          <input type="hidden" name="_form" value="bulten">
           <input type="hidden" name="_token" value="<?= e(form_token()) ?>">
           <input type="hidden" name="_back" value="<?= e(url('haberdarol')) ?>">
           <div class="hp" aria-hidden="true"><label>Web sitesi <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
@@ -81,26 +81,32 @@ $sent  = $durum === 'tamam';
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label for="kp-tel">Telefonunuz <span class="opt">(isteğe bağlı)</span></label>
-              <input id="kp-tel" name="telefon" type="tel" maxlength="20" pattern="[0-9 +\(\)\-]{7,20}" autocomplete="tel" inputmode="tel">
+              <label for="kp-tel">Telefonunuz</label>
+              <input id="kp-tel" name="telefon" type="tel" required maxlength="20" pattern="[0-9 +\(\)\-]{7,20}" autocomplete="tel" inputmode="tel">
+              <span class="field__err" aria-live="polite"></span>
+            </div>
+            <div class="field">
+              <label for="kp-il">İliniz</label>
+              <select id="kp-il" name="il" required>
+                <option value="">İl seçin</option>
+                <?php foreach (site('iller') as $il): ?><option><?= e($il) ?></option><?php endforeach; ?>
+              </select>
+              <span class="field__err" aria-live="polite"></span>
+            </div>
+            <div class="field">
+              <label for="kp-sektor">Sektörünüz</label>
+              <select id="kp-sektor" name="sektor" required>
+                <option value="">Sektör seçin</option>
+                <?php foreach ((array) site('sektorler') as $sk): ?><option><?= e($sk) ?></option><?php endforeach; ?>
+              </select>
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field kupon__wide">
-              <label for="kp-firma">Firmanız <span class="opt">(isteğe bağlı)</span></label>
-              <input id="kp-firma" name="firma" type="text" maxlength="160" autocomplete="organization">
+              <label for="kp-mesaj">İlgilendiğiniz konular <span class="opt">(isteğe bağlı)</span></label>
+              <textarea id="kp-mesaj" name="mesaj" rows="3" maxlength="5000" placeholder="İlgilendiğiniz teşvik, hibe ya da danışmanlık konularını yazabilirsiniz"></textarea>
               <span class="field__err" aria-live="polite"></span>
             </div>
           </div>
-
-          <fieldset class="field kupon__ilgi">
-            <legend>İlgilendiğiniz konular <span class="opt">(birden fazla işaretleyebilirsiniz)</span></legend>
-            <div class="kupon__boxes">
-              <?php foreach (services() as $slug => $s): ?>
-                <label class="check"><input type="checkbox" name="ilgi[]" value="<?= e($s['nav']) ?>"><span><?= e($s['nav']) ?></span></label>
-              <?php endforeach; ?>
-            </div>
-            <span class="field__err" aria-live="polite"></span>
-          </fieldset>
 
           <div class="kupon__consent">
             <div class="field">
@@ -108,7 +114,7 @@ $sent  = $durum === 'tamam';
               <span class="field__err" aria-live="polite"></span>
             </div>
             <div class="field">
-              <label class="check"><input type="checkbox" name="etk" value="1" required><span><?= e(cfg('name')) ?>’ın bana e-posta, SMS ve telefon yoluyla bilgilendirme ve ticari elektronik ileti göndermesine onay veriyorum. Onayımı dilediğim zaman geri alabilirim.</span></label>
+              <label class="check"><input type="checkbox" name="etk" value="1" required><span><?= e(cfg('name')) ?> tarafından e-posta, SMS ve telefon yoluyla bilgilendirme ve ticari elektronik ileti gönderilmesine onay veriyorum. Onayımı dilediğim zaman geri alabilirim.</span></label>
               <span class="field__err" aria-live="polite"></span>
             </div>
           </div>
@@ -127,7 +133,7 @@ $sent  = $durum === 'tamam';
     <ol class="kp__list" role="list">
       <li data-rise>
         <span class="kp__n">1</span>
-        <p><b>Yeni açılan çağrılar.</b> İşaretlediğiniz konularda bir destek çağrısı açıldığında, kimlerin başvurabileceğiyle birlikte.</p>
+        <p><b>Yeni açılan çağrılar.</b> İlgilendiğiniz konularda bir destek çağrısı açıldığında, kimlerin başvurabileceğiyle birlikte.</p>
       </li>
       <li data-rise style="--delay:.06s">
         <span class="kp__n">2</span>

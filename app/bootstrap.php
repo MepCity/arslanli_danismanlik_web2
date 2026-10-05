@@ -8,6 +8,37 @@ define('APP', __DIR__);
 define('ROOT', dirname(__DIR__));
 
 $GLOBALS['config']   = require APP . '/config.php';
+
+// Sunucuya özel ayarlar (SMTP şifresi gibi): storage/config.local.php, app/config.php ile aynı biçimde bir dizi döndüren PHP dosyasıdır
+// ve git'e girmez (storage/ depoda yoktur). İçindeki değerler config.php'nin üzerine yazılır; dosya yoksa ya da bozuksa sessizce atlanır.
+$_local = ROOT . '/storage/config.local.php';
+if (is_file($_local)) {
+    try {
+        $_over = (static function (string $__file) {
+            return require $__file;
+        })($_local);
+        if (is_array($_over)) {
+            $GLOBALS['config'] = array_replace_recursive($GLOBALS['config'], $_over);
+        }
+    } catch (Throwable $_e) {
+        error_log('storage/config.local.php okunamadı: ' . $_e->getMessage());
+    }
+}
+unset($_local, $_over, $_e);
+
+// Form güvenlik anahtarı: config.php'deki varsayılan değer herkesçe bilindiği için, siteye özel anahtar ilk açılışta
+// kendiliğinden oluşturulur ("x": dosya yalnızca yoksa açılır, aynı anda gelen iki istekten biri yazar).
+// Anahtar dosyası config.local.php'deki 'secret' değerinin de önüne geçer.
+$_key = ROOT . '/storage/secret.key';
+if (!is_file($_key) && ($_fh = @fopen($_key, 'x')) !== false) {
+    fwrite($_fh, bin2hex(random_bytes(32)));
+    fclose($_fh);
+    @chmod($_key, 0600);
+}
+if (is_file($_key) && ($_k = trim((string) file_get_contents($_key))) !== '') {
+    $GLOBALS['config']['secret'] = $_k;
+}
+unset($_key, $_fh, $_k);
 $GLOBALS['services'] = require APP . '/data/services.php';
 $GLOBALS['posts']    = require APP . '/data/posts.php';
 $GLOBALS['site']     = require APP . '/data/site.php';
@@ -124,22 +155,30 @@ function tr_upper(string $s): string
 
 function form_token(): string
 {
-    $t = (string) time();
+    // Zaman + rastgele parça: aynı saniyede üretilen belirteçler de birbirinden farklıdır (her belirteç yalnızca bir kez kullanılır, bkz. app/spam.php)
+    $t = time() . '.' . bin2hex(random_bytes(6));
     return $t . '.' . hash_hmac('sha256', $t, (string) cfg('secret'));
+}
+
+/** Belirtecin yaşı (saniye); biçimi ya da imzası geçersizse null. Rastgele parçası olmayan eski biçim (zaman.imza) de doğrulanır. */
+function form_token_age(?string $token): ?int
+{
+    $p = $token ? strrpos($token, '.') : false;
+    if (!$p) {
+        return null;
+    }
+    $msg = substr($token, 0, $p);
+    if (!preg_match('/^(\d{1,12})(?:\.[a-f0-9]{12})?$/D', $msg, $m) || !hash_equals(hash_hmac('sha256', $msg, (string) cfg('secret')), substr($token, $p + 1))) {
+        return null;
+    }
+    return time() - (int) $m[1];
 }
 
 function verify_form_token(?string $token): bool
 {
-    if (!$token || !str_contains($token, '.')) {
-        return false;
-    }
-    [$t, $sig] = explode('.', $token, 2);
-    if (!ctype_digit($t) || !hash_equals(hash_hmac('sha256', $t, (string) cfg('secret')), $sig)) {
-        return false;
-    }
-    $age = time() - (int) $t;
+    $age = form_token_age($token);
     // Çok hızlı (bot) ya da çok eski (2 saat) gönderimleri reddet.
-    return $age >= 2 && $age <= 7200;
+    return $age !== null && $age >= 2 && $age <= 7200;
 }
 
 /* ---------- Sayfa durumu ---------- */

@@ -97,9 +97,9 @@ $slugs = array_keys($refs);
 </section>
 
 <div class="wrap">
-  <a class="next" href="<?= url('blog') ?>">
+  <a class="next" href="<?= url(blog_on() ? 'blog' : 'duyurular') ?>">
     <span class="next__k">Sonraki evrak · 05</span>
-    <span class="next__t"><span>Makaleler</span></span>
+    <span class="next__t"><span><?= blog_on() ? 'Makaleler' : 'Duyurular' ?></span></span>
     <?= arrow() ?>
   </a>
 </div>

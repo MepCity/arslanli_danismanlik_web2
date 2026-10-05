@@ -44,7 +44,7 @@ return [
         ],
         'faq'      => [
             ['Her yeni ürün Ar-Ge projesi olur mu?', 'Hayır. TÜBİTAK çözümü bilinmeyen bir teknik soru ve onu çözmek için planlanmış bir çalışma arar. Projeniz bu tanıma uymuyorsa bunu ilk görüşmede söyleriz.'],
-            ['Destek oranı ne kadar?', 'Çağrıya göre değişir. Örneğin 2026 yılının ikinci 1501 çağrısında oran, firmanın ilk beş projesi için %75, sonraki projeler için %60\'tır. 2026 çağrılarında 1501 ve 1507\'ye yalnızca KOBİ ölçeğindeki sermaye şirketleri başvurabiliyor. Başvurudan önce açık çağrının şartlarını birlikte okuruz.'],
+            ['Destek oranı ne kadar?', 'Çağrıya göre değişir. Örneğin 2026 yılının ikinci 1501 çağrısında oran, firmanın ilk beş projesi için %75, sonraki projeler için %60\'tır; her iki durumda TÜBİTAK katkısı proje başına en çok 20 milyon TL. 2026 çağrılarında 1501 ve 1507\'ye yalnızca KOBİ ölçeğindeki sermaye şirketleri başvurabiliyor. Başvurudan önce açık çağrının şartlarını birlikte okuruz.'],
             ['Proje reddedilirse ne olur?', 'Hakem raporunu satır satır okuruz. Eleştiriler giderilebiliyorsa dosyayı düzeltip yeniden başvurmayı planlarız.'],
         ],
     ],
@@ -100,7 +100,7 @@ return [
         ],
         'docs'     => ['Organizasyon şeması ve Ar-Ge personel listesi', 'Yürüyen ve planlanan projelerin listesi', 'Yatırım için makine-teçhizat listesi ve proformalar', 'Ticaret sicil gazetesi ve imza sirküleri'],
         'fit'      => 'Ar-Ge ve tasarım işini kurumsallaştırmak ya da yeni bir üretim yatırımına başlamak isteyen sanayi kuruluşları.',
-        'unfit'    => 'Teşvik belgesi gerektiren harcamalar çoğunlukla belge tarihinden sonra yapılmalıdır. Makineyi aldıktan sonra gelirseniz bazı avantajlar kaçmış olabilir.',
+        'unfit'    => 'Teşvik belgesi başvuru tarihinden önce yapılan yatırım harcamaları belge kapsamına alınmaz. Makineyi aldıktan sonra gelirseniz bazı avantajlar kaçmış olabilir.',
         'law'      => [
             'source' => '5746 sayılı Kanun, Madde 3/3',
             'text'   => '… ücretleri üzerinden hesaplanan sigorta primi işveren hissesinin yarısı, (…) Maliye Bakanlığı bütçesine konulacak ödenekten karşılanır.',
@@ -254,7 +254,7 @@ return [
         'unfit'    => 'Hisse senedi, fon ya da döviz gibi sermaye piyasası araçlarında yatırım tavsiyesi vermiyoruz. Bu hizmet gerçek yatırımlar içindir: bina, makine, kapasite.',
         'faq'      => [
             ['Bu hizmet borsa danışmanlığı mı?', 'Hayır. İşletmelerin tesis, makine ve kapasite yatırımlarına yöneliktir. Sermaye piyasası araçlarında tavsiye vermiyoruz.'],
-            ['Yatırıma başladıktan sonra teşvik alınabilir mi?', 'Pek çok teşvik unsuru, harcamanın belge tarihinden sonra yapılmasını şart koşar. Teşvik planını yatırım kararıyla aynı anda yapmanızı öneririz.'],
+            ['Yatırıma başladıktan sonra teşvik alınabilir mi?', 'Teşvik belgesi başvuru tarihinden önce yapılan yatırım harcamaları belge kapsamına alınmaz. Teşvik planını yatırım kararıyla aynı anda yapmanızı öneririz.'],
         ],
     ],
 

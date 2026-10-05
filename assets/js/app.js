@@ -187,8 +187,52 @@ if ('IntersectionObserver' in window && !reduced) {
 
 /* ---------- Formlar ---------- */
 
+// 32 bit FNV-1a özeti; h başlangıç (ya da ara) değeridir. Çarpma (16777619) kaydırmalarla yapılır, sonuç 32 bite indirilir.
+const fnv1a = (bytes, h) => {
+  for (let i = 0; i < bytes.length; i++) {
+    h ^= bytes.charCodeAt(i);
+    h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+  }
+  return h;
+};
+
+// Form kanıtı: fnv1a(belirteç + ':' + sayı) değerinin son 16 biti sıfır olan en küçük sayı (sunucudaki karşılığı: app/spam.php)
+const formProof = (token) => {
+  const pre = fnv1a(unescape(encodeURIComponent(token + ':')), 0x811c9dc5); // UTF-8 baytları
+  for (let n = 0; n < 5000000; n++) {
+    if ((fnv1a(String(n), pre) & 0xffff) === 0) return String(n);
+  }
+  return '';
+};
+
 document.querySelectorAll('form[data-form]').forEach((form) => {
   const status = form.querySelector('.form-status');
+
+  // İstenmeyen gönderim süzgeci için kanıt: forma ilk dokunuşta hesaplanır ve gizli _p alanına yazılır.
+  // Alan şablonda yoktur; JavaScript çalışmazsa hiç gönderilmez ve form yine de çalışır.
+  let proved = false;
+  const prove = () => {
+    if (proved) return;
+    proved = true;
+    const token = form.querySelector('input[name="_token"]');
+    if (!token) return;
+    const p = document.createElement('input');
+    p.type = 'hidden';
+    p.name = '_p';
+    p.value = formProof(token.value);
+    form.appendChild(p);
+  };
+  ['focusin', 'pointerdown', 'keydown'].forEach((type) => form.addEventListener(type, prove));
+
+  // Sunucunun verdiği yeni belirteci forma yerleştirir; kanıt alanı varsa ona göre yeniden hesaplanır
+  const setToken = (value) => {
+    const tk = form.querySelector('input[name="_token"]');
+    const pf = form.querySelector('input[name="_p"]');
+    if (!tk) return;
+    tk.value = value;
+    if (pf) pf.value = formProof(value);
+  };
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (form.dataset.busy) return;
@@ -206,12 +250,21 @@ document.querySelectorAll('form[data-form]').forEach((form) => {
       if (status) { status.textContent = 'Lütfen işaretli alanları kontrol edin.'; status.className = 'form-status is-error'; }
       return;
     }
+    prove(); // ziyaretçi forma hiç dokunmadan gönderdiyse (ör. otomatik doldurma) kanıt yine de eklenir
     form.dataset.busy = '1';
     form.classList.add('is-busy');
+    let hold = false; // yeni belirteç verildiyse form birkaç saniye kapalı kalır
     if (status) { status.textContent = 'Gönderiliyor…'; status.className = 'form-status'; }
     try {
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
       const data = await res.json().catch(() => ({ ok: false, message: 'Beklenmeyen bir yanıt alındı.' }));
+      // Belirteç tek kullanımlıktır: başarılı yanıtta ve süresi dolmuş / kullanılmış belirteç yanıtında (419) sunucu yenisini verir.
+      // 419'da form sıfırlanmaz, yazılanlar durur; ziyaretçi sayfayı yenilemeden yeniden gönderir. Sunucu iki saniyeden yeni belirteci
+      // kabul etmediği, beş saniyeden yenisini de "çok hızlı" saydığı için form o süre boyunca yeni gönderim almaz.
+      if (typeof data.token === 'string' && data.token) {
+        setToken(data.token);
+        hold = !data.ok;
+      }
       if (data.ok) {
         if (status) { status.textContent = data.message; status.className = 'form-status is-ok'; }
         form.dispatchEvent(new CustomEvent('form:ok', { detail: data }));
@@ -229,8 +282,9 @@ document.querySelectorAll('form[data-form]').forEach((form) => {
     } catch {
       if (status) { status.textContent = 'Bağlantı kurulamadı. Lütfen telefonla ulaşın.'; status.className = 'form-status is-error'; }
     } finally {
-      delete form.dataset.busy;
       form.classList.remove('is-busy');
+      const free = () => delete form.dataset.busy;
+      if (hold) setTimeout(free, 5500); else free();
     }
   });
 });

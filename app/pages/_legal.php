@@ -10,7 +10,7 @@
  *   'updated'  => 'YYYY-AA-GG',
  *   'lead'     => 'Başlığın altındaki tek cümle (isteğe bağlı)',
  *   'summary'  => ['<mark> kullanılabilen sade cümleler', ...],
- *   'maddeler' => [['title' => 'Başlık', 'paras' => ['güvenli HTML', ...], 'list' => [['a', 'güvenli HTML'], ...] (isteğe bağlı), 'sade' => 'sade Türkçesi (güvenli HTML)'], ...],
+ *   'maddeler' => [['title' => 'Başlık', 'paras' => ['güvenli HTML', ...], 'list' => [['a', 'güvenli HTML'], ...] (isteğe bağlı), 'sade' => 'sade Türkçesi (güvenli HTML)', 'anchor' => 'dışarıdan bağlantı verilecek kısa kimlik (isteğe bağlı)'], ...],
  *   'next'     => ['label' => 'KVKK Aydınlatma Metni', 'href' => url(...), 'no' => '13'],
  * ]
  * Metinler sitenin kendi içeriğidir (kullanıcı girdisi değildir); HTML olarak basılır.
@@ -60,6 +60,7 @@ function legal_doc(array $doc): void
           $multi = count($paras) > 1 || !empty($m['list']);
       ?>
         <section class="madde" id="madde-<?= $i + 1 ?>" data-madde aria-labelledby="madde-<?= $i + 1 ?>-h">
+          <?php if (!empty($m['anchor'])): ?><span id="<?= e($m['anchor']) ?>"></span><?php endif; ?>
           <h2 class="madde__h" id="madde-<?= $i + 1 ?>-h"><?= e($m['title']) ?></h2>
           <?php foreach ($paras as $k => $p): ?>
             <p><?php if ($k === 0): ?><b class="madde__no">Madde <?= $i + 1 ?> –</b> <?php endif; ?><?php if ($multi): ?><span class="madde__f">(<?= $k + 1 ?>)</span> <?php endif; ?><?= $p ?></p>

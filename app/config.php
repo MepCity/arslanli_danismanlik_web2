@@ -37,13 +37,20 @@ return [
         'from'      => 'noreply@arslanlidanismanlik.com',
         'from_name' => 'Arslanlı Web Sitesi',
         // SMTP kullanmak isterseniz doldurun. Boş bırakılırsa PHP mail() kullanılır.
+        // Şifreyi bu dosyaya (ve git'e) yazmayın: aynı biçimde bir dizi döndüren storage/config.local.php dosyası
+        // sunucuda oluşturulursa içindeki değerler bu ayarların üzerine yazılır, ör.
+        //   <?php return ['mail' => ['smtp' => ['host' => '...', 'port' => 465, 'secure' => 'ssl', 'user' => '...', 'pass' => '...']]];
         // 'smtp' => ['host' => 'mail.arslanlidanismanlik.com', 'port' => 465, 'secure' => 'ssl', 'user' => 'noreply@arslanlidanismanlik.com', 'pass' => '••••'],
         'smtp'      => null,
     ],
 
+    // Makaleler (blog) bölümü: false iken /blog adresleri 404 verir, menü, site haritası ve ana sayfadan makale bağlantıları kalkar.
+    'blog' => false,
+
     // Gönderimler ayrıca storage/ klasörüne kaydedilsin mi? (e-posta iletilemezse kayıp olmaz)
     'store_submissions' => true,
 
-    // Form güvenlik anahtarı. Canlıya almadan önce rastgele uzun bir değerle değiştirin.
+    // Form güvenlik anahtarı (yedek değer). Gerçek anahtar storage/secret.key dosyasında tutulur ve ilk istekte kendiliğinden
+    // oluşturulur; dosya varken bu değer kullanılmaz. Bu değeri değiştirmenize gerek yok.
     'secret' => 'degistir-bunu-uzun-rastgele-bir-anahtar-ile-7f3a9c',
 ];

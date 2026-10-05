@@ -14,10 +14,13 @@ Her sayfa bu dünyadan farklı bir nesneyle çalışır:
 | Hizmetler | `/hizmetler` | Dosya dolabı: dokuz telli dosya ve “ne yapmak istiyorsunuz?” eşleştiricisi |
 | Hizmet detayı | `/urunler/detay/...` | Açık dosya: “Ek” sekmeleri, madde madde işler, işaretlenip yazdırılabilen evrak listesi |
 | Referanslar | `/referans` | Kaşe masası: tıkladığınız yere müşteri logosu basılır |
-| Makaleler | `/blog` | Gazete ön sayfası |
-| Makale | `/blog/...` | Sakin okuma sayfası, kenarda ilerleyen kurşun kalem |
+| Makaleler (şu an kapalı) | `/blog` | Gazete ön sayfası |
+| Makale (şu an kapalı) | `/blog/...` | Sakin okuma sayfası, kenarda ilerleyen kurşun kalem |
+| Duyurular | `/duyurular` | İlan panosu: panoya iğnelenmiş ilan kâğıtları, köşede “kaç gün kaldı” yazan tarih damgası, fihrist gibi noktalı tarih satırları, resmî kaynak bağlantısı ve takvime ekleme (`/duyurular.ics`) |
+| Açılış duyurusu | tüm sayfalar (öne çıkan duyuru varsa) | Masaya düşen acele evrak: “Canlı çağrı” bayrağı, daktilo rakamlı geri sayım, cetvel üzerinde tarih bayrakları; kapatılınca sol altta küçük bir etiket kalır |
 | İletişim | `/iletisim` | Boşlukları doldurulan dilekçe; gönderilince “ALINDI” kaşesi |
 | Haberdar Ol | `/haberdarol` | Dergi kuponu |
+| Kariyer | `/kariyer` | Özlük dosyası: manila dosyanın içinde numaralı kutulu başvuru formu, özgeçmiş ataçla forma tutturulur; gönderilince form dosyaya girer, kapak kapanır ve “DOSYAYA EKLENDİ” kaşesi basılır |
 | Hesap Numaralarımız | `/hesap-numaralarimiz` | POS fişi gibi basılan dekontlar |
 | Misyonumuz | `/kurumsal/misyonumuz` | Çizgili defterde iş listesi |
 | Vizyonumuz | `/kurumsal/vizyonumuz` | 2037’de açılacak mühürlü mektup |
@@ -37,12 +40,12 @@ Sayfalar arası geçişte yeni sayfa, masaya konan yeni bir kâğıt gibi aşağ
 
 1. Bu klasörün **tüm içeriğini** (gizli `.htaccess` dosyaları dahil) sitenin kök dizinine (`public_html` vb.) yükleyin. `.git` klasörünü yüklemeyin.
 2. `app/config.php` dosyasını açın:
-   - `secret` değerini uzun, rastgele bir metinle değiştirin.
+   - Form güvenlik anahtarı siteye ilk girişte kendiliğinden oluşur (`storage/secret.key`); `secret` satırına dokunmanız gerekmez.
    - `url` canlı alan adınız olmalı (`https://arslanlidanismanlik.com`).
    - Telefon, e-posta, adres, vergi bilgileri ve sosyal medya adreslerini kontrol edin (alt bilgideki kaşe bu bilgilerden oluşur).
-   - Hosting firmanız `mail()` fonksiyonuna izin vermiyorsa `mail.smtp` bölümünü doldurun.
+   - Hosting firmanız `mail()` fonksiyonuna izin vermiyorsa SMTP bilgilerini `storage/config.local.php` dosyasına yazın (aşağıda “Formlar” bölümü). Şifreler `app/config.php` dosyasına yazılmaz; bu dosya depoya girer.
 3. `storage/` klasörünün PHP tarafından yazılabilir olduğundan emin olun (genelde 755 yeterli; gerekirse 775).
-4. SSL kuruluysa `.htaccess` içindeki HTTPS yönlendirme satırlarının başındaki `#` işaretlerini kaldırın.
+4. `.htaccess` siteyi HTTPS adresine ve `www` olmayan adrese yönlendirir. Sunucuda SSL yoksa bu satırların başına `#` koyun; yoksa site açılmaz.
 
 Site bir alt klasörde de çalışır (ör. `alanadi.com/yeni/`); adresler otomatik ayarlanır.
 
@@ -73,10 +76,12 @@ php -S 127.0.0.1:8093 index.php
 |---|---|
 | İletişim, ticari bilgiler, sosyal medya, e-posta ayarları | `app/config.php` |
 | 9 hizmet alanı (başlık, metinler, programlar, evrak listesi, SSS) | `app/data/services.php` |
-| Makaleler | `app/data/posts.php` |
+| Makaleler (şu an kapalı; `app/config.php` içinde `'blog' => true` yapılınca açılır) | `app/data/posts.php` |
+| Duyurular ve açılışta öne çıkan duyuru (`featured`) | `app/data/duyurular.php` |
 | Ana sayfadaki kanun metinleri, takvim yaprakları, arşiv rafı, ilkeler, misyon, vizyon, referanslar, banka hesapları | `app/data/site.php` |
 | Sayfa şablonları | `app/pages/*.php` |
 | Ortak üst bilgi, fihrist, alt bilgi | `app/partials/layout.php` |
+| Form seçenekleri (iller, sektörler, deneyim süreleri) | `app/data/site.php` |
 | Firma kaşesi | `app/partials/kase.php` |
 
 **Mevzuat alıntıları:** Ana sayfadaki kanun metinleri mevzuat.gov.tr’deki 5746 sayılı Kanun’un güncel metninden birebir alınmıştır. Arşiv rafındaki tarih ve sayılar Resmî Gazete kayıtlarıyla karşılaştırılmıştır (Ekim 2026). Mevzuat değiştikçe bu metinleri `app/data/site.php` içinden güncelleyin.
@@ -87,14 +92,22 @@ php -S 127.0.0.1:8093 index.php
 
 ## Formlar
 
-- İletişim (dilekçe) ve “Haberdar Ol” (kupon) formları `config.php` içindeki `mail.to` adresine e-posta gönderir.
-- `store_submissions` açıksa her gönderim ayrıca `storage/submissions.jsonl` dosyasına kaydedilir (e-posta iletilemese bile kayıt kaybolmaz). Bu klasör dışarıdan erişime kapalıdır.
-- Botlara karşı: gizli tuzak alanı, imzalı zaman belirteci (çerez kullanmaz) ve IP başına hız sınırı.
-- KVKK aydınlatma metni taslaktır; yayına almadan önce hukuki kontrolden geçirin.
+- Üç form vardır: İletişim (dilekçe), bülten kaydı (Haberdar Ol sayfasındaki kupon ve sayfa kenarındaki “Bültene kayıt ol” sekmesi aynı bilgileri toplar) ve iş başvurusu (Kariyer). Hepsi `config.php` içindeki `mail.to` adresine e-posta gönderir; iş başvurusunda özgeçmiş e-postaya eklenir.
+- Bu sürümde yönetim paneli yoktur. Gönderimler `storage/submissions.jsonl` dosyasına, özgeçmişler `storage/cv/` klasörüne kaydedilir; bu klasör dışarıdan erişime kapalıdır. Bülten kayıtları ve iş başvuruları, `store_submissions` kapalı olsa da her zaman saklanır.
+- **SMTP:** sunucuda `mail()` kapalıysa `storage/config.local.php` adında bir dosya oluşturun (depoya girmez):
+  ```php
+  <?php
+  return ['mail' => ['smtp' => ['host' => 'mail.alanadiniz.com', 'port' => 465, 'secure' => 'ssl', 'user' => 'noreply@alanadiniz.com', 'pass' => 'şifre']]];
+  ```
+  Bu dosyadaki değerler `app/config.php` üzerine yazılır; yalnızca değiştirmek istediklerinizi yazmanız yeterlidir.
+- **İstenmeyen gönderim (spam) süzgeci:** her gönderim puanlanır (rastgele harflerden oluşan adlar, reklam dili, bağlantılar, tarayıcıdan gelmeyen istekler, çok hızlı doldurma, gizli tuzak alanı). Şüpheli bulunan gönderim ziyaretçiye fark ettirilmeden saklanır ama e-postası gönderilmez; kayıt dosyasında nedeniyle birlikte durur (en yeni 300 kayıt, en çok 30 gün). Panel olmadığı için bu kayıtlar yalnızca dosyadan okunabilir.
+- Form belirteçleri imzalı ve tek kullanımlıktır (çerez kullanmaz); adres başına 10 dakikada 5, site genelinde saatte 120 gönderim sınırı vardır.
+- İş başvurusunda özgeçmiş yalnızca PDF ya da DOCX olabilir, en çok 5 MB; dosyanın içeriği de denetlenir.
+- KVKK aydınlatma metni ve çerez politikası bu sitenin gerçekte yaptıklarına göre yazılmıştır ama hukuki kontrolden geçmemiştir; yayına almadan önce hukuk danışmanınıza gösterin. İş başvurularının işe alım süreci bitince silinmesi elle yapılır.
 
 ## Adresler
 
-Eski sitedeki tüm adresler korunmuştur (`/hakkimizda`, `/referans`, `/blog/...`, `/kurumsal/...`, `/urunler/detay/...`, `/iletisim`, `/haberdarol`, `/hesap-numaralarimiz`). Yeni sayfalar: `/hizmetler`, `/kurumsal/kvkk-aydinlatma-metni`. Site haritası: `/sitemap.xml`.
+Eski sitedeki tüm adresler korunmuştur (`/hakkimizda`, `/referans`, `/blog/...`, `/kurumsal/...`, `/urunler/detay/...`, `/iletisim`, `/haberdarol`, `/hesap-numaralarimiz`). Yeni sayfalar: `/duyurular`, `/kariyer`, `/hizmetler`, `/kurumsal/kvkk-aydinlatma-metni`. Site haritası: `/sitemap.xml`.
 
 ## Kullanılan kütüphaneler (yerel olarak `assets/vendor/` içinde)
 

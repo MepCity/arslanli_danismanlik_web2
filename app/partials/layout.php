@@ -26,13 +26,23 @@ $menu = [
     ['blog', 'Makaleler', '05'],
     ['iletisim', 'İletişim', '06'],
 ];
+if (!blog_on()) {
+    // Makaleler kapalıyken 05 numaralı sayfa Duyurular olur: fihristte ve sayfa üstündeki evrak numaralarında boşluk kalmaz
+    array_splice($menu, 4, 1, [['duyurular', 'Duyurular', '05']]);
+}
 $corp = [
     ['haberdarol', 'Haberdar Ol', '07'],
     ['kurumsal/misyonumuz', 'Misyonumuz', '08'],
     ['kurumsal/vizyonumuz', 'Vizyonumuz', '09'],
     ['kurumsal/mihenk-taslarimiz', 'Mihenk Taşlarımız', '10'],
     ['hesap-numaralarimiz', 'Hesap Numaralarımız', '11'],
+    ['kariyer', 'Kariyer', '14'],
 ];
+if (blog_on()) {
+    $corp[] = ['duyurular', 'Duyurular', '15'];   // 12 ve 13 yasal sayfaların numarası
+}
+// Açılışta öne çıkan duyuru (varsa): pencere, çip ve kendi dosyaları yalnızca o zaman yüklenir
+$spot = function_exists('ann_featured') ? ann_featured() : null;
 ?><!doctype html>
 <html lang="tr">
 <head>
@@ -57,6 +67,8 @@ $corp = [
 <link rel="preload" href="<?= url('assets/fonts/newsreader.woff2') ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
 <?php if ($pageCss): ?><link rel="stylesheet" href="<?= $pageCss ?>"><?php endif; ?>
+<?php if ($spot): ?><link rel="stylesheet" href="<?= asset('css/spotlight.css') ?>">
+<?php endif; ?>
 <script>
 (function(){var h=document.documentElement;h.classList.add('js');
 window.__revealFallback=setTimeout(function(){h.classList.add('reveal-fallback')},4000);
@@ -181,6 +193,8 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
     <div class="ftr__base">
       <p>&copy; <?= cfg('founded') ?>–<?= date('Y') ?> <?= e(cfg('name')) ?></p>
       <nav aria-label="Yasal">
+        <a href="<?= url('duyurular') ?>">Duyurular</a>
+        <a href="<?= url('kariyer') ?>">Kariyer</a>
         <a href="<?= url('kurumsal/kvkk-aydinlatma-metni') ?>">KVKK Aydınlatma Metni</a>
         <a href="<?= url('kurumsal/cerez-politikasi') ?>">Çerez Politikası</a>
         <a href="<?= url('hesap-numaralarimiz') ?>">Hesap Numaralarımız</a>
@@ -195,6 +209,7 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 </a>
 
 <?php require APP . '/partials/bulten.php'; ?>
+<?php if ($spot) { require APP . '/partials/spotlight.php'; } ?>
 
 <div class="toast" role="status" aria-live="polite" data-toast></div>
 
@@ -203,6 +218,8 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 <?php foreach ($vendor as $v): ?><script src="<?= asset('vendor/' . $v . '.min.js') ?>" defer></script>
 <?php endforeach; ?>
 <script src="<?= asset('vendor/lenis.min.js') ?>" defer></script>
+<?php if ($spot): ?><script src="<?= asset('js/spotlight.js') ?>" defer></script>
+<?php endif; ?>
 <script type="module" src="<?= asset('js/app.js') ?>"<?= $pageJs ? ' data-page-script="' . e($pageJs) . '"' : '' ?>></script>
 </body>
 </html>

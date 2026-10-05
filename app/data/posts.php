@@ -105,7 +105,7 @@ HTML,
 
 <h2>İkinci dosya: teşvik</h2>
 <p>30 Mayıs 2025’te Resmî Gazete’de yayımlanan 9903 sayılı Yatırımlarda Devlet Yardımları Hakkında Karar, 2012’den beri uygulanan sistemin yerini aldı. Yeni sistem üç ana başlıktan oluşuyor: Türkiye Yüzyılı Kalkınma Hamlesi, sektörel teşvik sistemi ve bölgesel teşvikler. Yatırımın konusuna, büyüklüğüne ve yapıldığı yere göre KDV istisnası, gümrük vergisi muafiyeti ve vergi indirimi gibi araçlar devreye girebilir.</p>
-<p>Burada en kritik nokta zamanlamadır. Teşvik belgesi kapsamındaki avantajlar çoğunlukla belge tarihinden sonra yapılan harcamalar için geçerlidir. Makineyi önce alıp sonra belge için başvurursanız, bazı avantajlar kaçmış olabilir. Teşvik planlaması bu yüzden yatırım kararıyla aynı anda, hatta ondan önce yapılmalıdır.</p>
+<p>Burada en kritik nokta zamanlamadır. 9903 sayılı Karar’a göre teşvik belgesi başvuru tarihinden önce gerçekleştirilen yatırım harcamaları belge kapsamına alınmaz. Makineyi önce alıp sonra belge için başvurursanız, bazı avantajlar kaçmış olabilir. Teşvik planlaması bu yüzden yatırım kararıyla aynı anda, hatta ondan önce yapılmalıdır.</p>
 
 <h2>Üçüncü dosya: finansman</h2>
 <p>Öz kaynak, banka kredisi, kalkınma ve yatırım bankalarının kredileri, KGF kefaleti ve kalkınma ajanslarının dönemsel programları farklı maliyet ve şartlar sunar. Doğru finansman yapısı, yatırımın nakit akışına uyan bir geri ödeme planı demektir. Bazı teşvik unsurlarının zaten kredi kullanımına bağlı olduğunu da unutmayın; teşvik ve finansman dosyaları birbirinden ayrı düşünülmemeli.</p>

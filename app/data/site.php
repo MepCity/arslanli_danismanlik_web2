@@ -3,6 +3,24 @@
  * Sayfalar arasında paylaşılan içerikler.
  * Mevzuat alıntıları mevzuat.gov.tr'deki güncel metinden birebir alınmıştır; (…) kısaltmayı gösterir.
  */
+// 81 il, Türkçe alfabe sırasıyla
+$iller = [
+    'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya',
+    'Ankara', 'Antalya', 'Ardahan', 'Artvin', 'Aydın', 'Balıkesir',
+    'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl', 'Bitlis',
+    'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
+    'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan',
+    'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari',
+    'Hatay', 'Iğdır', 'Isparta', 'İstanbul', 'İzmir', 'Kahramanmaraş',
+    'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kırıkkale',
+    'Kırklareli', 'Kırşehir', 'Kilis', 'Kocaeli', 'Konya', 'Kütahya',
+    'Malatya', 'Manisa', 'Mardin', 'Mersin', 'Muğla', 'Muş',
+    'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize', 'Sakarya',
+    'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Şanlıurfa', 'Şırnak',
+    'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van',
+    'Yalova', 'Yozgat', 'Zonguldak',
+];
+
 return [
     // Referans logoları: assets/img/refs/{slug}.webp
     'refs' => [
@@ -22,23 +40,17 @@ return [
         'nsk'            => 'NSK Europe',
     ],
 
-    // Bülten kaydı formundaki il listesi (81 il, Türkçe alfabe sırasıyla)
-    'iller' => [
-        'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya',
-        'Ankara', 'Antalya', 'Ardahan', 'Artvin', 'Aydın', 'Balıkesir',
-        'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl', 'Bitlis',
-        'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
-        'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan',
-        'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari',
-        'Hatay', 'Iğdır', 'Isparta', 'İstanbul', 'İzmir', 'Kahramanmaraş',
-        'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kırıkkale',
-        'Kırklareli', 'Kırşehir', 'Kilis', 'Kocaeli', 'Konya', 'Kütahya',
-        'Malatya', 'Manisa', 'Mardin', 'Mersin', 'Muğla', 'Muş',
-        'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize', 'Sakarya',
-        'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Şanlıurfa', 'Şırnak',
-        'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van',
-        'Yalova', 'Yozgat', 'Zonguldak',
+    // Form seçenekleri: il listesi (bülten), şehir listesi (iş başvurusu: 81 il ve "Yurt dışı"), sektörler (bülten), deneyim süreleri (iş başvurusu)
+    'iller' => $iller,
+    'sehirler' => array_merge($iller, ['Yurt dışı']),
+    'sektorler' => [
+        'İmalat: makine ve metal', 'İmalat: otomotiv ve yan sanayi', 'İmalat: tekstil ve hazır giyim', 'İmalat: gıda ve içecek',
+        'İmalat: kimya, plastik ve kauçuk', 'İmalat: elektrik ve elektronik', 'İmalat: mobilya ve orman ürünleri', 'İmalat: diğer',
+        'Bilişim ve yazılım', 'Tarım ve hayvancılık', 'Enerji', 'İnşaat ve yapı malzemeleri',
+        'Sağlık ve ilaç', 'Savunma ve havacılık', 'Lojistik ve ulaştırma', 'Turizm ve konaklama',
+        'Ticaret (toptan ve perakende)', 'Eğitim ve danışmanlık', 'Diğer',
     ],
+    'deneyim' => ['Yeni mezun / stajyer', '1 yıldan az', '1-3 yıl', '3-5 yıl', '5-10 yıl', '10 yıldan fazla'],
 
     // Ana sayfa: kanun metni ve sade Türkçesi (mercek altında görünen)
     'hero_law' => [

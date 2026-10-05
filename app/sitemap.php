@@ -3,13 +3,16 @@ declare(strict_types=1);
 
 header('Content-Type: application/xml; charset=utf-8');
 
-$paths = ['', 'hakkimizda', 'hizmetler', 'referans', 'blog', 'iletisim', 'haberdarol', 'hesap-numaralarimiz',
+$paths = ['', 'hakkimizda', 'hizmetler', 'referans', 'iletisim', 'duyurular', 'kariyer', 'haberdarol', 'hesap-numaralarimiz',
     'kurumsal/misyonumuz', 'kurumsal/vizyonumuz', 'kurumsal/mihenk-taslarimiz', 'kurumsal/cerez-politikasi', 'kurumsal/kvkk-aydinlatma-metni'];
 foreach (array_keys(services()) as $slug) {
     $paths[] = 'urunler/detay/' . $slug;
 }
-foreach (array_keys(posts()) as $slug) {
-    $paths[] = 'blog/' . $slug;
+if (blog_on()) {
+    $paths[] = 'blog';
+    foreach (array_keys(posts()) as $slug) {
+        $paths[] = 'blog/' . $slug;
+    }
 }
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";

@@ -163,7 +163,7 @@ $wall = function (string $mode) use ($law): void { ?>
   </div>
 </section>
 
-<!-- 6 · Bülten -->
+<?php /* 6 · Bülten: makale sütunları yalnızca makaleler açıkken (app/config.php 'blog') */ if (blog_on()): ?>
 <section class="bulten section" aria-labelledby="bulten-title">
   <div class="wrap">
     <header class="bulten__mast">
@@ -183,6 +183,7 @@ $wall = function (string $mode) use ($law): void { ?>
     <a class="link ui bulten__all" href="<?= url('blog') ?>">Tüm makaleler</a>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- 7 · Son söz -->
 <section class="masa section" aria-labelledby="masa-title">

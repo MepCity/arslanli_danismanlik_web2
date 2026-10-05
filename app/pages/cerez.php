@@ -108,8 +108,8 @@ $maddeler[] = [
 $maddeler[] = [
     'title' => 'Formlar ve güvenlik kayıtları',
     'paras' => [
-        'İletişim ve Haberdar Ol formlarında, gönderimin bir insan tarafından yapıldığını ayırt etmek için forma imzalı bir zaman damgası eklenir. Bu bilgi çerez olarak saklanmaz; formun içinde, yalnızca formu gönderdiğinizde iletilir.',
-        'Kısa sürede çok sayıda gönderim yapılmasını engellemek için, form gönderildiğinde IP adresinizin özeti (hash) ve son gönderim zamanları sunucumuzda tutulur. Bu kayıt yalnızca bu amaçla kullanılır.',
+        'İletişim, Haberdar Ol, bülten ve iş başvurusu formlarında, gönderimin bir insan tarafından yapıldığını ayırt etmek için forma imzalı, tek kullanımlık bir belirteç eklenir; forma ilk dokunduğunuzda tarayıcınız küçük bir hesaplama yapıp sonucunu da forma yazar. Bu bilgiler çerez olarak saklanmaz; formun içinde durur ve yalnızca formu gönderdiğinizde bize iletilir. Kullanılmış belirteçlerin özeti sunucumuzda en çok iki saat tutulur.',
+        'Kısa sürede çok sayıda gönderim yapılmasını engellemek için, form gönderildiğinde IP adresinizin özeti (hash) ve son gönderim zamanları sunucumuzda tutulur. Bu kayıt yalnızca bu amaçla kullanılır ve kısa süre sonra silinir. Gönderdiğiniz formun kendisinin (IP adresiniz dahil) nasıl saklandığı ' . $kvkk . '’nde anlatılmıştır.',
         'Formda yazdığınız bilgilerin nasıl işlendiği ' . $kvkk . '’nde anlatılmıştır.',
     ],
     'sade' => 'Formlar çerezsiz çalışır. Spam’i engellemek için form gönderdiğinizde IP adresinizin bir özetini kısa süre kullanırız.',
@@ -139,7 +139,7 @@ $maddeler[] = [
         $embeds
             ? 'Bazı sayfalarda üçüncü taraflara ait gömülü içerikler (örneğin harita) bulunabilir. Bu içerikler kendi çerez politikalarına göre çerez kullanabilir.'
             : null,
-        'WhatsApp, Google Haritalar ve sosyal medya hesaplarımıza verilen bağlantılara tıkladığınızda ilgili sitenin kendi çerez ve gizlilik politikaları geçerli olur.',
+        'WhatsApp, Google Haritalar, ' . (blog_on() ? 'makalelerdeki paylaşım düğmeleri (LinkedIn, X, WhatsApp), ' : '') . 'sosyal medya hesaplarımız ve duyurulardaki kurum sayfalarına verilen bağlantılara tıkladığınızda ilgili sitenin kendi çerez ve gizlilik politikaları geçerli olur. Bu bağlantılara tıklamadığınız sürece o sitelere hiçbir bilgi gitmez.',
     ])),
     'sade' => 'Biz kimseye “şu kişi siteye girdi” diye haber vermiyoruz. Ama WhatsApp ya da Instagram bağlantısına tıklarsanız artık onların sitesindesiniz.',
 ];
@@ -167,7 +167,7 @@ legal_doc([
     'no'       => 'ARS-' . date('Y') . '/012',
     'subject'  => 'Çerezler ve tarayıcı verileri',
     'h1'       => 'Çerez politikası',
-    'updated'  => '2026-10-02',
+    'updated'  => '2026-10-05',
     'lead'     => 'Sitemizi gezerken tarayıcınızda neyin kaldığını ve neyin kalmadığını anlatan metin.',
     'summary'  => $summary,
     'maddeler' => $maddeler,

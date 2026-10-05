@@ -60,13 +60,16 @@ $kvkkUrl = url('kurumsal/kvkk-aydinlatma-metni');
             <p class="field__err" aria-live="polite"></p>
           </div>
           <div class="field nlf__cell">
-            <label for="nl-sektor"><b>6</b> Sektör</label>
-            <input id="nl-sektor" name="sektor" type="text" maxlength="120" autocomplete="off" placeholder="Örn. bilişim, enerji, otomotiv">
+            <label for="nl-sektor"><b>6</b> Sektör <span class="req" aria-hidden="true">*</span></label>
+            <select id="nl-sektor" name="sektor" required>
+              <option value="">Sektör seçin</option>
+              <?php foreach ((array) site('sektorler') as $sk): ?><option><?= e($sk) ?></option><?php endforeach; ?>
+            </select>
             <p class="field__err" aria-live="polite"></p>
           </div>
           <div class="field nlf__cell nlf__cell--wide">
             <label for="nl-mesaj"><b>7</b> İlgilendiğiniz konular</label>
-            <textarea id="nl-mesaj" name="mesaj" rows="3" maxlength="3000" placeholder="Hangi destek, hibe ya da danışmanlık konularını takip etmek istersiniz?"></textarea>
+            <textarea id="nl-mesaj" name="mesaj" rows="3" maxlength="5000" placeholder="İlgilendiğiniz teşvik, hibe ya da danışmanlık konularını yazabilirsiniz"></textarea>
             <p class="field__err" aria-live="polite"></p>
           </div>
         </div>
@@ -77,7 +80,7 @@ $kvkkUrl = url('kurumsal/kvkk-aydinlatma-metni');
             <p class="field__err" aria-live="polite"></p>
           </div>
           <div class="field">
-            <label class="check"><input type="checkbox" name="etk" value="1" required><span><?= e(cfg('name')) ?>’ın bana e-posta, SMS ve telefonla bilgilendirme ve ticari elektronik ileti göndermesine onay veriyorum. Onayımı istediğim zaman geri alabilirim. <span class="req" aria-hidden="true">*</span></span></label>
+            <label class="check"><input type="checkbox" name="etk" value="1" required><span><?= e(cfg('name')) ?> tarafından e-posta, SMS ve telefon yoluyla bilgilendirme ve ticari elektronik ileti gönderilmesine onay veriyorum. Onayımı dilediğim zaman geri alabilirim. <span class="req" aria-hidden="true">*</span></span></label>
             <p class="field__err" aria-live="polite"></p>
           </div>
         </div>
