@@ -75,7 +75,7 @@ return [
                 'hakkimizda.sonraki.etiket' => ['Sonraki sayfa bağlantısının küçük yazısı', 'Sonraki evrak · {no}', 'line', '{no} yerine Hizmetler sayfasının evrak numarası gelir. Bağlantının büyük yazısı Hizmetler sayfasının adıdır (Sayfa adları).', ['vars' => ['no' => 'Hizmetler sayfasının numarası'], 'need' => ['no'], 'max' => 40]],
             ],
             '7. Arama motorları' => [
-                'hakkimizda.seo.description' => ['Arama motoru açıklaması', '{firma} {kurulus}’de İstanbul’da kuruldu. TÜBİTAK, KOSGEB, Bakanlık, ihracat ve AB desteklerinde başvuru dosyasını hazırlıyor, kabulden sonra raporlama ve ödeme taleplerini yürütüyoruz.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['firma', 'kurulus'], 'max' => 320]],
+                'hakkimizda.seo.description' => ['Arama motoru açıklaması', '{firma} {kurulus}’de kuruldu: TÜBİTAK, KOSGEB, bakanlık, ihracat ve AB desteklerinde başvuru dosyası, raporlama ve ödeme talepleri.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['firma', 'kurulus'], 'max' => 320]],
             ],
         ],
     ],

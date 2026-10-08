@@ -32,7 +32,7 @@ return [
                 'vizyon.sonraki.etiket' => ['Sonraki sayfa bağlantısının küçük yazısı', 'Sonraki evrak · {no}', 'line', '{no} yerine Mihenk Taşlarımız sayfasının evrak numarası gelir. Bağlantının büyük yazısı o sayfanın adıdır (Sayfa adları).', ['vars' => ['no' => 'Mihenk Taşlarımız sayfasının numarası'], 'need' => ['no'], 'max' => 40]],
             ],
             '5. Arama motorları' => [
-                'vizyon.seo.description' => ['Arama motoru açıklaması', 'Vizyonumuzu, kuruluşumuzun {acilis_yil_sayisi|sıra} yılında, {acilis_yili}’de açılmak üzere bir mektuba yazdık: işletmelerin Ar-Ge ve yenilik kapasitesi, zamanında bilgi ve yeni nesil destek programları.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. {acilis_yil_sayisi|sıra} yerine açılış yılının sırası yazıyla (otuzuncu…), {acilis_yili} yerine açılış yılı gelir.', ['vars' => ['acilis_yil_sayisi', 'acilis_yili'], 'need' => ['acilis_yil_sayisi', 'acilis_yili'], 'max' => 320]],
+                'vizyon.seo.description' => ['Arama motoru açıklaması', 'Vizyonumuzu, kuruluşumuzun {acilis_yil_sayisi|sıra} yılında, {acilis_yili}’de açılmak üzere bir mektuba yazdık: Ar-Ge ve yenilik kapasitesi, zamanında bilgi, yeni nesil destekler.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. {acilis_yil_sayisi|sıra} yerine açılış yılının sırası yazıyla (otuzuncu…), {acilis_yili} yerine açılış yılı gelir.', ['vars' => ['acilis_yil_sayisi', 'acilis_yili'], 'need' => ['acilis_yil_sayisi', 'acilis_yili'], 'max' => 320]],
             ],
         ],
     ],

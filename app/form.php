@@ -83,7 +83,7 @@ function form_rate(string $ip, bool $cv, bool $record): ?string
                 }
             }
         }
-        $ipFile   = $dir . '/rate-' . md5(form_rate_key($ip)) . '.json';
+        $ipFile   = $dir . '/rate-' . hash_hmac('sha256', 'rate|' . form_rate_key($ip), (string) cfg('secret')) . '.json';   // IP'nin yalın özeti değil, site anahtarıyla anahtarlı özet
         $siteFile = $dir . '/rate-site.json';
         $hits = $keep($read($ipFile), 600);
         $site = $read($siteFile);

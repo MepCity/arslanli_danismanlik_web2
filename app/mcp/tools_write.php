@@ -435,6 +435,7 @@ function mcp_tools_write(): array
             if ($post['title'] === '') $errors[] = 'Başlık zorunludur.';
             if ($post['excerpt'] === '') $errors[] = 'Kısa özet zorunludur.';
             if (trim(strip_tags($post['body'])) === '') $errors[] = 'Yazının metni boş olamaz (izin verilen etiketler dışındaki içerik temizlenir).';
+            $errors = array_merge($errors, post_markup_errors($post));
             $dt = DateTime::createFromFormat('Y-m-d', (string) $post['date']);
             if (!$dt || $dt->format('Y-m-d') !== $post['date']) $errors[] = 'Geçerli bir yayın tarihi girin (YYYY-AA-GG).';
             if (!preg_match('/^[\p{L}\p{N} \-]+$/u', (string) $post['category']) || slugify((string) $post['category']) === '') {
@@ -464,7 +465,7 @@ function mcp_tools_write(): array
         });
 
     $T[] = mcp_def('geri_al', 'icerik', 'Değişikliği geri al',
-        'Bir içerik bölümünü önceki bir sürümüne döndürür. Sürüm kimliğini degisiklik_gecmisi ile öğrenin (her sürüm, bir değişiklikten ÖNCEKİ halin kopyasıdır; "ilk_hal" sitenin kurulumdaki özgün halidir). Geri almadan önceki şu anki hal de geçmişe eklenir, yani geri almayı da geri alabilirsiniz. Önemli: seçilen sürümdeki TÜM içerik döner (yalnızca son değişiklik değil); önce degisiklik_gecmisi özetine bakın. Sürüm kimliği son_degisiklikler sonucundaki "surum" değeri de olabilir. settings, features ve seo bölümleri için ayrıca "ayarlar", duyurular bölümü için ayrıca "duyurular" izni gerekir (iş ilanları, ilanlar bölümü, "Sayfa içerikleri" iznidir); settings geri alındığında e-posta gönderim ayarları olduğu gibi korunur.',
+        'Bir içerik bölümünü önceki bir sürümüne döndürür. Sürüm kimliğini degisiklik_gecmisi ile öğrenin (her sürüm, bir değişiklikten ÖNCEKİ halin kopyasıdır; "ilk_hal" sitenin kurulumdaki özgün halidir). Geri almadan önceki şu anki hal de geçmişe eklenir, yani geri almayı da geri alabilirsiniz. Önemli: seçilen sürümdeki TÜM içerik döner (yalnızca son değişiklik değil); önce degisiklik_gecmisi özetine bakın. Sürüm kimliği son_degisiklikler sonucundaki "surum" değeri de olabilir. settings, features ve seo bölümleri için ayrıca "ayarlar", duyurular bölümü için ayrıca "duyurular" izni gerekir (iş ilanları, ilanlar bölümü, "Sayfa içerikleri" iznidir); settings geri alındığında e-posta gönderim ayarları olduğu gibi korunur. Eski sürümdeki içerik, normal kayıttaki kurallarla yeniden doğrulanır: kurallara uymayan öğeler (ör. HTML içeren bir başlık) geri alınmaz ve sonuçta listelenir; hiç geçerli öğe kalmazsa bölüm değişmez.',
         sc_obj([
             'bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü (degisiklik_gecmisi ile aynı): services, posts, refs, lists, legal, texts, settings, duyurular, ilanlar, features, seo.'),
             'surum' => sc_str('Sürüm kimliği, örneğin "20261002-153012-a1b2".', ['pattern' => '^\d{8}-\d{6}-[a-f0-9]{4}$', 'x-ipucu' => 'degisiklik_gecmisi sonucundaki "surum" değeri']),
@@ -496,17 +497,27 @@ function mcp_tools_write(): array
             changelog_note('Geri alma');
             // settings: e-posta gönderim ayarları ve kayıt saklama tercihi geri alınmaz, şu anki hali korunur
             if (!changelog_restore($key, $rev, true)) {
-                if ($key === 'ilanlar') {
-                    mcp_fail('Bu sürümdeki ilan verisi geçerli ilan içermediği (bozuk) ya da kaydedilemediği için geri yüklenemedi; hiçbir şey değiştirilmedi.');
+                $rep = restore_report();
+                if ($rep['error'] !== null) {
+                    // Eski sürüm bugünkü kurallarla yeniden doğrulanır (app/restore.php): hiç geçerli öğe kalmadıysa bölüm değişmez
+                    mcp_fail('Bu sürüm geri yüklenemedi: ' . $rep['error'] . ($rep['dropped'] ? ' Atılan öğeler: ' . restore_report_text($rep['dropped']) : '') . ' Hiçbir şey değiştirilmedi.');
                 }
                 mcp_save_failed();
             }
+            $rep = restore_report();
             $msg = mcp_history_sections()[$key] . ' ' . $rev . ' sürümüne döndürüldü. Geri almadan önceki hal de geçmişe eklendi.';
+            if ($rep['dropped']) {
+                $msg .= ' Bugünkü kurallara uymadığı için geri alınmayan öğeler (' . count($rep['dropped']) . '): ' . restore_report_text($rep['dropped']);
+            }
+            if ($rep['notes']) {
+                $msg .= ' ' . restore_report_text($rep['notes']);
+            }
             $opened = $key === 'ilanlar' ? ilan_restore_opened() : [];
             if ($opened) {
                 $msg .= ' DİKKAT: şu ilanlar geri almayla başvuruya AÇILDI (sitede yayında): ' . implode(', ', $opened) . '. İstemiyorsanız is_ilani_guncelle ile kapatın.';
             }
-            return mcp_ok(['mesaj' => $msg, 'bolum' => $key, 'surum' => $rev] + ($opened ? ['basvuruya_acilan_ilanlar' => $opened] : []), $msg);
+            return mcp_ok(['mesaj' => $msg, 'bolum' => $key, 'surum' => $rev] + ($opened ? ['basvuruya_acilan_ilanlar' => $opened] : [])
+                + ($rep['dropped'] ? ['geri_alinmayanlar' => array_slice($rep['dropped'], 0, 30)] : []), $msg);
         });
 
     /* ---------- ayarlar ---------- */
@@ -573,9 +584,10 @@ function mcp_tools_write(): array
                 if (!preg_match('/^[1-9][0-9]{9,14}$/', $v)) $errors[] = 'WhatsApp numarası yalnızca rakamlardan oluşmalı ve ülke koduyla başlamalıdır. Örnek: 905548089771 (başında 0 ya da + olmadan).';
                 else $set['whatsapp'] = $v;
             }
+            require_once APP . '/mailer.php';   // mail_address_ok(): panelle aynı e-posta denetimi
             if (array_key_exists('eposta', $a)) {
                 $v = mcp_line($a['eposta']);
-                if (!filter_var($v, FILTER_VALIDATE_EMAIL)) $errors[] = 'E-posta adresi geçerli değil.';
+                if (!mail_address_ok($v)) $errors[] = 'E-posta adresi geçerli değil.';   // panelle aynı sıkı denetim
                 else $set['email'] = $v;
             }
             if (array_key_exists('adres', $a)) {
@@ -617,6 +629,12 @@ function mcp_tools_write(): array
                     if ($u !== '' && !mcp_url_ok($u)) $errors[] = $net . ' bağlantısı https:// ile başlayan geçerli bir adres olmalı (kaldırmak için boş metin verin).';
                     else $social[$net] = $u;
                 }
+            }
+            foreach (['address' => 'Adres', 'address_short' => 'Kısa adres', 'name' => 'Şirket adı'] as $k => $label) {
+                if (isset($set[$k]) && val_markup($set[$k])) $errors[] = val_markup_error('', $label);   // düz metin alanları: HTML işareti yazılamaz
+            }
+            foreach (['authorized' => 'Yetkili kişi', 'tax_office' => 'Vergi dairesi', 'tax_number' => 'Vergi numarası'] as $k => $label) {
+                if (isset($company[$k]) && val_markup($company[$k])) $errors[] = val_markup_error('', $label);
             }
             if ($errors) {
                 mcp_fail("Bilgiler kaydedilmedi:\n- " . implode("\n- ", $errors));

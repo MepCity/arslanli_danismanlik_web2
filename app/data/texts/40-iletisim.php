@@ -51,6 +51,7 @@ return [
                 'iletisim.imza.cizgi' => ['İmza çizgisinin altındaki yazı', 'Ad Soyad · İmza', 'line', '', ['max' => 30]],
             ],
             '7. Gönderme ve “Alındı” kaşesi' => [
+                'iletisim.kvkk.not' => ['İmzanın altındaki gizlilik notu', 'Yazdıklarınız yalnızca size dönmek için kullanılır. Ayrıntısı {baglanti}’nde.', 'text', '{baglanti} yerine KVKK Aydınlatma Metni sayfasının adı, tıklanabilir olarak gelir; silmeyin.', ['vars' => ['baglanti' => 'KVKK sayfası bağlantısı'], 'need' => ['baglanti'], 'max' => 140]],
                 'iletisim.gonder.dugme' => ['Gönder düğmesi', 'Dilekçeyi gönder', 'line', '', ['max' => 40]],
                 'iletisim.kase.baslik' => ['Kaşenin büyük yazısı', 'Alındı', 'line', 'Kaşede büyük harfle basılır; yer dar, kısa tutun.', ['max' => 14]],
                 'iletisim.kase.alt' => ['Kaşenin alt satırı', '{tarih} · {firma_kisa|büyük}', 'line', '{tarih} yerine bugünün tarihi, {firma_kisa} yerine firmanın kısa adı gelir.', ['vars' => ['tarih', 'firma_kisa'], 'max' => 40]],

@@ -42,9 +42,18 @@
       var q = norm(input.value.trim());
       shown = data.filter(function (it) { return !q || norm(it.t + ' ' + it.k).indexOf(q) > -1; }).slice(0, 40);
       sel = Math.min(sel, Math.max(0, shown.length - 1));
-      list.innerHTML = shown.length ? shown.map(function (it, i) {
-        return '<li class="pal__item' + (i === sel ? ' is-on' : '') + '" role="option"><a href="' + it.u + '"><span>' + it.t.replace(/[<>&]/g, '') + '</span><small>' + it.k + '</small></a></li>';
-      }).join('') : '<li class="pal__none">Sonuç bulunamadı</li>';
+      // Sonuçlar DOM düğümleri olarak kurulur (başlıklar yönetilen içeriktir: hizmet / yazı / duyuru adı); HTML metni birleştirilmez
+      list.textContent = '';
+      if (!shown.length) {
+        var none = d.createElement('li'); none.className = 'pal__none'; none.textContent = 'Sonuç bulunamadı'; list.appendChild(none);
+        return;
+      }
+      shown.forEach(function (it, i) {
+        var li = d.createElement('li'), a = d.createElement('a'), t = d.createElement('span'), k = d.createElement('small');
+        li.className = 'pal__item' + (i === sel ? ' is-on' : ''); li.setAttribute('role', 'option');
+        a.setAttribute('href', it.u); t.textContent = it.t; k.textContent = it.k;
+        a.appendChild(t); a.appendChild(k); li.appendChild(a); list.appendChild(li);
+      });
     };
     var open = function () { pal.hidden = false; input.value = ''; sel = 0; render(); setTimeout(function () { input.focus(); }, 10); };
     var close = function () { pal.hidden = true; };

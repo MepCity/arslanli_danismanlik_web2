@@ -47,6 +47,121 @@
   font-display: swap;
 }
 
+/* ---------- Yedek yazılar (metrik uyumlu): web yazı tipi inene kadar görünen yedek, gerçek yazının genişliğine ve satır ölçülerine ayarlıdır;
+   yazı tipi gelince sayfa kaymaz. Değerler yazı tipi dosyalarından ölçüldü (Archivo her genişlik/ağırlık için ayrı, Newsreader ve Courier Prime ayrı);
+   Arial/Georgia/Courier New: macOS, iOS, Windows; Roboto/Noto Serif/Noto Sans Mono: Android. Yazı tipi yüklenince hiçbir etkisi yoktur. ---------- */
+/* tam eşleşen yüzler: sayfalarda gerçekten kullanılan ağırlık ve genişlik çiftleri */
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:86.86%;ascent-override:101.08%;descent-override:24.18%;line-gap-override:0%;font-weight:400; font-stretch:86%;}
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:92.65%;ascent-override:94.77%;descent-override:22.67%;line-gap-override:0%;font-weight:400; font-stretch:90%;}
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:99.64%;ascent-override:88.12%;descent-override:21.08%;line-gap-override:0%;font-weight:400; font-stretch:100%;}
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:86.88%;ascent-override:101.06%;descent-override:24.17%;line-gap-override:0%;font-weight:560; font-stretch:82%;}
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:90.85%;ascent-override:96.64%;descent-override:23.11%;line-gap-override:0%;font-weight:560; font-stretch:85%;}
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:91.01%;ascent-override:96.47%;descent-override:23.07%;line-gap-override:0%;font-weight:560; font-stretch:86%;}
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:92.69%;ascent-override:94.73%;descent-override:22.66%;line-gap-override:0%;font-weight:560; font-stretch:88%;}
+@font-face{font-family:"Archivo FB";src:local("Arial"),local("ArialMT");size-adjust:91.47%;ascent-override:95.99%;descent-override:22.96%;line-gap-override:0%;font-weight:580; font-stretch:86%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:80.68%;ascent-override:108.82%;descent-override:26.03%;line-gap-override:0%;font-weight:600; font-stretch:82%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:85.56%;ascent-override:102.61%;descent-override:24.54%;line-gap-override:0%;font-weight:600; font-stretch:84%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:89.14%;ascent-override:98.5%;descent-override:23.56%;line-gap-override:0%;font-weight:600; font-stretch:85%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:84.94%;ascent-override:103.37%;descent-override:24.72%;line-gap-override:0%;font-weight:600; font-stretch:86%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:86.39%;ascent-override:101.64%;descent-override:24.31%;line-gap-override:0%;font-weight:600; font-stretch:86%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:84%;ascent-override:104.53%;descent-override:25%;line-gap-override:0%;font-weight:620; font-stretch:84%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:87.29%;ascent-override:100.58%;descent-override:24.06%;line-gap-override:0%;font-weight:620; font-stretch:85%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:81.22%;ascent-override:108.1%;descent-override:25.85%;line-gap-override:0%;font-weight:650; font-stretch:76%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:83.64%;ascent-override:104.97%;descent-override:25.11%;line-gap-override:0%;font-weight:650; font-stretch:80%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:83.55%;ascent-override:105.09%;descent-override:25.14%;line-gap-override:0%;font-weight:650; font-stretch:82%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:83.76%;ascent-override:104.82%;descent-override:25.07%;line-gap-override:0%;font-weight:650; font-stretch:82%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:85.6%;ascent-override:102.57%;descent-override:24.53%;line-gap-override:0%;font-weight:650; font-stretch:84%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:88.14%;ascent-override:99.61%;descent-override:23.83%;line-gap-override:0%;font-weight:650; font-stretch:85%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:87.46%;ascent-override:100.39%;descent-override:24.01%;line-gap-override:0%;font-weight:650; font-stretch:86%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:77.53%;ascent-override:113.25%;descent-override:27.09%;line-gap-override:0%;font-weight:700; font-stretch:72%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:82.01%;ascent-override:107.06%;descent-override:25.61%;line-gap-override:0%;font-weight:700; font-stretch:78%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:83.48%;ascent-override:105.17%;descent-override:25.16%;line-gap-override:0%;font-weight:700; font-stretch:80%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:84.62%;ascent-override:103.75%;descent-override:24.82%;line-gap-override:0%;font-weight:700; font-stretch:82%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:108.2%;ascent-override:81.14%;descent-override:19.41%;line-gap-override:0%;font-weight:700; font-stretch:100%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:83.94%;ascent-override:104.6%;descent-override:25.02%;line-gap-override:0%;font-weight:720; font-stretch:80%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:81.35%;ascent-override:107.93%;descent-override:25.81%;line-gap-override:0%;font-weight:740; font-stretch:76%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:83.36%;ascent-override:105.33%;descent-override:25.19%;line-gap-override:0%;font-weight:750; font-stretch:78%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:78.86%;ascent-override:111.34%;descent-override:26.63%;line-gap-override:0%;font-weight:760; font-stretch:72%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:81.23%;ascent-override:108.08%;descent-override:25.85%;line-gap-override:0%;font-weight:760; font-stretch:74%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:82.32%;ascent-override:106.66%;descent-override:25.51%;line-gap-override:0%;font-weight:760; font-stretch:76%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:83.89%;ascent-override:104.67%;descent-override:25.03%;line-gap-override:0%;font-weight:760; font-stretch:78%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:86.47%;ascent-override:101.54%;descent-override:24.29%;line-gap-override:0%;font-weight:760; font-stretch:80%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:81.11%;ascent-override:108.25%;descent-override:25.89%;line-gap-override:0%;font-weight:780; font-stretch:74%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:80.21%;ascent-override:109.46%;descent-override:26.18%;line-gap-override:0%;font-weight:780; font-stretch:76%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:75.42%;ascent-override:116.42%;descent-override:27.85%;line-gap-override:0%;font-weight:800; font-stretch:66%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:76.14%;ascent-override:115.31%;descent-override:27.58%;line-gap-override:0%;font-weight:800; font-stretch:68%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:77.78%;ascent-override:112.88%;descent-override:27%;line-gap-override:0%;font-weight:800; font-stretch:70%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:77.99%;ascent-override:112.58%;descent-override:26.93%;line-gap-override:0%;font-weight:800; font-stretch:72%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:87.99%;ascent-override:99.78%;descent-override:23.87%;line-gap-override:0%;font-weight:800; font-stretch:84%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:79.74%;ascent-override:110.11%;descent-override:26.34%;line-gap-override:0%;font-weight:820; font-stretch:66%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:77.32%;ascent-override:113.55%;descent-override:27.16%;line-gap-override:0%;font-weight:820; font-stretch:68%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:72.78%;ascent-override:120.64%;descent-override:28.85%;line-gap-override:0%;font-weight:850; font-stretch:62%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:72.86%;ascent-override:120.5%;descent-override:28.82%;line-gap-override:0%;font-weight:850; font-stretch:64%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:76.72%;ascent-override:114.44%;descent-override:27.37%;line-gap-override:0%;font-weight:850; font-stretch:66%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:76.79%;ascent-override:114.34%;descent-override:27.35%;line-gap-override:0%;font-weight:900; font-stretch:62%;}
+@font-face{font-family:"Archivo FB";src:local("Arial Bold"),local("Arial-BoldMT");size-adjust:74.06%;ascent-override:118.55%;descent-override:28.35%;line-gap-override:0%;font-weight:900; font-stretch:64%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:87.14%;ascent-override:100.75%;descent-override:24.1%;line-gap-override:0%;font-weight:400; font-stretch:86%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:96.92%;ascent-override:90.59%;descent-override:21.67%;line-gap-override:0%;font-weight:400; font-stretch:90%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:100.78%;ascent-override:87.12%;descent-override:20.84%;line-gap-override:0%;font-weight:400; font-stretch:100%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:88.79%;ascent-override:98.89%;descent-override:23.65%;line-gap-override:0%;font-weight:560; font-stretch:82%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:91%;ascent-override:96.49%;descent-override:23.08%;line-gap-override:0%;font-weight:560; font-stretch:85%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:91.87%;ascent-override:95.57%;descent-override:22.86%;line-gap-override:0%;font-weight:560; font-stretch:86%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:93.52%;ascent-override:93.88%;descent-override:22.46%;line-gap-override:0%;font-weight:560; font-stretch:88%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto"),local("Roboto-Regular");size-adjust:93.43%;ascent-override:93.98%;descent-override:22.48%;line-gap-override:0%;font-weight:580; font-stretch:86%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:82.92%;ascent-override:105.89%;descent-override:25.33%;line-gap-override:0%;font-weight:600; font-stretch:82%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:90.99%;ascent-override:96.49%;descent-override:23.08%;line-gap-override:0%;font-weight:600; font-stretch:84%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:90.1%;ascent-override:97.45%;descent-override:23.31%;line-gap-override:0%;font-weight:600; font-stretch:85%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:90.33%;ascent-override:97.2%;descent-override:23.25%;line-gap-override:0%;font-weight:600; font-stretch:86%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:91.87%;ascent-override:95.57%;descent-override:22.86%;line-gap-override:0%;font-weight:600; font-stretch:86%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:88.88%;ascent-override:98.79%;descent-override:23.63%;line-gap-override:0%;font-weight:620; font-stretch:84%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:90.41%;ascent-override:97.12%;descent-override:23.23%;line-gap-override:0%;font-weight:620; font-stretch:85%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:86.78%;ascent-override:101.18%;descent-override:24.2%;line-gap-override:0%;font-weight:650; font-stretch:76%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:88.13%;ascent-override:99.62%;descent-override:23.83%;line-gap-override:0%;font-weight:650; font-stretch:80%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:87.42%;ascent-override:100.43%;descent-override:24.02%;line-gap-override:0%;font-weight:650; font-stretch:82%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:87.65%;ascent-override:100.17%;descent-override:23.96%;line-gap-override:0%;font-weight:650; font-stretch:82%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:91.06%;ascent-override:96.42%;descent-override:23.06%;line-gap-override:0%;font-weight:650; font-stretch:84%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:91.21%;ascent-override:96.26%;descent-override:23.02%;line-gap-override:0%;font-weight:650; font-stretch:85%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:92.43%;ascent-override:94.99%;descent-override:22.72%;line-gap-override:0%;font-weight:650; font-stretch:86%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:84.73%;ascent-override:103.63%;descent-override:24.79%;line-gap-override:0%;font-weight:700; font-stretch:72%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:87.96%;ascent-override:99.81%;descent-override:23.87%;line-gap-override:0%;font-weight:700; font-stretch:78%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:82.35%;ascent-override:106.62%;descent-override:25.5%;line-gap-override:0%;font-weight:700; font-stretch:80%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:90.03%;ascent-override:97.52%;descent-override:23.32%;line-gap-override:0%;font-weight:700; font-stretch:82%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:109.75%;ascent-override:80%;descent-override:19.13%;line-gap-override:0%;font-weight:700; font-stretch:100%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:88.96%;ascent-override:98.7%;descent-override:23.61%;line-gap-override:0%;font-weight:720; font-stretch:80%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:87.06%;ascent-override:100.85%;descent-override:24.12%;line-gap-override:0%;font-weight:740; font-stretch:76%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:87.3%;ascent-override:100.57%;descent-override:24.05%;line-gap-override:0%;font-weight:750; font-stretch:78%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:84.28%;ascent-override:104.18%;descent-override:24.92%;line-gap-override:0%;font-weight:760; font-stretch:72%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:86.71%;ascent-override:101.25%;descent-override:24.22%;line-gap-override:0%;font-weight:760; font-stretch:74%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:86.74%;ascent-override:101.22%;descent-override:24.21%;line-gap-override:0%;font-weight:760; font-stretch:76%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:88.56%;ascent-override:99.14%;descent-override:23.71%;line-gap-override:0%;font-weight:760; font-stretch:78%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:90.88%;ascent-override:96.61%;descent-override:23.11%;line-gap-override:0%;font-weight:760; font-stretch:80%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:85.47%;ascent-override:102.73%;descent-override:24.57%;line-gap-override:0%;font-weight:780; font-stretch:74%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:83.77%;ascent-override:104.81%;descent-override:25.07%;line-gap-override:0%;font-weight:780; font-stretch:76%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:80.68%;ascent-override:108.82%;descent-override:26.03%;line-gap-override:0%;font-weight:800; font-stretch:66%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:81.79%;ascent-override:107.35%;descent-override:25.68%;line-gap-override:0%;font-weight:800; font-stretch:68%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:85.36%;ascent-override:102.86%;descent-override:24.6%;line-gap-override:0%;font-weight:800; font-stretch:70%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:83.8%;ascent-override:104.77%;descent-override:25.06%;line-gap-override:0%;font-weight:800; font-stretch:72%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:95.53%;ascent-override:91.91%;descent-override:21.98%;line-gap-override:0%;font-weight:800; font-stretch:84%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:78.45%;ascent-override:111.92%;descent-override:26.77%;line-gap-override:0%;font-weight:820; font-stretch:66%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:83.5%;ascent-override:105.15%;descent-override:25.15%;line-gap-override:0%;font-weight:820; font-stretch:68%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:72.47%;ascent-override:121.15%;descent-override:28.98%;line-gap-override:0%;font-weight:850; font-stretch:62%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:78.62%;ascent-override:111.68%;descent-override:26.71%;line-gap-override:0%;font-weight:850; font-stretch:64%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:83.32%;ascent-override:105.38%;descent-override:25.21%;line-gap-override:0%;font-weight:850; font-stretch:66%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:81.53%;ascent-override:107.69%;descent-override:25.76%;line-gap-override:0%;font-weight:900; font-stretch:62%;}
+@font-face{font-family:"Archivo FB R";src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:79.52%;ascent-override:110.42%;descent-override:26.41%;line-gap-override:0%;font-weight:900; font-stretch:64%;}
+@font-face{font-family:"Newsreader FB";src:local("Georgia");size-adjust:95.53%;ascent-override:76.94%;descent-override:27.74%;line-gap-override:0%;font-weight:100 599; font-style:normal;}
+@font-face{font-family:"Newsreader FB";src:local("Georgia Bold"),local("Georgia-Bold");size-adjust:88.32%;ascent-override:83.22%;descent-override:30%;line-gap-override:0%;font-weight:600 900; font-style:normal;}
+@font-face{font-family:"Newsreader FB";src:local("Georgia Italic"),local("Georgia-Italic");size-adjust:87.35%;ascent-override:84.14%;descent-override:30.34%;line-gap-override:0%;font-style:italic;}
+@font-face{font-family:"Newsreader FB R";src:local("Noto Serif"),local("NotoSerif");size-adjust:87.9%;ascent-override:83.62%;descent-override:30.15%;line-gap-override:0%;font-weight:100 599; font-style:normal;}
+@font-face{font-family:"Newsreader FB R";src:local("Noto Serif Bold"),local("NotoSerif-Bold");size-adjust:95.3%;ascent-override:77.12%;descent-override:27.81%;line-gap-override:0%;font-weight:600 900; font-style:normal;}
+@font-face{font-family:"Newsreader FB R";src:local("Noto Serif Italic"),local("NotoSerif-Italic");size-adjust:85.29%;ascent-override:86.17%;descent-override:31.07%;line-gap-override:0%;font-style:italic;}
+@font-face{font-family:"Newsreader Display FB";src:local("Georgia");size-adjust:98.52%;ascent-override:74.6%;descent-override:26.9%;line-gap-override:0%;}
+@font-face{font-family:"Newsreader Display FB R";src:local("Noto Serif"),local("NotoSerif");size-adjust:90.81%;ascent-override:80.94%;descent-override:29.18%;line-gap-override:0%;}
+@font-face{font-family:"Courier Prime FB";src:local("Courier New"),local("CourierNewPSMT");size-adjust:100%;ascent-override:78.12%;descent-override:34.18%;line-gap-override:0%;font-weight:100 699;}
+@font-face{font-family:"Courier Prime FB";src:local("Courier New Bold"),local("CourierNewPS-BoldMT");size-adjust:100%;ascent-override:78.12%;descent-override:34.18%;line-gap-override:0%;font-weight:700 900;}
+@font-face{font-family:"Courier Prime FB R";src:local("Noto Sans Mono"),local("Droid Sans Mono"),local("Roboto Mono");size-adjust:100%;ascent-override:78.12%;descent-override:34.18%;line-gap-override:0%;font-weight:100 699;}
+@font-face{font-family:"Courier Prime FB R";src:local("Noto Sans Mono Bold"),local("NotoSansMono-Bold"),local("Roboto Mono Bold");size-adjust:100%;ascent-override:78.12%;descent-override:34.18%;line-gap-override:0%;font-weight:700 900;}
+
 /* ---------- Değişkenler ---------- */
 
 :root {
@@ -59,14 +174,14 @@
   /* mürekkep */
   --ink: #1a1a1d;
   --ink-2: #47464a;
-  --ink-3: #7a766d;
+  --ink-3: #66625a;
   --rule: rgba(26, 26, 29, 0.16);
   --rule-2: rgba(26, 26, 29, 0.32);
 
   /* kalemler: logodaki lacivert ve somon, masadaki tükenmez ve kırmızı kaleme dönüşür */
   --pen: #23409c;
   --navy: #1a3870;
-  --red: #cf412f;
+  --red: #cb3f2d;
   --salmon: #de7468;
   --hl: #f2df4f;
 
@@ -84,10 +199,10 @@
   --bg: var(--paper);
   --fg: var(--ink);
 
-  --font-sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --font-display: "Newsreader Display", "Newsreader", Georgia, serif;
-  --font-type: "Courier Prime", "Courier New", monospace;
+  --font-sans: "Archivo", "Archivo FB", "Archivo FB R", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Newsreader", "Newsreader FB", "Newsreader FB R", "Iowan Old Style", Georgia, serif;
+  --font-display: "Newsreader Display", "Newsreader Display FB", "Newsreader Display FB R", "Newsreader", "Newsreader FB", "Newsreader FB R", Georgia, serif;
+  --font-type: "Courier Prime", "Courier Prime FB", "Courier Prime FB R", "Courier New", monospace;
 
   --t-mega: clamp(3.4rem, 10.5vw, 11.5rem);
   --t-h1: clamp(2.7rem, 6.6vw, 7rem);

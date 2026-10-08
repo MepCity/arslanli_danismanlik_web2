@@ -7,6 +7,7 @@
  *   /yonetim/bulten/csv                         süzülen listenin CSV dosyası
  *   /yonetim/bulten/cikar               (POST)  bir adresi abonelikten çıkarır
  *   /yonetim/bulten/yeniden-abone       (POST)  abonelikten ayrılmış bir adresi yeniden abone yapar (ayrılma kalıcıdır; yalnızca buradan geri açılır)
+ *   /yonetim/bulten/engel-kaldir        (POST)  kaydı silinmiş bir kişinin "bir daha e-posta alma" kaydını (anahtarlı özet) adresi yazılarak kaldırır
  *   /yonetim/bulten/yeni                        e-posta yazma ekranı (POST: taslağı kaydet ya da gönderimi başlat)
  *   /yonetim/bulten/yeni/{say|onizle|deneme}    (POST, JSON) alıcı sayısı, önizleme, deneme e-postası
  *   /yonetim/bulten/gonderimler                 taslaklar, gönderim geçmişi, saatlik sınır
@@ -89,6 +90,21 @@ if ($a0 === 'cikar' && $method === 'POST') {
         }
     }
     adm_go('bulten' . $geri);
+}
+
+/* ---------- Kaydı silinmiş kişinin engel kaydını kaldır (kişi bunu açıkça istediğinde; adres günlüğe yazılmaz) ---------- */
+if ($a0 === 'engel-kaldir' && $method === 'POST') {
+    $email = strtolower(trim(post_str('email', 254)));
+    if ($email === '' || !mail_address_ok($email)) {
+        adm_flash('Geçerli bir e-posta adresi yazın.', 'err');
+    } else {
+        try {
+            adm_flash(bulten_engel_kaldir($email) ? 'Bu adresin “bir daha e-posta alma” kaydı silindi. Adres aynı formla yeniden kayıt olursa abone sayılır ve bülten alır.' : 'Bu adres için silinmiş kişi kaydı (engel listesi) bulunamadı. Adresi hâlâ listede görünen bir abone için “Yeniden abone yap” kullanılır.');
+        } catch (Throwable $e) {
+            adm_flash('Kaydedilemedi: storage klasörü yazılabilir mi?', 'err');
+        }
+    }
+    adm_go('bulten');
 }
 
 /* ---------- Ayrılmış adresi yeniden abone yap (ayrılma kalıcıdır; sitedeki form aboneliği kendiliğinden geri açmaz) ---------- */
@@ -868,7 +884,12 @@ $body = $suzgec . $ozet . ($rows
         . ($tum ? 'Seçimleri azaltmayı ya da arama kutusunu temizlemeyi deneyin. Sektörünü eskiden serbest metinle yazmış aboneler sektör listesinde çıkmaz; arama kutusuyla bulunur.' : 'Sitedeki bülten formunu dolduranlar burada listelenir.')
         . '</span></div>');
 
-adm_layout('Bülten', $uyari . $sekmeler('') . ui_card('', $body, ['class' => 'bl-card']) . '<script>' . $jsOrtak . '</script><script>
+adm_layout('Bülten', $uyari . $sekmeler('') . ui_card('', $body, ['class' => 'bl-card'])
+    . ui_card('Silinmiş kişinin “bir daha e-posta alma” kaydı', '<p class="muted">Bir kişinin form kaydı silindiğinde, daha önce abonelikten ayrılmışsa tercihi adres yerine yalnızca anahtarlı bir özet olarak saklanır (adres tutulmaz). Kişi bu özetin de silinmesini isterse adresini buraya yazın; kayıt silinir ve adres yeniden kayıt olursa e-posta alabilir.</p>'
+        . '<form method="post" action="' . adm_url('bulten/engel-kaldir') . '" class="bl-engel" data-confirm="Bu adresin “bir daha e-posta alma” kaydı silinsin mi? Adres yeniden kayıt olursa bülten alır.">' . adm_csrf_field()
+        . ui_text('email', 'E-posta adresi', '', ['type' => 'email', 'required' => true, 'maxlength' => 254, 'autocomplete' => 'off'])
+        . '<div><button class="btn btn--ghost btn--sm" type="submit">Kaydı sil</button></div></form>', ['id' => 'engel'])
+    . '<script>' . $jsOrtak . '</script><script>
 (function () {
   var d = document, cp = d.querySelector("[data-bl-copy]"), ff = d.querySelector("form.bl-filters");
   // Boş bırakılan süzgeç alanları adrese yazılmaz (paylaşılan adres kısa kalır)

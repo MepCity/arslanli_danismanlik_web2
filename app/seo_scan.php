@@ -127,6 +127,8 @@ function seoa_parse(string $html, string $path): array
         $words = preg_match_all('/[\p{L}\p{N}]+/u', seoa_clean($clone->textContent));
     }
     $d['words'] = (int) $words;
+    // Liste sayfaları (ör. Referanslar): içerik düz yazı değil, adlandırılmış kayıtlardır; kayıt sayısı ayrıca sayılır
+    $d['items'] = $main ? $x->query('.//li', $main)->length : 0;
     return $d;
 }
 
@@ -178,7 +180,8 @@ function seoa_checks(array $d, string $path, string $expectCanon): array
     if ($d['noalt'] > 0) $add('alt', 'Görsel açıklamaları', 'warn', $d['noalt'] . ' görselde açıklama yok', $d['noalt'] . ' görsel', 'Bazı görsellerin açıklaması (alt metni) yok. Görme engelliler ve arama motorları görseli bu yazıyla anlar.');
     else $add('alt', 'Görsel açıklamaları', 'ok', '', '', 'Tüm görsellerde açıklama alanı var.');
 
-    if ($d['words'] < 100) $add('words', 'Sayfadaki yazı miktarı', 'warn', 'Yazı az', $d['words'] . ' kelime', 'Sayfada çok az yazı var. Arama motorları ve yapay zekâ asistanları konuyu anlamak için biraz daha metne ihtiyaç duyar.');
+    if ($d['words'] < 100 && $d['items'] >= 12 && $d['words'] >= 60) $add('words', 'Sayfadaki yazı miktarı', 'ok', '', $d['words'] . ' kelime, ' . $d['items'] . ' kayıt', 'Bu bir liste sayfası: içerik, tek tek adlandırılmış kayıtlardır. Doldurma yazısı eklemeyin.');
+    elseif ($d['words'] < 100) $add('words', 'Sayfadaki yazı miktarı', 'warn', 'Yazı az', $d['words'] . ' kelime', 'Sayfada çok az yazı var. Arama motorları ve yapay zekâ asistanları konuyu anlamak için biraz daha metne ihtiyaç duyar.');
     else $add('words', 'Sayfadaki yazı miktarı', 'ok', '', $d['words'] . ' kelime', 'Yeterli yazı var.');
 
     return $c;

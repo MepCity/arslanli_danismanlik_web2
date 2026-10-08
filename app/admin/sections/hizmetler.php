@@ -45,17 +45,12 @@ if ($slug === 'hedefler') {
     foreach ($all as $s => $v) {
         $opts[$s] = $v['title'];
     }
-    $missing = [];
+    // Silinmiş hizmetler listede gösterilmez (silme zaten eşleştiriciden çıkarır; eski kayıtlarda kalmışsa kaydedince düşer)
     foreach ($rows as $i => $g) {
-        foreach ((array) ($g['services'] ?? []) as $sl) {
-            if (!isset($all[$sl])) {
-                $missing[] = '"' . ($g['label'] ?? '') . '" hedefinde silinmiş bir hizmet var (' . $sl . ')';
-            }
-        }
+        $rows[$i]['services'] = array_values(array_filter((array) ($g['services'] ?? []), fn($sl) => isset($all[$sl])));
     }
     ob_start();
     if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong><ul class="errs"><li>' . implode('</li><li>', array_map('e', $errors)) . '</li></ul>');
-    if ($missing && !$errors) echo '<p class="goal-warn">' . ui_icon('warning-circle') . '<span>' . e(implode('; ', $missing)) . '. Sitede bu hizmet atlanır; kaydederken listeden çıkarılması istenir.</span></p>';
     ?>
 <form id="goal-form" method="post" action="<?= adm_url('hizmetler/hedefler') ?>" novalidate>
   <?= adm_csrf_field() ?>

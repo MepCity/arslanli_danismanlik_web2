@@ -31,7 +31,7 @@ return [
                 'referans.sonraki.etiket' => ['Sonraki sayfa bağlantısının küçük yazısı', 'Sonraki evrak · {no}', 'line', '{no} yerine sonraki sayfanın evrak numarası gelir. Bağlantının büyük yazısı sonraki sayfanın adıdır (Sayfa adları).', ['vars' => ['no' => 'sonraki sayfanın numarası'], 'need' => ['no'], 'max' => 40]],
             ],
             '5. Arama motorları' => [
-                'referans.seo.description' => ['Arama motoru açıklaması', 'Hibe, teşvik ve Ar-Ge başvurularında dosyasını hazırladığımız kurumlardan bazıları: Pilot Seating, Tork, CNK Havacılık, Acar Kaporta, Sacform, Mado, NSK ve diğerleri.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. Kurum adları Referanslar bölümü değişirse güncelleyin. 150-160 karakter önerilir.', ['max' => 320]],
+                'referans.seo.description' => ['Arama motoru açıklaması', 'Hibe, teşvik ve Ar-Ge başvurularında dosyasını hazırladığımız kurumlardan bazıları: Pilot Seating, Tork, CNK Havacılık, Acar Kaporta, Sacform, Mado, NSK.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. Kurum adları Referanslar bölümü değişirse güncelleyin. 150-160 karakter önerilir.', ['max' => 320]],
             ],
         ],
     ],

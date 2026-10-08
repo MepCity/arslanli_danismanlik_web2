@@ -12,6 +12,9 @@ declare(strict_types=1);
  *
  *   storage/bulten/ayarlar.json           saatlik gönderim sınırı
  *   storage/bulten/ayrilanlar.json        abonelikten ayrılan adresler (adres => zaman); yönetici yeniden abone yapana kadar kalır
+ *   storage/bulten/bastirilanlar.json     kaydı silinen kişilerin "bir daha e-posta alma" tercihi: adres DEĞİL, adresin anahtarlı özeti (HMAC, site anahtarıyla)
+ *                                         => ayrılma zamanı. Kişinin son kaydı silinince ayrılanlar listesindeki adres yerine buraya geçer; aynı adresle
+ *                                         sonradan yapılan kayıt yine "ayrıldı" görünür ve e-posta almaz. Yönetici "yeniden abone yap" derse silinir.
  *   storage/bulten/saat.json              son bir saatte gönderilen e-postaların zamanları (sınır tüm gönderimler için ortaktır)
  *   storage/bulten/imza.json              ayrılma bağlantılarının imzalandığı anahtarlar (anahtar yenilense de eski e-postalardaki bağlantı çalışır)
  *   storage/bulten/gonderimler/{id}.json  gönderimler ve taslaklar
@@ -223,6 +226,114 @@ function bulten_ayrilanlar(): array
     return $out;
 }
 
+/* ---------- Engel listesi: kaydı silinen kişinin ayrılma tercihi (adres tutulmaz, yalnızca anahtarlı özeti) ---------- */
+
+/** Anahtarın kısa kimliği (özetle birlikte saklanır; hangi anahtarla üretildiği bilinsin). Anahtarın kendisi sızmaz. */
+function bulten_engel_kimlik(string $anahtar): string
+{
+    return substr(hash('sha256', 'engel-kimlik|' . $anahtar), 0, 8);
+}
+
+/** Adresin engel listesindeki girdisi: "anahtarkimligi:özet". Özet, imza bağlantısındaki imzadan farklıdır (ayrı alan etiketi). */
+function bulten_engel_girdi(string $email, string $anahtar): string
+{
+    return bulten_engel_kimlik($anahtar) . ':' . hash_hmac('sha256', 'engel|' . strtolower(trim($email)), $anahtar);
+}
+
+/** Engel listesi: girdi => ayrılma zamanı (unix). Dosyadaki bozuk satırlar atılır. */
+function bulten_engel_listesi(): array
+{
+    $out = [];
+    foreach (bulten_oku(BULTEN_DIR . '/bastirilanlar.json') as $girdi => $iso) {
+        $t = is_string($iso) ? (int) strtotime($iso) : 0;
+        if (is_string($girdi) && preg_match('/^[a-f0-9]{8}:[a-f0-9]{64}$/D', $girdi) && $t > 0) {
+            $out[$girdi] = $t;
+        }
+    }
+    return $out;
+}
+
+/**
+ * Engel listesine bakarken denenecek anahtarlar: şimdiki form güvenlik anahtarı ve saklanmış eski anahtarlar (imza.json).
+ * Anahtar yenilense de önceki anahtarla yazılmış girdiler bulunur (ayrılma bağlantılarının imzaları gibi); varsayılan anahtar hiçbir zaman saklanmadığından
+ * yalnızca şimdiki anahtar olarak denenir.
+ */
+function bulten_engel_anahtarlari(): array
+{
+    $k = (array) (bulten_oku(BULTEN_DIR . '/imza.json')['anahtarlar'] ?? []);
+    return array_values(array_unique(array_filter(array_merge([(string) cfg('secret')], array_filter($k, 'is_string')), fn($x) => $x !== '')));
+}
+
+/**
+ * Bir adresin engel listesi girdisini siler (kişi “bu özetin de silinmesini” istediğinde): her anahtarla üretilmiş girdi temizlenir. Adres günlüğe yazılmaz.
+ * @return bool bir girdi silindiyse true
+ */
+function bulten_engel_kaldir(string $email): bool
+{
+    $email = strtolower(trim($email));
+    if ($email === '' || !mail_address_ok($email)) {
+        return false;
+    }
+    $oldu = (bool) bulten_kilit('ayrilanlar', function () use ($email): int {
+        $file = bulten_dir() . '/bastirilanlar.json';
+        $engel = bulten_oku($file);
+        $degisti = false;
+        foreach (bulten_engel_anahtarlari() as $a) {
+            $g = bulten_engel_girdi($email, $a);
+            if (isset($engel[$g])) {
+                unset($engel[$g]);
+                $degisti = true;
+            }
+        }
+        return $degisti && bulten_yaz($file, $engel) ? 1 : 0;
+    });
+    if ($oldu) {
+        bulten_aboneler(true);
+        changelog_event('bulten', 'Kaydı silinmiş bir kişinin “bir daha e-posta alma” kaydı (anahtarlı özet) yönetim panelinden kaldırıldı');
+    }
+    return $oldu;
+}
+
+/** Yedekten gelen engel listesi girdilerini mevcut listeyle birleştirir (yalnızca biçimi geçerli girdiler). @return int eklenen girdi sayısı */
+function bulten_engel_birlestir(array $in): int
+{
+    return (int) bulten_kilit('ayrilanlar', function () use ($in): int {
+        $file = bulten_dir() . '/bastirilanlar.json';
+        $cur = bulten_oku($file);
+        $n = 0;
+        foreach ($in as $g => $iso) {
+            if (is_string($g) && preg_match('/^[a-f0-9]{8}:[a-f0-9]{64}$/D', $g) && is_string($iso) && strtotime($iso) > 0 && !isset($cur[$g])) {
+                $cur[$g] = $iso;
+                $n++;
+            }
+        }
+        return $n && bulten_yaz($file, $cur) ? $n : 0;
+    });
+}
+
+/** Adres engel listesinde mi? Ayrılma zamanı (unix) ya da 0. */
+function bulten_engel_zamani(string $email): int
+{
+    $liste = bulten_engel_listesi();
+    if (!$liste) {
+        return 0;
+    }
+    foreach (bulten_engel_anahtarlari() as $a) {
+        $g = bulten_engel_girdi($email, $a);
+        if (isset($liste[$g])) {
+            return $liste[$g];
+        }
+    }
+    return 0;
+}
+
+/** Adresin ayrılma zamanı: ayrılanlar listesinde (adres açık) ya da engel listesinde (yalnızca özet); yoksa 0. */
+function bulten_ayrilma_zamani(string $email): int
+{
+    $email = strtolower(trim($email));
+    return bulten_ayrilanlar()[$email] ?? bulten_engel_zamani($email);
+}
+
 /**
  * Aboneler, en yeni kayıt önce. Abone = e-posta adresi (küçük harfle) başına tek satır. Bilgileri (ad, il, sektör, kayıt tarihi),
  * o adresin karantinada olmayan ve ileti onayı içeren EN ESKİ bülten kaydından gelir: aynı adresle sonradan yapılan kayıtlar
@@ -283,9 +394,11 @@ function bulten_aboneler(bool $yenile = false): array
     $ayrilan = bulten_ayrilanlar();
     $out = [];
     foreach ($ilk as $email => $a) {
-        // Ayrılma kalıcıdır: adres listede durdukça, sonradan yeni kayıt yapılmış olsa da "ayrildi" kalır
-        $a['durum'] = isset($ayrilan[$email]) ? 'ayrildi' : ($a['onay'] ? 'onayli' : 'onaysiz');
-        $a['yeniden'] = isset($ayrilan[$email]) && ($sonOnay[$email] ?? 0) > $ayrilan[$email] ? $sonOnay[$email] : 0;
+        // Ayrılma kalıcıdır: adres listede durdukça, sonradan yeni kayıt yapılmış olsa da "ayrildi" kalır. Kaydı bir kez silinmiş kişinin
+        // tercihi engel listesinde (adres yerine anahtarlı özet) durur: aynı adresle yeniden doldurulan form da aboneliği geri açmaz.
+        $ayrildi = $ayrilan[$email] ?? bulten_engel_zamani($email);
+        $a['durum'] = $ayrildi ? 'ayrildi' : ($a['onay'] ? 'onayli' : 'onaysiz');
+        $a['yeniden'] = $ayrildi && ($sonOnay[$email] ?? 0) > $ayrildi ? $sonOnay[$email] : 0;
         $out[] = $a;
     }
     usort($out, fn($x, $y) => [$y['zaman'], $y['sira']] <=> [$x['zaman'], $x['sira']]);
@@ -434,7 +547,15 @@ function bulten_imza_arsivle(): void
         $file = bulten_dir() . '/imza.json';
         $list = array_values(array_filter((array) (bulten_oku($file)['anahtarlar'] ?? []), fn($x) => is_string($x) && $x !== '' && $x !== $k));
         $list[] = $k;
-        return bulten_yaz($file, ['anahtarlar' => array_slice($list, -12)]) ? 1 : 0;
+        // Son 12 anahtar saklanır; ayrıca engel listesindeki bir girdinin üretildiği anahtar (kaydı silinen kişinin ayrılma tercihi) hiç atılmaz
+        $gerekli = array_unique(array_map(fn($g) => explode(':', $g)[0], array_keys(bulten_engel_listesi())));
+        $tut = array_slice($list, -12);
+        foreach (array_slice($list, 0, -12) as $x) {
+            if (in_array(bulten_engel_kimlik($x), $gerekli, true)) {
+                $tut[] = $x;
+            }
+        }
+        return bulten_yaz($file, ['anahtarlar' => array_values(array_unique($tut))]) ? 1 : 0;
     });
 }
 
@@ -488,8 +609,8 @@ function bulten_ayril(string $email, string $nasil): bool
     $yeni = (bool) bulten_kilit('ayrilanlar', function () use ($email): int {
         $file = bulten_dir() . '/ayrilanlar.json';
         $list = bulten_oku($file);
-        if (isset($list[$email]) && (int) strtotime((string) $list[$email]) > 0) {
-            return 0;
+        if ((isset($list[$email]) && (int) strtotime((string) $list[$email]) > 0) || bulten_engel_zamani($email) > 0) {
+            return 0;   // zaten ayrılmış (adres açık ya da engel listesinde)
         }
         $list[$email] = date('c');
         return bulten_yaz($file, $list) ? 1 : 0;
@@ -515,11 +636,25 @@ function bulten_yeniden_abone(string $email): bool
     $oldu = (bool) bulten_kilit('ayrilanlar', function () use ($email): int {
         $file = bulten_dir() . '/ayrilanlar.json';
         $list = bulten_oku($file);
-        if (!isset($list[$email])) {
-            return 0;
+        $n = 0;
+        if (isset($list[$email])) {
+            unset($list[$email]);
+            $n += bulten_yaz($file, $list) ? 1 : 0;
         }
-        unset($list[$email]);
-        return bulten_yaz($file, $list) ? 1 : 0;
+        // Engel listesindeki girdi de (hangi anahtarla yazılmış olursa olsun) temizlenir: yeniden abone yapmak tercihi tümüyle geri alır
+        $engel = bulten_oku(bulten_dir() . '/bastirilanlar.json');
+        $degisti = false;
+        foreach (bulten_engel_anahtarlari() as $a) {
+            $g = bulten_engel_girdi($email, $a);
+            if (isset($engel[$g])) {
+                unset($engel[$g]);
+                $degisti = true;
+            }
+        }
+        if ($degisti && bulten_yaz(bulten_dir() . '/bastirilanlar.json', $engel)) {
+            $n++;
+        }
+        return $n;
     });
     if ($oldu) {
         bulten_aboneler(true);
@@ -532,7 +667,8 @@ function bulten_yeniden_abone(string $email): bool
  * Bir kişinin bülten kaydı Form kayıtlarından silindikten sonra (verisinin silinmesini isteyen kişi) bülten deposunda kalan izlerini temizler.
  * Adresin başka bir bülten kaydı duruyorsa (şüpheli olarak ayrılmış olanlar dahil) hiçbir şey yapılmaz: ayrılma kaydı silinseydi,
  * duran kayıt sonradan gelen kutusuna alındığında adres yeniden e-posta almaya başlardı. Hiç kaydı kalmadıysa adres ayrılanlar
- * listesinden çıkarılır; gönderim kayıtlarında adı ve adresi silinir (sayılar ve durumlar kalır), sırada bekliyorsa atlanır.
+ * listesinden çıkarılır ve yerine adresin anahtarlı özeti (HMAC) engel listesine yazılır: kişi bir daha e-posta almaz, ama adresin kendisi
+ * saklanmaz; aynı adresle sonradan yapılan kayıt "ayrıldı" görünür. Gönderim kayıtlarında adı ve adresi silinir (sayılar ve durumlar kalır), sırada bekliyorsa atlanır.
  * Kaydı silen işlev (adm_form_record_delete) çağırır.
  */
 function bulten_adres_unut(string $email): void
@@ -553,9 +689,18 @@ function bulten_adres_unut(string $email): void
         if (!isset($list[$email])) {
             return 0;
         }
+        // Silme isteğine uyulur (adres saklanmaz) ama ayrılma tercihi etkisini korur: adres yerine anahtarlı özeti engel listesine geçer.
+        // Önce engel listesi yazılır, sonra adres çıkarılır: yarıda kesilirse tercih kaybolmaz.
+        $engelDosya = bulten_dir() . '/bastirilanlar.json';
+        $engel = bulten_oku($engelDosya);
+        $engel[bulten_engel_girdi($email, (string) cfg('secret'))] = (string) $list[$email];
+        if (!bulten_yaz($engelDosya, $engel)) {
+            return 0;
+        }
         unset($list[$email]);
         return bulten_yaz($file, $list) ? 1 : 0;
     });
+    bulten_imza_arsivle();   // engel listesindeki özet bu anahtarla yazıldı: anahtar sonradan yenilense de bulunabilsin diye saklanır
     $iz = '"email":' . json_encode($email, bulten_json_flags());
     foreach (glob(bulten_dir('gonderimler') . '/*.json') ?: [] as $f) {
         $id = basename($f, '.json');
@@ -608,9 +753,9 @@ function bulten_ayril_sayfasi(): void
     if ($email !== null) {
         if ($post) {
             // Yeni bir ayrılma kaydedildiyse "tamam"; adres zaten ayrılmışsa (çift tıklama, sayfanın yenilenmesi) "zaten"
-            $vars = ['durum' => bulten_ayril($email, 'e-postadaki bağlantıyla') ? 'tamam' : 'zaten', 'adres' => $email, 'aksiyon' => '', 'tarih' => bulten_ayrilanlar()[$email] ?? time()];
-        } elseif (isset(bulten_ayrilanlar()[$email])) {
-            $vars = ['durum' => 'zaten', 'adres' => $email, 'aksiyon' => '', 'tarih' => bulten_ayrilanlar()[$email]];   // GET hiçbir şeyi değiştirmez
+            $vars = ['durum' => bulten_ayril($email, 'e-postadaki bağlantıyla') ? 'tamam' : 'zaten', 'adres' => $email, 'aksiyon' => '', 'tarih' => bulten_ayrilma_zamani($email) ?: time()];
+        } elseif (bulten_ayrilma_zamani($email) > 0) {
+            $vars = ['durum' => 'zaten', 'adres' => $email, 'aksiyon' => '', 'tarih' => bulten_ayrilma_zamani($email)];   // GET hiçbir şeyi değiştirmez
         } else {
             $vars = ['durum' => 'onay', 'adres' => $email, 'aksiyon' => url('bulten/ayril') . '?e=' . rawurlencode($e) . '&k=' . rawurlencode($k)];
         }

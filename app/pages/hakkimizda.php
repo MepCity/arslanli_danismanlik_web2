@@ -2,6 +2,7 @@
 $timeline = site('timeline');
 page([
     'id'          => 'about',
+    'vendor'      => ['ScrollTrigger'],
     'title'       => pg_name('hakkimizda'),
     'description' => t('hakkimizda.seo.description'),
     'folio'       => pg_folio('hakkimizda'),
@@ -68,12 +69,12 @@ $cards = [
 
     <div class="raf__panels" data-panels>
       <?php foreach ($timeline as $i => $t): ?>
-        <article class="pn<?= $t['kind'] === 'us' ? ' pn--us' : '' ?>" id="pn-<?= $t['year'] ?>" aria-labelledby="sp-<?= $t['year'] ?>" data-panel>
+        <div class="pn<?= $t['kind'] === 'us' ? ' pn--us' : '' ?>" id="pn-<?= $t['year'] ?>" aria-labelledby="sp-<?= $t['year'] ?>" data-panel>
           <p class="pn__k"><?= e(t($t['kind'] === 'us' ? 'hakkimizda.raf.klasor_biz' : ($t['year'] < cfg('founded') ? 'hakkimizda.raf.klasor_once' : 'hakkimizda.raf.klasor_degisiklik'), ['klasor_yili' => $t['year']])) ?></p>
           <h3 class="pn__t"><?= e($t['title']) ?></h3>
           <p class="pn__x"><?= e($t['text']) ?></p>
           <p class="pn__src"><?= e(t('hakkimizda.raf.kunye', ['kunye' => $t['src']])) ?></p>
-        </article>
+        </div>
       <?php endforeach; ?>
     </div>
   </div>

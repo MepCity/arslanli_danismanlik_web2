@@ -73,8 +73,9 @@ $i = 0;
                   $left = ann_left_text($e['date']);   // "Bugün", "Yarın", "5 gün kaldı": Duyurular > Kalan süre metinleri
                   $i++; ?>
                 <li class="cg__row cg__row--<?= $kClass ?><?= $soon ? ' is-soon' : '' ?>" data-on style="--delay:<?= round(0.05 * (($i - 1) % 4), 2) ?>s">
-                  <a class="cg__a" href="<?= e(ann_url($e)) ?>" aria-label="<?= e(t('cagri.satir.aria', ['tarih_uzun' => tr_date($e['date']), 'haftagunu' => $wdays[(int) date('w', $t)], 'tur' => $kLabel, 'kurum' => $e['kurum'], 'baslik' => $e['title'], 'kalan' => $left])) ?>">
-                    <time class="cg__date" datetime="<?= e($e['date']) ?>"><b><?= (int) date('j', $t) ?></b><span><?= e(tr_upper($short[(int) date('n', $t) - 1])) ?></span><i><?= e(mb_substr($wdays[(int) date('w', $t)], 0, 3)) ?></i></time>
+                  <span hidden id="cg-d-<?= $i ?>-<?= e($mode) ?>"><?= e(t('cagri.satir.tarih', ['tarih_uzun' => tr_date($e['date']), 'haftagunu' => $wdays[(int) date('w', $t)]])) ?></span>
+                  <a class="cg__a" href="<?= e(ann_url($e)) ?>" aria-describedby="cg-d-<?= $i ?>-<?= e($mode) ?>" data-md-label="<?= e(t('cagri.satir.aria', ['tarih_uzun' => tr_date($e['date']), 'haftagunu' => $wdays[(int) date('w', $t)], 'tur' => $kLabel, 'kurum' => $e['kurum'], 'baslik' => $e['title'], 'kalan' => $left])) ?>">
+                    <time class="cg__date" aria-hidden="true" datetime="<?= e($e['date']) ?>"><b><?= (int) date('j', $t) ?></b><span><?= e(tr_upper($short[(int) date('n', $t) - 1])) ?></span><i><?= e(mb_substr($wdays[(int) date('w', $t)], 0, 3)) ?></i></time>
                     <span class="cg__kind"><?= e(tr_upper($kLabel)) ?></span>
                     <span class="cg__body">
                       <span class="cg__t"><?= e($e['title']) ?></span>

@@ -112,6 +112,8 @@ $date  = today_official();
         <span class="letter__sline"><?= e(t('iletisim.imza.cizgi')) ?></span>
       </div>
 
+      <p class="letter__note"><?= str_replace('</a>’', '</a>&#8288;’', th('iletisim.kvkk.not', ['baglanti' => ['html' => '<a class="link" href="' . url('kurumsal/kvkk-aydinlatma-metni') . '" target="_blank" rel="noopener">' . e(pg_name('kvkk')) . '</a>']])) ?></p>   <?php /* sözcük birleştiricisi: bağlantı ile ekleri ("’nde.") alt satıra bölünmesin */ ?>
+
       <div class="letter__foot">
         <p class="form-status" role="status" aria-live="polite"></p>
         <button class="btn sendbtn" type="submit"><?= e(t('iletisim.gonder.dugme')) ?> <?= arrow() ?></button>

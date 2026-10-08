@@ -240,9 +240,63 @@ function ann_validate(array $in, ?array $old = null): array
         'updated'        => date('c'),
     ];
     if ($a['title'] === '') $errors[] = 'Başlık zorunludur.';
+    foreach (['title' => 'Başlık', 'kurum' => 'Kurum', 'summary' => 'Özet'] as $k => $label) {
+        if (val_markup($a[$k])) $errors[] = val_markup_error('', $label);   // düz metin alanları: HTML işareti yazılamaz
+    }
+    foreach ($events as $i => $ev) {
+        if (val_markup($ev['note'])) $errors[] = val_markup_error('Tarih ' . ($i + 1), 'notu');
+    }
     if ($a['link'] !== '' && (!filter_var($a['link'], FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $a['link']))) $errors[] = 'Bağlantı http:// ya da https:// ile başlamalı.';
     if ($a['featured'] && ann_featured_until($a) === '') $errors[] = 'Öne çıkarmak için en az bir tarih ya da öne çıkarma bitiş tarihi girin.';
     return [$a, $errors];
+}
+
+/**
+ * Geri yüklenecek (yedekten ya da geçmişten gelen) duyuruları temizler: yalnızca dizi öğeler, geçerli kimlik, her öğe ann_validate'ten geçer
+ * (normal kayıtla aynı kurallar: HTML işareti yok, uzunluklar, tarihler, bağlantı); geçmeyen öğe atılır ve nedeni $dropped'a yazılır.
+ * Kimlik tekrarı atılır; birden çok "öne çıkan" varsa yalnızca ilki öne çıkmış kalır. Kayıt tarihleri geçerliyse korunur.
+ */
+function ann_clean_restore(array $data, array &$dropped = []): array
+{
+    $out = [];
+    $ids = [];
+    $featured = false;
+    foreach ($data as $i => $x) {
+        $w = 'Duyuru ' . ((int) $i + 1);
+        if (!is_array($x) || !is_string($x['id'] ?? null) || !preg_match('/^[a-f0-9]{10}$/D', $x['id']) || isset($ids[$x['id']])) {
+            $dropped[] = $w . ': kimliği geçersiz ya da tekrarlı.';
+            continue;
+        }
+        [$v, $errs] = ann_validate($x, $x);
+        if ($errs) {
+            $dropped[] = $w . ' («' . mb_substr(val_line($x['title'] ?? ''), 0, 40) . '»): ' . $errs[0];
+            continue;
+        }
+        foreach (['created', 'updated'] as $k) {
+            if (is_string($x[$k] ?? null) && $x[$k] !== '' && strtotime($x[$k]) !== false) {
+                $v[$k] = $x[$k];
+            }
+        }
+        if ($v['featured']) {
+            if ($featured) {
+                $v['featured'] = false;
+            }
+            $featured = true;
+        }
+        $ids[$v['id']] = true;
+        $out[] = $v;
+    }
+    return $out;
+}
+
+/** Yedekten ya da geçmişten gelen duyuruları temizleyip kaydeder. Dolu veri tamamen geçersizse hiçbir şey yazılmaz (false). */
+function ann_restore_all(array $data, array &$dropped = []): bool
+{
+    $clean = ann_clean_restore($data, $dropped);
+    if ($data && !$clean) {
+        return false;
+    }
+    return ann_save_all($clean);
 }
 
 /** Duyuruyu ekler ya da günceller; öne çıkarılırsa diğerlerinin öne çıkarması kaldırılır. */

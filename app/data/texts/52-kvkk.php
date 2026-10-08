@@ -29,7 +29,7 @@ return [
                 'kvkk.sonraki.ad' => ['Sonraki sayfa bağlantısının büyük yazısı', 'Çerez politikası', 'line', 'Çerez Politikası sayfasına götürür; küçük yazı (Sonraki evrak) Yasal metinler grubundadır.', ['max' => 50]],
             ],
             '4. Arama motorları' => [
-                'kvkk.seo.description' => ['Arama motoru açıklaması', '{firma} web sitesindeki formlar, ziyaret sayacı, bülten e-postaları ve yönetimde yapay zekâ kullanımıyla işlenen kişisel verilere ilişkin aydınlatma metni.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['firma'], 'max' => 320]],
+                'kvkk.seo.description' => ['Arama motoru açıklaması', '{firma}: formlar, ziyaret sayacı, bülten ve yönetimdeki yapay zekâ kullanımıyla işlenen kişisel verilere ilişkin aydınlatma metni.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['firma'], 'max' => 320]],
             ],
         ],
     ],

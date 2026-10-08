@@ -3,6 +3,9 @@
  * Masaya tıklanan yere sıradaki kurumun kaşesi basılır. İnce imleçlerde ahşap kaşe aleti imleci izler.
  */
 
+// CSS url("...") içine giren adres: tırnak, ters eğik çizgi ve satır sonu yüzde koduna çevrilir (kayıttaki görsel yolu yönetilen içeriktir)
+const cssUrl = (src) => 'url("' + String(src).replace(/["\\\n\r]/g, (c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')) + '")';
+
 const INKS = ['blue', 'red', 'violet', 'navy'];
 const INK_VARS = { blue: 'var(--pen)', red: 'var(--red)', violet: '#5b44b0', navy: 'var(--navy)' };
 
@@ -74,7 +77,7 @@ export default function init({ gsap, reduced, fine }) {
     const { ref } = nextRef();
     if (nextName) nextName.textContent = ref.name;
     if (toolLogo) {
-      toolLogo.style.setProperty('--src', `url("${ref.src}")`);
+      toolLogo.style.setProperty('--src', cssUrl(ref.src));
       toolLogo.style.setProperty('--ink', INK_VARS[INKS[count % INKS.length]]);
     }
     if (btnAll) btnAll.disabled = refs.every((r) => onDesk.has(r.slug));
@@ -98,7 +101,7 @@ export default function init({ gsap, reduced, fine }) {
     el.style.setProperty('--o', rand(0.78, 0.95).toFixed(2));
     const logo = document.createElement('span');
     logo.className = 'imp__logo';
-    logo.style.setProperty('--src', `url("${ref.src}")`);
+    logo.style.setProperty('--src', cssUrl(ref.src));
     el.appendChild(logo);
     layer.appendChild(el);
     if (reduced) el.classList.add('is-on');

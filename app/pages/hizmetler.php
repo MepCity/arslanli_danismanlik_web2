@@ -2,6 +2,7 @@
 $all = services();
 page([
     'id'          => 'services',
+    'vendor'      => ['ScrollTrigger'],
     'title'       => pg_name('hizmetler'),
     'description' => t('hizmetler.seo.description'),
     'folio'       => pg_folio('hizmetler'),
@@ -55,8 +56,8 @@ $tabs = [4, 22, 40, 58, 74, 13, 31, 49, 66];
               <article class="file__card" aria-labelledby="ft-<?= e($s['no']) ?>">
                 <span class="file__hook file__hook--l" aria-hidden="true"></span>
                 <span class="file__hook file__hook--r" aria-hidden="true"></span>
-                <a class="file__tab" href="#dosya-<?= e($s['no']) ?>" data-tab="<?= $i ?>" aria-label="<?= e(t('hizmetler.dosya.sekme', ['no' => svc_no($s), 'baslik' => $s['title']])) ?>">
-                  <span class="file__tabno"><?= svc_no($s) ?></span><span class="file__tabt"><?= e($s['tab']) ?></span>
+                <a class="file__tab" href="#dosya-<?= e($s['no']) ?>" data-tab="<?= $i ?>" aria-label="<?= e(t('hizmetler.dosya.sekme', ['no' => svc_no($s), 'baslik' => $s['title'], 'sekme' => $s['tab']])) ?>">
+                  <span class="file__tabno"><?= svc_no($s) ?></span> <span class="file__tabt"><?= e($s['tab']) ?></span>
                 </a>
                 <div class="file__face">
                   <div class="file__label">

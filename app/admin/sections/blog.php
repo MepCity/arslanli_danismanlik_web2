@@ -105,6 +105,7 @@ if ($method === 'POST') {
     if ($post['title'] === '') $errors[] = 'Başlık zorunludur.';
     if ($post['excerpt'] === '') $errors[] = 'Kısa özet zorunludur.';
     if (trim(strip_tags($post['body'])) === '') $errors[] = 'Yazının metni boş olamaz.';
+    $errors = array_merge($errors, post_markup_errors($post));
     $dt = DateTime::createFromFormat('Y-m-d', $post['date']);
     if (!$dt || $dt->format('Y-m-d') !== $post['date']) $errors[] = 'Geçerli bir yayın tarihi seçin.';
     if (!preg_match('/^[\p{L}\p{N} \-]+$/u', $post['category']) || $catSlug($post['category']) === '') {

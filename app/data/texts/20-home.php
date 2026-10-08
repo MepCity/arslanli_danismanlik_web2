@@ -63,7 +63,7 @@ return [
                 'home.masa.dugme' => ['Koyu düğme: dilekçe', 'Dilekçe yazın', 'line', 'İletişim sayfasına gider. Yanındaki telefon düğmesinin yazısı İletişim ayarlarından gelir.', ['max' => 40]],
             ],
             '8. Arama motorları' => [
-                'home.seo.description' => ['Arama motoru açıklaması', 'Hibe ve teşvik mevzuatını sade Türkçeye çeviriyor, TÜBİTAK, KOSGEB, Bakanlık, ihracat ve AB desteklerinde başvuru dosyasını hazırlayıp son ödemeye kadar yürütüyoruz. {kurulus}’den beri İstanbul’da.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['kurulus'], 'max' => 320]],
+                'home.seo.description' => ['Arama motoru açıklaması', 'Hibe ve teşvik mevzuatını sade Türkçeye çeviriyoruz: TÜBİTAK, KOSGEB, bakanlık, ihracat ve AB desteklerinde başvurudan ödemeye kadar. {kurulus}’den beri İstanbul’da.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['kurulus'], 'max' => 320]],
             ],
         ],
     ],

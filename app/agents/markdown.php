@@ -362,8 +362,8 @@ function agent_md_inline_node(DOMElement $n, string $pageUrl): string
     if ($tag === 'a' && agent_md_has_class($n, ['kart']) && agent_md_cls($n, 'kart__t', $pageUrl) !== '') {   // katalog kartı
         return '**' . agent_md_text(agent_md_cls($n, 'kart__call', $pageUrl)) . '** ' . agent_md_link(agent_md_cls($n, 'kart__t', $pageUrl), agent_abs_href((string) $n->getAttribute('href'), $pageUrl)) . ': ' . agent_md_cls($n, 'kart__d', $pageUrl);
     }
-    if ($tag === 'a' && agent_md_has_class($n, ['cg__a']) && $n->getAttribute('aria-label') !== '') {   // çağrı takvimi satırı: tam cümle erişilebilirlik adında
-        return agent_md_link($n->getAttribute('aria-label'), agent_abs_href((string) $n->getAttribute('href'), $pageUrl));
+    if ($tag === 'a' && agent_md_has_class($n, ['cg__a']) && $n->getAttribute('data-md-label') !== '') {   // çağrı takvimi satırı: tam cümle data-md-label özniteliğinde
+        return agent_md_link($n->getAttribute('data-md-label'), agent_abs_href((string) $n->getAttribute('href'), $pageUrl));
     }
     if ($tag === 'a') {
         $href = agent_abs_href((string) $n->getAttribute('href'), $pageUrl);

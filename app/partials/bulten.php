@@ -7,9 +7,11 @@
 $kvkkUrl = url('kurumsal/kvkk-aydinlatma-metni');
 ?>
 <?php if (page()['id'] !== 'signup'): ?>
+<aside aria-label="<?= e(t('bulten.sekme.bolge')) ?>">
 <a class="nl-tab" href="<?= url('haberdarol') ?>" data-nl-open aria-haspopup="dialog">
   <?= icon('envelope-simple') ?><span><?= e(t('bulten.sekme.metin')) ?></span>
 </a>
+</aside>
 <?php endif; ?>
 
 <dialog class="nl" id="bulten" aria-labelledby="nl-title" data-lenis-prevent>

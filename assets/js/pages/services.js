@@ -120,8 +120,8 @@ export default function init({ gsap, ScrollTrigger, lenis, reduced, t: metin }) 
 
   /* ---------- Eleme ---------- */
 
-  const join = (arr) => (arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' ' + metin('hizmetler.eleme.ve') + ' ' + arr[arr.length - 1]);
-  const kac = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const kac = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const join = (arr) => (arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ' ' + kac(metin('hizmetler.eleme.ve')) + ' ' + arr[arr.length - 1]);
 
   opts.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -142,7 +142,8 @@ export default function init({ gsap, ScrollTrigger, lenis, reduced, t: metin }) 
         if (hit) hits.push(i);
       });
       if (out) {
-        const links = hits.map((i) => `<a href="#${files[i].id}" data-go="${i}">${titles[i]}</a>`);
+        // Hizmet başlığı yönetilen içeriktir (panelden / yapay zekâ erişiminden gelir): HTML'e girerken kaçırılır. Bağlantı adresi ve sözcükler de.
+        const links = hits.map((i) => `<a href="#${kac(files[i].id)}" data-go="${i}">${kac(titles[i])}</a>`);
         // Metin düz yazıdır: kaçırılır, {dosyalar} yerine bağlantılar (HTML) konur
         const sablon = kac(metin(hits.length === 1 ? 'hizmetler.eleme.sonuc_tek' : 'hizmetler.eleme.sonuc_cok', { n: hits.length, dosyalar: '\u0000' }));
         out.innerHTML = sablon.replace('\u0000', () => join(links));

@@ -85,7 +85,7 @@
 }
 .kd__tabk { font-family: var(--font-sans); font-weight: 760; font-stretch: 72%; font-size: 0.86rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
 .kd__who { min-width: 8ch; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-type); font-size: 0.95rem; color: var(--pen); border-bottom: 1px dotted var(--ink-3); }
-.kd__who.is-empty { color: var(--ink-3); opacity: 0.75; }
+.kd__who.is-empty { color: var(--ink-2); opacity: 1; }
 
 .kd__body {
   position: relative;

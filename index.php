@@ -14,6 +14,7 @@ if (PHP_SAPI === 'cli-server') {
 }
 
 require __DIR__ . '/app/bootstrap.php';   // ayarlar, içerik deposu, duyurular, görünürlük anahtarları (feature)
+housekeeping_tick();   // günlük bakım: günde en çok bir kez, yanıt gönderildikten sonra; diğer isteklerde tek stat
 
 header_remove('X-Powered-By');
 header('X-Content-Type-Options: nosniff');

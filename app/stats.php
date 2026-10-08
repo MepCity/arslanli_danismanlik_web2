@@ -107,6 +107,32 @@ function stats_write_file(string $file, array $data): bool
     return true;
 }
 
+/**
+ * Dünden kalan günlük tuzu ve ziyaretçi özetlerini siler (today.json). Normalde yeni günün ilk sayımı yapar; sayım gelmezse günlük bakım
+ * (app/housekeeping.php) yapar, böylece eşleştirmeye yarayabilecek özetler bir gün sonrasına dek kalmaz. @return bool dosya silindiyse true
+ */
+function stats_purge_stale(): bool
+{
+    if (!is_file(STATS_DIR . '/today.json')) {
+        return false;
+    }
+    $lock = @fopen(STATS_DIR . '/.lock', 'c');
+    if (!$lock) {
+        return false;
+    }
+    try {
+        flock($lock, LOCK_EX);
+        $t = stats_read_file(STATS_DIR . '/today.json');
+        if (($t['date'] ?? '') !== date('Y-m-d')) {
+            return @unlink(STATS_DIR . '/today.json');
+        }
+        return false;
+    } finally {
+        flock($lock, LOCK_UN);
+        fclose($lock);
+    }
+}
+
 /** Bir sayfa görüntülemesini kaydeder. Sayıldıysa true. */
 function stats_hit(string $path, string $source, string $ip, string $ua): bool
 {

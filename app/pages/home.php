@@ -5,7 +5,7 @@ page([
     'id'          => 'home',
     'description' => t('home.seo.description'),
     'folio'       => pg_folio('home'),
-    'vendor'      => ['CustomEase'],
+    'vendor'      => ['ScrollTrigger', 'CustomEase'],
 ]);
 
 // "Bu cümleleri bizden duymazsınız": beş iddia ve düzeltmesi (home.kalem.iddia_N / duzeltme_N)
@@ -155,7 +155,7 @@ $wall = function (string $mode) use ($law): void { ?>
     </header>
     <ul class="kaseler__grid" role="list">
       <?php foreach (refs_map() as $slug => $name): ?>
-        <li><span class="inklogo" role="img" aria-label="<?= e($name) ?>" style="--src:url('<?= ref_ink_url($slug) ?>')"></span></li>
+        <li><span class="inklogo" role="img" aria-label="<?= e($name) ?>" style="--src:url('<?= e(ref_ink_url($slug)) ?>')"></span></li>
       <?php endforeach; ?>
     </ul>
   </div>

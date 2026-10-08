@@ -41,7 +41,13 @@ if (($rest[0] ?? '') === 'yedek' && $method === 'POST') {
             if (is_link($full)) continue;
             if (is_dir($full)) { $addTree($full, $prefix . $f . '/', $accept); continue; }
             if ($accept && !$accept($f)) continue;
-            $zip->addFile($full, $prefix . $f);
+            if (($prefix === 'content/' && $f === 'settings.json') || $prefix === 'content/_history/settings/') {
+                // Ayarlar ve ayarların geçmiş sürümleri: panelden yazılmış SMTP şifresi yedeğe girmez
+                [$txt] = settings_strip_secrets((string) @file_get_contents($full));
+                $zip->addFromString($prefix . $f, $txt);
+            } else {
+                $zip->addFile($full, $prefix . $f);
+            }
             $n[$accept ? 'img' : 'content']++;
         }
     };
@@ -51,13 +57,18 @@ if (($rest[0] ?? '') === 'yedek' && $method === 'POST') {
     if (is_dir(ROOT . '/uploads')) $addTree(ROOT . '/uploads', 'uploads/', fn($f) => (bool) preg_match('/\.(webp|jpe?g|png)$/i', $f));
     $readme = "Arslanlı web sitesi yedeği\r\nOluşturulma: " . date('d.m.Y H:i') . "\r\n\r\n"
         . "content/        Sayfa metinleri, hizmetler, yazılar, ayarlar ve kurumsal listeler; değişiklik geçmişi (_history) dahil.\r\n"
+        . "                 E-posta (SMTP) şifresi yedeğe ve geçmiş sürümlerine GİRMEZ; geri yüklemeden sonra panelde yeniden yazmanız gerekebilir.\r\n"
         . "duyurular.json  Duyurular ve çağrı takvimi.\r\n"
         . "ilanlar.json     İş ilanları (başvurular burada değildir; bunlar kayitlar/ altındadır).\r\n"
         . "uploads/        Panelden yüklenen görseller.\r\n"
-        . ($withRecords ? "kayitlar/       Form kayıtları, iş başvurusu özgeçmişleri, bülten gönderimleri ve abonelikten ayrılanlar listesi. KİŞİSEL VERİ İÇERİR; güvenli saklayın, paylaşmayın.\r\n" : '')
-        . "\r\nGeri yüklemek için: Yönetim > Güvenlik ve yedek > Yedekten geri yükle.\r\n"
+        . "bulten/bastirilanlar.json  Kaydı silinen kişilerin \"bir daha e-posta alma\" tercihi (adres değil, anahtarlı özet). Yalnızca bu sitenin form güvenlik anahtarıyla (storage/secret.key) anlamlıdır; siteyi taşırken storage/ klasörünün tamamını kopyalayın.\r\n"
+        . ($withRecords ? "kayitlar/       Form kayıtları, iş başvurusu özgeçmişleri, bülten gönderimleri ve abonelikten ayrılanlar listesi. KİŞİSEL VERİ İÇERİR; güvenli saklayın, paylaşmayın (açık adresli abonelikten ayrılanlar listesi dahil).\r\n" : '')
+        . "\r\nYedeğe GİRMEYENLER: panel şifresi, form güvenlik anahtarı (secret.key), bülten imza anahtarları (bulten/imza.json), erişim anahtarları, config.local.php, SMTP şifresi.\r\n"
+        . "\r\nGeri yüklemek için: Yönetim > Güvenlik ve yedek > Yedekten geri yükle. Her içerik kayıttaki kurallardan yeniden geçer; bildirim ve gönderen e-posta adresleri ancak geri yüklerken kutu işaretlenirse alınır.\r\n"
         . "Form kayıtları gizlilik nedeniyle panelden geri yüklenmez.\r\n";
     $zip->addFromString('BENIOKU.txt', $readme);
+    require_once APP . '/bulten.php';
+    if (is_file(ROOT . '/storage/bulten/bastirilanlar.json')) $zip->addFile(ROOT . '/storage/bulten/bastirilanlar.json', 'bulten/bastirilanlar.json');   // yalnızca anahtarlı özetler: kişisel veri değil
     if ($withRecords) {
         if (is_file(ROOT . '/storage/submissions.jsonl')) $zip->addFile(ROOT . '/storage/submissions.jsonl', 'kayitlar/submissions.jsonl');
         if (is_dir(ROOT . '/storage/cv')) foreach (scandir(ROOT . '/storage/cv') ?: [] as $f) {
@@ -110,7 +121,13 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
         return ($data === false || strlen($data) > $maxEach) ? null : $data;
     };
     $nContent = 0; $nImg = 0; $skipped = 0; $recordsSeen = false;
-    $histDirs = [];
+    $stores = [];       // anahtar => çözülmüş içerik: önce hepsi okunur, sonra bağımlılık sırasıyla doğrulanıp yazılır
+    $report = [];       // geri yüklenmeyen öğeler ve bilgi notları
+    $engelNote = '';
+    $infoNotes = [];     // bilgi notları: neyin değiştiği / değişmediği (reddedilen öğe değil)
+    $mailRoutes = post_bool('posta_adresleri');   // varsayılan kapalı: yedek, bildirimlerin gideceği adresi değiştiremez
+    $histKeys = array_keys(array_filter(changelog_sections(), fn($x) => !empty($x[2])));
+    $secretsNote = false;
     for ($i = 0; $i < $zip->numFiles; $i++) {
         $st = $zip->statIndex($i);
         $nm = (string) ($st['name'] ?? '');
@@ -121,29 +138,36 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
         $size = (int) ($st['size'] ?? 0);
 
         if (preg_match('#^content/([a-z_]+)\.json$#', $nm, $m)) {
+            // Yalnızca bilinen içerik depoları; her biri aşağıda normal kayıtla aynı doğrulamadan geçer
+            if (!in_array($m[1], restore_stores(), true)) { $skipped++; continue; }
             $raw = $read($i, $size);
             $val = $raw === null ? null : json_decode($raw, true);
-            if ($m[1] === 'texts' && is_array($val)) $val = texts_sanitize_all($val);   // sayfa metinleri: bilinmeyen anahtar ve kurallara uymayan metin yedekten alınmaz
-            if (!is_array($val) || !content_put($m[1], $val)) { $skipped++; continue; }
-            $nContent++;
+            if (!is_array($val)) { $skipped++; continue; }
+            $stores[$m[1]] = $val;
         } elseif (preg_match('#^content/_history/([a-z_]+)/(\d{8}-\d{6}-[a-f0-9]{4})\.json$#', $nm, $m)) {
+            // Geçmiş sürümleri alınır (değişiklik geçmişi yedekle birlikte taşınsın) ama HAM İÇERİK OLARAK UYGULANMAZ: bir sürüm geri alınırken
+            // changelog_restore() onu normal kayıtla aynı kurallardan geçirir (app/restore.php). Burada yalnızca biçim denetlenir; SMTP şifresi çıkarılır.
+            if (!in_array($m[1], $histKeys, true)) { $skipped++; continue; }
             $raw = $read($i, $size);
             $val = $raw === null ? null : json_decode($raw, true);
             if ($val === null && trim((string) $raw) !== 'null') { $skipped++; continue; }
+            if ($m[1] === 'settings') [$raw] = settings_strip_secrets((string) $raw);
             $dir = CONTENT_DIR . '/_history/' . $m[1];
             if (!is_dir($dir) && !@mkdir($dir, 0755, true)) { $skipped++; continue; }
             if (!is_file($dir . '/' . $m[2] . '.json')) @file_put_contents($dir . '/' . $m[2] . '.json', $raw, LOCK_EX);
             $nContent++;
-        } elseif ($nm === 'duyurular.json') {
+        } elseif ($nm === 'bulten/bastirilanlar.json') {
             $raw = $read($i, $size);
             $val = $raw === null ? null : json_decode($raw, true);
-            if (!is_array($val) || !ann_save_all($val)) { $skipped++; continue; }
+            if (!is_array($val)) { $skipped++; continue; }
+            require_once APP . '/bulten.php';
             $nContent++;
-        } elseif ($nm === 'ilanlar.json') {
+            $engelNote = ' Bülten engel listesi: ' . bulten_engel_birlestir($val) . ' yeni kayıt birleştirildi (özetler yalnızca bu sitenin form güvenlik anahtarıyla eşleşir).';
+        } elseif ($nm === 'duyurular.json' || $nm === 'ilanlar.json') {
             $raw = $read($i, $size);
             $val = $raw === null ? null : json_decode($raw, true);
-            if (!is_array($val) || !ilan_restore_all($val)) { $skipped++; continue; }
-            $nContent++;
+            if (!is_array($val)) { $skipped++; continue; }
+            $stores[$nm === 'duyurular.json' ? 'duyurular' : 'ilanlar'] = $val;
         } elseif (preg_match('#^uploads/([a-z0-9_-]+)/([A-Za-z0-9_-]+\.(?:webp|jpe?g|png))$#D', $nm, $m)) {
             // Görsel adında tek nokta olabilir: "x.php.png" gibi adlar eşleşmez ve aşağıda atlanır
             $raw = $read($i, $size);
@@ -158,9 +182,30 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
             $skipped++;
         }
     }
+    // Bağımlılık sırası: hizmetler hedef eşleştiriciden (kurumsal listeler) önce
+    $order = ['services', 'refs', 'posts', 'lists', 'texts', 'legal', 'features', 'settings', 'seo', 'duyurular', 'ilanlar'];
+    uksort($stores, fn($a, $b) => array_search($a, $order, true) <=> array_search($b, $order, true));
+    $secName = changelog_sections();
+    foreach ($stores as $key => $val) {
+        $label = $secName[$key][0] ?? $key;
+        if (restore_store($key, $val, false, ['mail_routes' => $mailRoutes])) {
+            $nContent++;
+            if ($key === 'settings' && is_array($val['mail']['smtp'] ?? null) && !empty($val['mail']['smtp']['host'])) $secretsNote = true;   // yalnızca yedekte SMTP ayarı varsa
+        } else {
+            $skipped++;
+        }
+        $rep = restore_report();
+        if ($rep['error'] !== null) $report[] = $label . ': ' . $rep['error'];
+        foreach ($rep['dropped'] as $line) $report[] = $label . ': ' . $line;
+        foreach ($rep['notes'] as $line) $infoNotes[] = $label . ': ' . $line;
+    }
     $zip->close();
-    if (!$nContent && !$nImg) $back("Bu dosyada geri yüklenecek içerik bulunamadı (" . $skipped . " dosya atlandı). Panelden indirdiğiniz bir yedek seçtiğinizden emin olun.");
+    if (!$nContent && !$nImg) $back("Bu dosyada geri yüklenecek içerik bulunamadı (" . $skipped . " dosya atlandı)." . ($report ? ' Nedenleri: ' . restore_report_text($report, 8) : ' Panelden indirdiğiniz bir yedek seçtiğinizden emin olun.'));
     $msg = $nContent . ' içerik dosyası, ' . $nImg . ' görsel geri yüklendi; ' . $skipped . ' dosya atlandı.';
+    if ($report) $msg .= ' Normal kayıttaki kurallara uymayan öğeler alınmadı: ' . restore_report_text($report, 8);
+    if ($infoNotes) $msg .= ' Bilgi: ' . restore_report_text($infoNotes, 8);
+    $msg .= $engelNote;
+    if ($secretsNote) $msg .= ' E-posta (SMTP) şifresi yedeğe girmediği için geri yüklenmedi; panelde SMTP kayıtlıysa ve bağlantı bilgisi aynıysa şu anki şifre korundu, değilse İletişim ve şirket sayfasında şifreyi yeniden yazın.';
     if ($recordsSeen) $msg .= ' Form kayıtları gizlilik nedeniyle geri yüklenmez.';
     if (ilan_restore_opened()) $msg .= ' DİKKAT: şu iş ilanları geri yüklemeyle başvuruya açıldı: ' . implode(', ', ilan_restore_opened()) . '.';
     $back($msg, 'ok');
@@ -168,6 +213,10 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
 
 /* ---------- Form güvenlik anahtarı ---------- */
 if (($rest[0] ?? '') === 'anahtar' && $method === 'POST') {
+    // Eski anahtar saklanır: gönderilmiş e-postalardaki ayrılma bağlantıları ve kaydı silinen kişilerin "bir daha e-posta alma" kayıtları
+    // (adres yerine anahtarlı özet olarak durur) onunla bulunur; saklanmazsa yeni anahtar bu kayıtları sessizce geçersiz kılardı.
+    require_once APP . '/bulten.php';
+    bulten_imza_arsivle();
     $ok = @file_put_contents(ROOT . '/storage/secret.key', bin2hex(random_bytes(32)), LOCK_EX);
     if ($ok) {
         @chmod(ROOT . '/storage/secret.key', 0600);
@@ -221,16 +270,17 @@ if ($errors) echo ui_alert(e(implode(' ', $errors)));
 /* Yedek kartı */
 if ($hasZip) {
     $backup = '<div class="ay__block"><h3>Yedeği indir</h3>'
-        . '<p class="muted">Sayfa metinleri, hizmetler, yazılar, ayarlar, duyurular, iş ilanları, değişiklik geçmişi ve yüklenen görseller tek bir ZIP dosyasında iner.</p>'
+        . '<p class="muted">Sayfa metinleri, hizmetler, yazılar, ayarlar, duyurular, iş ilanları, değişiklik geçmişi ve yüklenen görseller tek bir ZIP dosyasında iner. Panelden yazdığınız e-posta (SMTP) şifresi yedeğe ve geçmiş sürümlerine girmez.</p>'
         . '<form method="post" action="' . adm_url('guvenlik/yedek') . '" class="ay__block" style="gap:16px">' . adm_csrf_field()
         . ui_toggle('kayitlar', 'Form kayıtlarını ve özgeçmişleri de ekle (kişisel veri içerir)', false, ['help' => 'Yedeği güvenli bir yerde saklayın ve başkalarıyla paylaşmayın.'])
         . '<div><button class="btn" type="submit">' . ui_icon('download-simple') . 'Yedeği indir</button></div></form>'
         . '<p class="ay__meta">' . ($lastBackup ? 'Son yedek: ' . e(tr_date(date('Y-m-d', $lastBackup))) . ', ' . date('H:i', $lastBackup) . '.' : 'Henüz yedek alınmadı.') . '</p></div>'
         . '<div class="ay__block"><h3>Yedekten geri yükle</h3>'
-        . '<p class="muted">Bu panelden indirdiğiniz bir yedeği seçin; içindeki metinler, ayarlar, duyurular, iş ilanları ve görseller sitedeki güncel halin üzerine yazılır. İşlemden önce kendi yedeğinizi almanız önerilir. Form kayıtları ve özgeçmişler gizlilik nedeniyle geri yüklenmez.</p>'
+        . '<p class="muted">Bu panelden indirdiğiniz bir yedeği seçin; içindeki metinler, ayarlar, duyurular, iş ilanları ve görseller sitedeki güncel halin üzerine yazılır; her içerik, panelden kaydederken uygulanan kurallardan yeniden geçer ve kurallara uymayan öğeler alınmaz (hangileri olduğu sonuçta yazılır). İşlemden önce kendi yedeğinizi almanız önerilir. Form kayıtları ve özgeçmişler gizlilik nedeniyle geri yüklenmez.</p>'
         . '<form method="post" action="' . adm_url('guvenlik/geri-yukle') . '" enctype="multipart/form-data" class="ay__block" style="gap:16px" data-confirm="Yedekteki içerik sitedeki mevcut içeriğin üzerine yazılacak. Devam edilsin mi?">' . adm_csrf_field()
         . '<div class="fld"><label class="fld__label" for="f-yedek">Yedek dosyası (.zip)</label><input class="inp ay__file" type="file" id="f-yedek" name="yedek" accept=".zip,application/zip" required aria-describedby="f-yedek-h">'
         . '<p class="fld__help" id="f-yedek-h">En fazla 50 MB. Sunucunuzun yükleme sınırı ' . e((string) $limit) . '.</p></div>'
+        . ui_toggle('posta_adresleri', 'Bildirim ve gönderen e-posta adreslerini de geri yükle', false, ['help' => 'Kapalıyken yedekteki ayarlardan “bildirimlerin gideceği adres” ve “gönderen adres” alınmaz; şu anki adresler kalır. Yalnızca kendi aldığınız bir yedeği geri yüklüyorsanız işaretleyin: formlardan gelen kişisel veriler bu adrese e-postalanır.'])
         . '<div><button class="btn btn--ghost" type="submit">' . ui_icon('upload-simple') . 'Geri yükle</button></div></form></div>';
 } else {
     $backup = ui_alert('Bu sunucuda ZIP desteği (ZipArchive) kapalı olduğu için yedek alınamıyor. Barındırma firmanızdan "php-zip" eklentisini açmasını isteyin.', 'warn');
@@ -251,7 +301,7 @@ if ($hasZip) {
 
     <?= ui_card('Form güvenlik anahtarı',
         '<p class="ay__status">' . ui_icon($customKey ? 'check-circle' : 'warning-circle') . '<span>' . ($customKey ? '<strong>Özel anahtar kullanılıyor.</strong> Formlar size özel bir anahtarla imzalanıyor.' : '<strong>Varsayılan anahtar kullanılıyor.</strong> Canlıya almadan önce yeni bir anahtar oluşturun.') . '</span></p>'
-        . '<p class="muted">Sitedeki formlar (iletişim, bülten, iş başvurusu) bu anahtarla imzalanır; böylece otomatik gönderim yapan programlar engellenir. Yeni anahtar oluşturduğunuzda o anda formu açık olan ziyaretçilerin sayfayı bir kez yenilemesi gerekebilir.</p>'
+        . '<p class="muted">Sitedeki formlar (iletişim, bülten, iş başvurusu) bu anahtarla imzalanır; böylece otomatik gönderim yapan programlar engellenir. Yeni anahtar oluşturduğunuzda o anda formu açık olan ziyaretçilerin sayfayı bir kez yenilemesi gerekebilir. Önceki anahtar sunucuda (storage/bulten/imza.json) saklanır; böylece gönderilmiş bültenlerdeki ayrılma bağlantıları ve kaydı silinen kişilerin “bir daha e-posta alma” tercihi geçerli kalır. O dosyayı silmeyin: silinirse bu tercihler tanınmaz ve bu kişilere yeniden e-posta gidebilir.</p>'
         . '<form method="post" action="' . adm_url('guvenlik/anahtar') . '" data-confirm="Yeni bir form güvenlik anahtarı oluşturulsun mu?">' . adm_csrf_field()
         . '<button class="btn btn--ghost" type="submit">' . ui_icon('lock-key') . 'Yeni anahtar oluştur</button></form>',
         ['id' => 'anahtar']) ?>

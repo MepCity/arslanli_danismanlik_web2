@@ -118,9 +118,9 @@ function agent_flush(): void
  */
 function agent_refresh_globals(): void
 {
-    $GLOBALS['services'] = content_get('services') ?? require APP . '/data/services.php';
+    $GLOBALS['services'] = services_effective();
     $GLOBALS['posts']    = content_get('posts') ?? require APP . '/data/posts.php';
-    $GLOBALS['site']     = array_merge(require APP . '/data/site.php', (array) content_get('lists', []));
+    $GLOBALS['site']     = lists_effective();
     $cfg   = require APP . '/config.php';
     $local = ROOT . '/storage/config.local.php';
     if (is_file($local)) {

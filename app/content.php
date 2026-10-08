@@ -73,7 +73,13 @@ function content_put(string $key, $value): bool
     }
     if ($prev !== null) {
         $rev = content_rev_id($hdir);
-        @copy($file, $hdir . '/' . $rev . '.json');
+        if ($key === 'settings') {
+            // Ayarların geçmiş sürümüne panelden yazılmış SMTP şifresi girmez (bkz. settings_strip_secrets); eski sürümlerdeki şifreler de temizlenir
+            @file_put_contents($hdir . '/' . $rev . '.json', settings_strip_secrets($prev)[0], LOCK_EX);
+            settings_history_scrub();
+        } else {
+            @copy($file, $hdir . '/' . $rev . '.json');
+        }
         $old = array_filter(glob($hdir . '/*.json') ?: [], fn($f) => !str_ends_with($f, '-0000.json'));
         rsort($old);
         foreach (array_slice($old, CONTENT_HISTORY_KEEP) as $f) {
@@ -139,13 +145,7 @@ function content_restore(string $key, string $rev): bool
         return false;
     }
     $data = json_decode((string) file_get_contents($f), true);
-    if ($key === 'legal' && is_array($data)) {
-        $data = legal_sanitize_all($data);   // eski sürüm bugünkü kurallara uymuyorsa (ör. zorunlu madde yoksa) o belge varsayılana döner
-    }
-    if ($key === 'texts' && is_array($data)) {
-        $data = texts_sanitize_all($data);   // eski sürüm bugünkü kurallara uymuyorsa (kayıt defteri değişmiş olabilir) uymayan metinler alınmaz
-    }
-    return $data !== null && content_put($key, $data);
+    return is_array($data) && restore_store($key, $data, true);   // eski sürüm bugünkü kurallara uymuyorsa uymayan kısımlar alınmaz (app/restore.php)
 }
 
 /* ---------- Görünürlük: sitedeki bölümler panelden açılıp kapatılır (content 'features') ---------- */
@@ -221,6 +221,80 @@ function settings_apply(array $config, array $s): array
     return $config;
 }
 
+/**
+ * Panel ayarlarının altındaki taban: app/config.php, üzerine storage/config.local.php (sunucuya özel, SMTP şifresi gibi gizli değerler orada durur).
+ * Açılıştaki (app/bootstrap.php) sıra ile aynıdır; panelden kaydedilen ayarlar (settings_apply) bunun ÜZERİNE uygulanır.
+ */
+function config_inherited(): array
+{
+    $c = (array) require APP . '/config.php';
+    $local = ROOT . '/storage/config.local.php';
+    if (is_file($local)) {
+        try {
+            $over = (static function (string $__f) {
+                return require $__f;
+            })($local);
+            if (is_array($over)) {
+                $c = array_replace_recursive($c, $over);
+            }
+        } catch (Throwable $e) {
+            // bozuk yerel ayar dosyası bootstrap'te de atlanır
+        }
+    }
+    return $c;
+}
+
+/** Bir SMTP ayarını yalnızca bağlantı bilgisine indirir (şifre yok): host, port, secure, user. Boş / geçersiz ayar için null. */
+function smtp_tuple($smtp): ?array
+{
+    if (!is_array($smtp) || empty($smtp['host'])) {
+        return null;
+    }
+    return ['host' => (string) $smtp['host'], 'port' => (int) ($smtp['port'] ?? 465), 'secure' => (string) ($smtp['secure'] ?? 'ssl'), 'user' => (string) ($smtp['user'] ?? '')];
+}
+
+/**
+ * E-postanın SMTP durumu: üç açık hâl.
+ *  'miras'  panelde SMTP için bir seçim kaydedilmemiş (settings.json'da mail.smtp anahtarı yok): storage/config.local.php ne diyorsa o geçerlidir
+ *  'panel'  SMTP panelden kaydedilmiş: bağlantı bilgisi ve (panelden yazılmışsa) şifre settings.json'dadır
+ *  'kapali' panelde SMTP açıkça kapatılmış (mail.smtp = null): yerel dosyadaki SMTP de yok sayılır, sunucunun e-posta işlevi kullanılır
+ * 'miras' ve 'panel' aynı bilgiyi taşıyorsa (eski sürümler yerel dosyadaki şifreyi settings.json'a kopyalıyordu) kopya 'miras' sayılır ('kopya' => true):
+ * şifrenin içerik deposunda durmasına gerek yoktur ve bir sonraki kayıtta oradan kalkar.
+ * @return array{mode:string, inherited:?array, panel:?array, panel_pass:string, copy:bool}
+ *   inherited: yerel dosyadan gelen SMTP (şifresiz bağlantı bilgisi); panel: panelde kayıtlı bağlantı bilgisi; panel_pass: panelde yazılmış şifre
+ */
+function smtp_state(?array $settings = null, ?array $base = null): array
+{
+    $settings = $settings ?? (array) content_get('settings', []);
+    $base     = $base ?? config_inherited();
+    $inh      = $base['mail']['smtp'] ?? null;
+    $out      = ['mode' => 'miras', 'inherited' => smtp_tuple($inh), 'panel' => null, 'panel_pass' => '', 'copy' => false];
+    $mail     = is_array($settings['mail'] ?? null) ? $settings['mail'] : [];
+    if (!array_key_exists('smtp', $mail)) {
+        return $out;
+    }
+    if (!is_array($mail['smtp']) || empty($mail['smtp']['host'])) {
+        $out['mode'] = 'kapali';
+        return $out;
+    }
+    $out['panel']      = smtp_tuple($mail['smtp']);
+    $out['panel_pass'] = (string) ($mail['smtp']['pass'] ?? '');
+    if ($out['inherited'] !== null && $out['panel'] === $out['inherited'] && $out['panel_pass'] === (string) ($inh['pass'] ?? '')) {
+        $out['copy']       = true;
+        $out['panel']      = null;   // panelde kayıtlı sayılmaz: şifresi yerel dosyadandır, bir sonraki kayıtta içerik deposundan kalkar
+        $out['panel_pass'] = '';
+        return $out;
+    }
+    $out['mode'] = 'panel';
+    return $out;
+}
+
+/** https:// ile başlayan geçerli bir adres mi? (panel ve geri yükleme: harita ve sosyal medya bağlantıları) */
+function settings_url_ok(string $u): bool
+{
+    return mb_strlen($u) <= 500 && preg_match('#^https://[^\s/]+\.[^\s/]+#i', $u) && filter_var($u, FILTER_VALIDATE_URL) !== false;
+}
+
 /** "+90 554 808 97 71" ya da "0554 808 97 71" → "+905548089771" */
 function phone_href(string $phone): string
 {
@@ -242,13 +316,32 @@ function val_line($v, int $cap = 3000): string
     return mb_substr((string) preg_replace('/\s+/u', ' ', trim($v)), 0, $cap);
 }
 
-/** Uzunluk denetimi: kurala uymayan için okunur bir ileti, uyan için null. */
+/**
+ * Düz metin alanlarında HTML işareti denetimi: "<" işaretinden hemen sonra harf, "/" ya da "!" ("?" de) gelen metin reddedilir
+ * (tarayıcı bunu etiket sayar; "5 < 10" ya da "<3" gibi yazılar serbesttir). Sayfa metinleri kayıt defterindeki (texts_clean) kural budur.
+ * Zengin alanlar (yazı gövdesi) bu denetimden geçmez; onların süzgeci sanitize_html()'dir.
+ */
+function val_markup($v): bool
+{
+    return is_string($v) && preg_match('/<[a-zA-Z\/!?]/', $v) === 1;
+}
+
+/** Okunur ileti: "<where>: <label> HTML etiketi içeremez ..." (kural için bkz. val_markup) */
+function val_markup_error(string $where, string $label): string
+{
+    return ($where !== '' ? $where . ': ' : '') . $label . ' HTML etiketi içeremez: “<” işaretinden sonra harf, “/” ya da “!” gelmemeli. Düz metin yazın.';
+}
+
+/** Uzunluk denetimi: kurala uymayan için okunur bir ileti, uyan için null. Düz metin alanlarının ortak kapısıdır: HTML işareti de burada reddedilir. */
 function val_len(string $where, string $label, string $v, int $min, int $max): ?string
 {
     $n = mb_strlen($v);
     $w = $where !== '' ? $where . ': ' : '';
     if ($v === '') {
         return $min > 0 ? $w . $label . ' boş bırakılamaz.' : null;
+    }
+    if (val_markup($v)) {
+        return val_markup_error($where, $label);
     }
     if ($n < $min) {
         return $w . $label . ' en az ' . $min . ' karakter olmalı (şu an ' . $n . ').';
@@ -518,7 +611,7 @@ function services_save(array $all): bool
 {
     $ok = content_put('services', services_renumber($all));
     if ($ok) {
-        $GLOBALS['services'] = content_get('services');
+        $GLOBALS['services'] = services_effective();
     }
     return $ok;
 }
@@ -596,7 +689,41 @@ function service_delete(string $slug): array
         return ['ok' => false, 'errors' => ['En az ' . $min . ' hizmet kalmalı; Dosya dolabı ve menü bu sayının altında düzenli görünmez.']];
     }
     unset($all[$slug]);
-    return services_save($all) ? ['ok' => true, 'errors' => []] : ['ok' => false, 'errors' => ['Silinemedi: storage klasörü yazılabilir mi?']];
+    if (!services_save($all)) {
+        return ['ok' => false, 'errors' => ['Silinemedi: storage klasörü yazılabilir mi?']];
+    }
+    goals_forget_service($slug);
+    return ['ok' => true, 'errors' => []];
+}
+
+/**
+ * Silinen hizmeti "Ne yapmak istiyorsunuz?" eşleştiricisinden çıkarır; hiçbir dosyası kalmayan hedef de kalkar (hiçbir şeyi öne çıkarmazdı).
+ * Doğrulamadan geçmez (en az hedef sayısı gibi sınırlar burada aranmaz): amaç silmenin geride eski bir adres bırakmamasıdır.
+ */
+function goals_forget_service(string $slug): void
+{
+    $goals = (array) site('goals');
+    $out = [];
+    $changed = false;
+    foreach ($goals as $g) {
+        $svc = array_values(array_filter((array) ($g['services'] ?? []), fn($x) => $x !== $slug));
+        if (count($svc) !== count((array) ($g['services'] ?? []))) {
+            $changed = true;
+            if (!$svc) {
+                continue;
+            }
+        }
+        $out[] = ['label' => (string) ($g['label'] ?? ''), 'services' => $svc];
+    }
+    if (!$changed) {
+        return;
+    }
+    $cur = content_get('lists', []);
+    $cur = is_array($cur) ? $cur : [];
+    $cur['goals'] = $out;
+    if (content_put('lists', $cur)) {
+        $GLOBALS['site'] = lists_effective();
+    }
 }
 
 /** Hizmetleri verilen adres sırasına dizer; listede olmayanlar sona eklenir. @return array{ok:bool, errors:string[]} */
@@ -644,6 +771,31 @@ function refs_limits(): array
     return ['count' => [4, 30], 'name' => [2, 40]];
 }
 
+/**
+ * Sitede kullanılan hizmetler: kayıtlı hizmet listesi boş ya da bozuksa (ör. elle yazılmış ya da eski bir dosya) özgün hizmetler kullanılır;
+ * şablonlar (dosya dolabı, bir sonraki dosya, menü) boş listeyle çalışmaz.
+ */
+function services_effective(): array
+{
+    $s = content_get('services');
+    return is_array($s) && $s ? $s : (array) require APP . '/data/services.php';
+}
+
+/**
+ * Ortak listeler: varsayılanların üzerine yalnızca bilinen anahtarlar ve DOLU dizi değerleri uygulanır. Boş ya da biçimi bozuk bir liste
+ * (ör. timeline: []) varsayılana düşer; şablonlar [0] ya da sayıya bölme gibi işlemlerle boş listede bozulmaz.
+ */
+function lists_effective(): array
+{
+    $site = (array) require APP . '/data/site.php';
+    foreach ((array) content_get('lists', []) as $k => $v) {
+        if (is_string($k) && isset(lists_keys()[$k]) && is_array($v) && $v) {
+            $site[$k] = $v;
+        }
+    }
+    return $site;
+}
+
 /** Sitenin özgün referansları (app/data/site.php): logo assets/img/refs/{kod}.webp, kaşe maskesi assets/img/refs/ink/{kod}.webp */
 function refs_defaults(): array
 {
@@ -661,8 +813,8 @@ function refs_defaults(): array
 function refs_list(): array
 {
     $list = content_get('refs');
-    if (!is_array($list)) {
-        return refs_defaults();
+    if (!is_array($list) || !$list) {
+        return refs_defaults();   // kayıt yok ya da boş: şablonlar boş referans listesiyle çalışmaz
     }
     $out = [];
     $seen = [];
@@ -1279,7 +1431,7 @@ function lists_save(array $changes): array
     if (!content_put('lists', $cur)) {
         return ['ok' => false, 'errors' => ['Kaydedilemedi: storage klasörü yazılabilir mi?'], 'changed' => []];
     }
-    $GLOBALS['site'] = array_merge(require APP . '/data/site.php', (array) content_get('lists', []));
+    $GLOBALS['site'] = lists_effective();
     return ['ok' => true, 'errors' => [], 'changed' => $changed];
 }
 
@@ -1344,6 +1496,18 @@ function t(string $key, array $vars = []): string
 require_once APP . '/texts.php';
 
 /* ---------- Güvenli HTML (blog gövdesi) ---------- */
+
+/** Yazının düz metin alanlarında (başlık, özet, kategori) HTML işareti hatası. Gövde zengin alandır: onu sanitize_html() süzer. */
+function post_markup_errors(array $post): array
+{
+    $e = [];
+    foreach (['title' => 'Başlık', 'excerpt' => 'Kısa özet', 'category' => 'Kategori'] as $k => $label) {
+        if (val_markup($post[$k] ?? '')) {
+            $e[] = val_markup_error('', $label);
+        }
+    }
+    return $e;
+}
 
 /** Yalnızca izin verilen etiketleri ve bağlantı adreslerini bırakır. */
 function sanitize_html(string $html): string

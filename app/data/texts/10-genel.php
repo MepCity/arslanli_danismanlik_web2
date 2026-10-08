@@ -73,6 +73,7 @@ return [
             '7. Logo ve WhatsApp düğmesi' => [
                 'genel.logo.label' => ['Logonun erişilebilirlik açıklaması', '{firma}', 'line', 'Görünmez; ekran okuyucular içindir.', ['vars' => ['firma']]],
                 'genel.whatsapp.label' => ['Sağ alttaki WhatsApp düğmesinin erişilebilirlik açıklaması', 'WhatsApp ile yazın', 'line', 'Görünmez; ekran okuyucular içindir.'],
+                'genel.whatsapp.bolge' => ['WhatsApp düğmesini saran bölgenin adı', 'Hızlı iletişim', 'line', 'Görünmez; ekran okuyucular içindir (sayfa bölgeleri listesinde görünür).', ['max' => 40]],
                 'genel.whatsapp.text' => ['Sağ alttaki WhatsApp düğmesinin yazısı', 'WhatsApp', 'line', 'WhatsApp bölümü Görünürlük ayarından açıksa görünür. Küçük ekranlarda yalnızca simge görünür.', ['max' => 24]],
             ],
         ],

@@ -10,6 +10,7 @@ return [
         'icon'  => 'envelope-simple',
         'sections' => [
             '1. Sayfa kenarındaki sekme' => [
+                'bulten.sekme.bolge' => ['Kenardaki bülten sekmesini saran bölgenin adı', 'Bülten kaydı', 'line', 'Görünmez; ekran okuyucular içindir (sayfa bölgeleri listesinde görünür).', ['max' => 40]],
                 'bulten.sekme.metin' => ['Sekmenin yazısı', 'Bültene kayıt ol', 'line', 'Sayfanın sağ kenarında dikey durur; tıklanınca kayıt penceresi açılır. Bülten bölümü Görünürlük ayarından kapatılırsa görünmez.', ['max' => 40]],
             ],
             '2. Pencerenin üst şeridi' => [

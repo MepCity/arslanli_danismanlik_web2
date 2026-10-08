@@ -16,11 +16,16 @@ if ($key !== '' && !isset($sections[$key])) {
 /* ---------- Geri al ---------- */
 if ($method === 'POST' && $key !== '' && $rev !== '') {
     if (changelog_restore($key, $rev)) {
+        $rep = restore_report();
         adm_flash($sections[$key][0] . ' seçtiğiniz değişiklikten önceki haline döndürüldü. Geri almadan önceki hali de geçmişe eklendi.'
-            . ($key === 'ilanlar' && ilan_restore_opened() ? ' DİKKAT: şu ilanlar geri almayla başvuruya açıldı: ' . implode(', ', ilan_restore_opened()) . '.' : ''));
+            . ($key === 'ilanlar' && ilan_restore_opened() ? ' DİKKAT: şu ilanlar geri almayla başvuruya açıldı: ' . implode(', ', ilan_restore_opened()) . '.' : '')
+            // Eski sürüm bugünkü kurallarla yeniden doğrulanır; uymayan öğeler alınmaz ve burada söylenir
+            . ($rep['dropped'] ? ' Bugünkü kurallara uymadığı için geri alınmayan öğeler: ' . restore_report_text($rep['dropped']) : '')
+            . ($rep['notes'] ? ' ' . restore_report_text($rep['notes']) : ''));
         adm_go('gecmis/' . $key);
     }
-    adm_flash('Sürüm geri yüklenemedi.', 'err');
+    $rep = restore_report();
+    adm_flash('Sürüm geri yüklenemedi.' . ($rep['error'] ? ' ' . $rep['error'] . ' Hiçbir şey değişmedi.' : '') . ($rep['dropped'] ? ' ' . restore_report_text($rep['dropped']) : ''), 'err');
     adm_go('gecmis/' . $key);
 }
 

@@ -85,7 +85,7 @@ function adm_throttle(bool $record = false): bool
 {
     static $lock = null;
     $dir  = ROOT . '/storage';
-    $file = $dir . '/login-' . md5(adm_ip_key()) . '.json';
+    $file = $dir . '/login-' . hash_hmac('sha256', 'login|' . adm_ip_key(), (string) cfg('secret')) . '.json';   // IP'nin yalın özeti değil, site anahtarıyla anahtarlı özet
     $now  = time();
     $free = function () use (&$lock): void {
         if ($lock) { flock($lock, LOCK_UN); fclose($lock); $lock = null; }

@@ -25,7 +25,7 @@ if ($category) {
 page([
     'id'          => 'blog',
     'title'       => $category && isset($cats[$category]) ? t('blog.seo.baslik_bolum', ['bolum' => $cats[$category], 'sayfa' => pg_name('blog')]) : pg_name('blog'),
-    'description' => t('blog.seo.description'),
+    'description' => $category && isset($cats[$category]) ? t('blog.seo.description_bolum', ['bolum' => $cats[$category], 'n' => count($list)]) : t('blog.seo.description'),
     'folio'       => pg_folio('blog'),
 ]);
 

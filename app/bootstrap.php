@@ -46,12 +46,14 @@ if (is_file($_key) && ($_k = trim((string) file_get_contents($_key))) !== '') {
 }
 unset($_key, $_fh, $_k);
 // Varsayılanlar app/data/*.php dosyalarından gelir; panelden yapılan değişiklikler (storage/content/*.json) üzerine yazılır.
-$GLOBALS['services'] = content_get('services') ?? require APP . '/data/services.php';
+$GLOBALS['services'] = services_effective();
 $GLOBALS['posts']    = content_get('posts') ?? require APP . '/data/posts.php';
-$GLOBALS['site']     = array_merge(require APP . '/data/site.php', (array) content_get('lists', []));
+$GLOBALS['site']     = lists_effective();
 require APP . '/announcements.php';   // duyurular: storage/duyurular.json, yoksa app/data/duyurular.php
 require APP . '/legal.php';           // yasal metinlerin maddeleri (KVKK, çerez politikası; panel: Yasal metinler)
 require APP . '/ilanlar.php';         // iş ilanları (veri katmanı; ilan sayfası ve panel ekranı Aşama 2D)
+require APP . '/restore.php';          // yedekten geri yükleme ve geçmişten geri alma doğrulaması (her depo normal kayıtla aynı kurallardan geçer)
+require APP . '/housekeeping.php';     // günde bir kez, yanıttan sonra: süresi dolan şüpheli gönderimler, eski hız sınırı dosyaları, dünün sayaç tuzu
 require APP . '/seo.php';             // arama motoru ve yapay zekâ katmanı: sayfa başlığı, yapısal veri, paylaşım etiketleri, seo_changed() (Aşama 3A)
 
 function cfg(string $key, $default = null)
@@ -311,13 +313,14 @@ function base_path(): string
 
 function url(string $path = ''): string
 {
-    $path = ltrim($path, '/');
+    // Adresteki yönetilen parçalar (hizmet adresi, yazı adresi, kimlik) HTML özniteliğine girdiğinde öznitelikten çıkamasın: bu karakterler adreste zaten geçersizdir
+    $path = strtr(ltrim($path, '/'), ['"' => '%22', "'" => '%27', '<' => '%3C', '>' => '%3E', '`' => '%60', ' ' => '%20', "\n" => '%0A', "\r" => '%0D']);
     return base_path() . '/' . $path;
 }
 
 function absolute_url(string $path = ''): string
 {
-    return rtrim((string) cfg('url'), '/') . '/' . ltrim($path, '/');
+    return rtrim((string) cfg('url'), '/') . '/' . strtr(ltrim($path, '/'), ['"' => '%22', "'" => '%27', '<' => '%3C', '>' => '%3E', '`' => '%60', ' ' => '%20', "\n" => '%0A', "\r" => '%0D']);
 }
 
 /** Önbellek kırıcı sürüm parametresiyle dosya adresi. */

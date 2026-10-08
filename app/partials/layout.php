@@ -39,6 +39,7 @@ $spot = function_exists('ann_featured') ? ann_featured() : null;
 <link rel="preload" href="<?= url('assets/fonts/newsreader.woff2') ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
 <?php if ($pageCss): ?><link rel="stylesheet" href="<?= $pageCss ?>"><?php endif; ?>
+<?php if ($pageJs): ?><link rel="modulepreload" href="<?= $pageJs ?>"><?php endif; ?>
 <?php foreach (($p['styles'] ?? []) as $extraCss): ?><link rel="stylesheet" href="<?= asset('css/' . $extraCss . '.css') ?>">
 <?php endforeach; ?>
 <?php if ($spot): ?><link rel="stylesheet" href="<?= asset('css/spotlight.css') ?>">
@@ -184,9 +185,11 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 </footer>
 
 <?php if (feature('whatsapp')): ?>
+<aside aria-label="<?= e(t('genel.whatsapp.bolge')) ?>">
 <a class="wa" href="https://wa.me/<?= e(cfg('whatsapp')) ?>" rel="noopener" target="_blank" aria-label="<?= e(t('genel.whatsapp.label')) ?>">
   <?= icon('whatsapp-logo') ?><span><?= e(t('genel.whatsapp.text')) ?></span>
 </a>
+</aside>
 <?php endif; ?>
 
 <?php if (feature('bulten')) { require APP . '/partials/bulten.php'; } ?>
@@ -194,8 +197,17 @@ window.addEventListener('pagereveal',function(e){window.__vt=e.viewTransition||n
 
 <div class="toast" role="status" aria-live="polite" data-toast></div>
 
+<?php /* Görünüm tetikleyicileri (yükselen yazılar, kaşe, kalem işareti): sayfa betikleri ve GSAP beklenmeden, gövde ayrıştırılır ayrıştırılmaz kurulur;
+        yoksa yavaş bağlantıda içerik JavaScript inene kadar görünmez kalır (ölçüm: LCP telefonda 3,1 sn → 1,6 sn). Davranış ve ayarlar eskisiyle aynı. */ ?>
+<script>
+(function(){var els=document.querySelectorAll('[data-rise], [data-stamp], .annot, [data-hl], [data-on]');
+var on=function(e){e.classList.add('is-on')};
+if(!('IntersectionObserver' in window)||matchMedia('(prefers-reduced-motion: reduce)').matches){els.forEach(on);window.__observe=on;return}
+var io=new IntersectionObserver(function(es){es.forEach(function(en){if(!en.isIntersecting)return;en.target.classList.add('is-on');en.target.dispatchEvent(new CustomEvent('on'));io.unobserve(en.target)})},{rootMargin:'0px 0px -12% 0px',threshold:0.01});
+window.__observe=function(e){io.observe(e)};els.forEach(window.__observe)})();
+</script>
 <script src="<?= asset('vendor/gsap.min.js') ?>" defer></script>
-<script src="<?= asset('vendor/ScrollTrigger.min.js') ?>" defer></script>
+<?php /* ScrollTrigger yalnızca kullanan sayfalarda yüklenir (page(['vendor' => ['ScrollTrigger', ...]])) */ ?>
 <?php foreach ($vendor as $v): ?><script src="<?= asset('vendor/' . $v . '.min.js') ?>" defer></script>
 <?php endforeach; ?>
 <script src="<?= asset('vendor/lenis.min.js') ?>" defer></script>

@@ -306,8 +306,7 @@ function mcp_tool_call(array $p, array $ctx): array
 
 function mcp_services(): array
 {
-    $s = content_get('services');
-    return is_array($s) ? $s : (array) require APP . '/data/services.php';
+    return services_effective();
 }
 
 function mcp_posts(): array
@@ -328,21 +327,7 @@ function mcp_lists_site(): array
  */
 function mcp_config_now(): array
 {
-    $c = (array) require APP . '/config.php';
-    $local = ROOT . '/storage/config.local.php';
-    if (is_file($local)) {
-        try {
-            $over = (static function (string $__f) {
-                return require $__f;
-            })($local);
-            if (is_array($over)) {
-                $c = array_replace_recursive($c, $over);
-            }
-        } catch (Throwable $e) {
-            // bozuk yerel ayar dosyası bootstrap'te de atlanır
-        }
-    }
-    return settings_apply($c, (array) content_get('settings', []));
+    return settings_apply(config_inherited(), (array) content_get('settings', []));
 }
 
 function mcp_iso(?int $t): ?string
@@ -807,9 +792,9 @@ function mcp_page_markdown(string $path): ?array
         return $b === null ? null : ['md' => (string) $b['md'], 'title' => (string) $b['title'], 'description' => ''];
     }
     // Bu istekte yazılmış içerik de görünsün: genel değişkenler dosyalardan yenilenir
-    $GLOBALS['services'] = content_get('services') ?? require APP . '/data/services.php';
+    $GLOBALS['services'] = services_effective();
     $GLOBALS['posts']    = content_get('posts') ?? require APP . '/data/posts.php';
-    $GLOBALS['site']     = array_merge(require APP . '/data/site.php', (array) content_get('lists', []));
+    $GLOBALS['site']     = lists_effective();
     $GLOBALS['config']   = array_replace((array) $GLOBALS['config'], array_diff_key(mcp_config_now(), ['secret' => 1]));
 
     $view = null;
@@ -941,8 +926,11 @@ function mcp_tools_read(): array
     $T = [];
 
     $T[] = mcp_def('site_durumu', 'okuma', 'Site durumu',
-        'Sitenin genel durumunu tek çağrıda verir: site adı ve adresi, bugünün tarihi, her bölümün sitede açık/kapalı olduğu, açık sayfaların "Evrak" numaraları (bölüm kapatılınca sonrakilerin numarası kayar), sayılar (hizmet dosyası, yazı, referans, duyuru, iş ilanı), açılışta öne çıkan duyuru, yaklaşan ilk 10 tarih, her içerik alanının son değişiklik zamanı, arama motoru (SEO) taraması özeti (tarama katmanı kuruluysa) ve gelen kutusunda okunmamış kayıt olup olmadığı (yalnızca sayı; spam süzgecinin şüpheli bulup ayırdıkları sayılmaz). Bir işe başlamadan önce ilk çağıracağınız araç budur.',
-        $noArgs, $RO, function (array $a): array {
+        'Sitenin genel durumunu tek çağrıda verir: site adı ve adresi, bugünün tarihi, her bölümün sitede açık/kapalı olduğu, açık sayfaların "Evrak" numaraları (bölüm kapatılınca sonrakilerin numarası kayar), sayılar (hizmet dosyası, yazı, referans, duyuru, iş ilanı), açılışta öne çıkan duyuru, yaklaşan ilk 10 tarih, her içerik alanının son değişiklik zamanı, arama motoru (SEO) taraması özeti (tarama katmanı kuruluysa) ve gelen kutusunda okunmamış kayıt olup olmadığı (yalnızca sayı; spam süzgecinin şüpheli bulup ayırdıkları sayılmaz). Taslak (yayınlanmamış) yazı, iş ilanı ve duyuru SAYILARI da taslak içeriğinin bir parçasıdır: yazı ve ilan taslak sayısı yalnızca "Sayfa içerikleri", duyuru taslak sayısı yalnızca "Duyurular" izni olan anahtarlara gelir; yalnızca okuma izni olan anahtar yayındakileri görür. Bir işe başlamadan önce ilk çağıracağınız araç budur.',
+        $noArgs, $RO, function (array $a, array $ctx): array {
+            $sc = $ctx['principal']['scopes'];
+            $canPostDrafts = in_array('icerik', $sc, true);
+            $canAnnDrafts = in_array('duyurular', $sc, true);
             $today = date('Y-m-d');
             $anns = ann_all();
             $pub = array_filter($anns, fn($x) => !empty($x['published']));
@@ -981,9 +969,10 @@ function mcp_tools_read(): array
                 'sayilar'           => [
                     'hizmet'    => count(mcp_services()),
                     'referans'  => count(refs_list()),
-                    'yazi'      => ['yayinda' => count($posts) - $draft, 'taslak' => $draft],
-                    'is_ilani'  => ['acik' => count(array_filter($jobs, 'ilan_active')), 'taslak' => count(array_filter($jobs, fn($x) => ($x['status'] ?? '') === 'taslak')), 'kapali_ya_da_suresi_dolmus' => count(array_filter($jobs, fn($x) => in_array(ilan_state($x), ['kapali', 'doldu'], true)))],
-                    'duyuru'    => ['yayinda' => count($pub), 'taslak' => count($anns) - count($pub), 'one_cikan' => $feat ? 1 : 0, 'ornek' => count(array_filter($anns, fn($x) => !empty($x['sample'])))],
+                    'yazi'      => ['yayinda' => count($posts) - $draft] + ($canPostDrafts ? ['taslak' => $draft] : []),
+                    'is_ilani'  => ['acik' => count(array_filter($jobs, 'ilan_active'))] + ($canPostDrafts ? ['taslak' => count(array_filter($jobs, fn($x) => ($x['status'] ?? '') === 'taslak'))] : [])
+                        + ['kapali_ya_da_suresi_dolmus' => count(array_filter($jobs, fn($x) => in_array(ilan_state($x), ['kapali', 'doldu'], true) && ($canPostDrafts || (string) ($x['published'] ?? '') !== '')))],
+                    'duyuru'    => ['yayinda' => count($pub)] + ($canAnnDrafts ? ['taslak' => count($anns) - count($pub)] : []) + ['one_cikan' => $feat ? 1 : 0, 'ornek' => count(array_filter($pub, fn($x) => !empty($x['sample'])))],
                 ],
                 'one_cikan_duyuru'  => $feat ? mcp_ann_public($feat) : null,
                 'yaklasan_tarihler' => array_slice($upcoming, 0, 10),
@@ -998,17 +987,22 @@ function mcp_tools_read(): array
         });
 
     $T[] = mcp_def('duyurulari_listele', 'okuma', 'Duyuruları listele',
-        'Duyuruları listeler (yaklaşan tarihe göre sıralı: önce en yakın tarihli, sonra geçmişler). Her duyurunun kimliği (id), başlığı, kurumu, özeti, bağlantısı, tarihleri, yayında/taslak ve öne çıkan durumu gelir. Duyuruyu güncellemeden ya da yeni duyuru eklemeden önce, aynı çağrının zaten girilmediğini görmek için bunu çağırın.',
+        'Duyuruları listeler (yaklaşan tarihe göre sıralı: önce en yakın tarihli, sonra geçmişler). Her duyurunun kimliği (id), başlığı, kurumu, özeti, bağlantısı, tarihleri, yayında/taslak ve öne çıkan durumu gelir. Taslak (yayınlanmamış) duyurular yalnızca "Duyurular" izni olan anahtarlara gelir; yalnızca okuma izni olan anahtar yayındakileri görür. Duyuruyu güncellemeden ya da yeni duyuru eklemeden önce, aynı çağrının zaten girilmediğini görmek için bunu çağırın.',
         sc_obj([
             'durum'    => sc_enum(['hepsi', 'yayinda', 'taslak', 'one_cikan', 'ornek'], 'Hangi duyurular: hepsi (varsayılan), yayinda, taslak, one_cikan (öne çıkarılmış olanlar), ornek ("Örnek" etiketli deneme duyuruları).'),
             'yaklasan' => sc_bool('true ise yalnızca bugün ve sonrasında en az bir tarihi olan duyurular gelir. Varsayılan false.'),
-        ]), $RO, function (array $a): array {
+        ]), $RO, function (array $a, array $ctx): array {
             $durum = $a['durum'] ?? 'hepsi';
+            $canDrafts = in_array('duyurular', $ctx['principal']['scopes'], true);
+            if ($durum === 'taslak' && !$canDrafts) {
+                mcp_fail('Taslak duyuruları görmek için "Duyurular" izni gerekir; bu erişim anahtarında yok. durum: yayinda ile yayındaki duyurular görülür.');
+            }
             $items = ann_all();
             usort($items, fn($x, $y) => strcmp(ann_sort_key($x), ann_sort_key($y)));
             $today = date('Y-m-d');
             $out = [];
             foreach ($items as $x) {
+                if (empty($x['published']) && !$canDrafts) continue;   // taslak duyuru yalnızca "Duyurular" izniyle
                 if ($durum === 'yayinda' && empty($x['published'])) continue;
                 if ($durum === 'taslak' && !empty($x['published'])) continue;
                 if ($durum === 'one_cikan' && empty($x['featured'])) continue;
@@ -1022,11 +1016,11 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('duyuru_getir', 'okuma', 'Duyuruyu getir',
-        'Tek bir duyurunun tüm alanlarını getirir. id değeri duyurulari_listele sonucundan alınır.',
+        'Tek bir duyurunun tüm alanlarını getirir. id değeri duyurulari_listele sonucundan alınır. Taslak duyuru yalnızca "Duyurular" izni olan anahtarlara verilir.',
         sc_obj(['id' => sc_str('Duyurunun kimliği, örneğin "51d903e57d".', ['minLength' => 1, 'maxLength' => 64])], ['id']),
-        $RO, function (array $a): array {
+        $RO, function (array $a, array $ctx): array {
             $x = ann_find(trim($a['id']));
-            if (!$x) {
+            if (!$x || (empty($x['published']) && !in_array('duyurular', $ctx['principal']['scopes'], true))) {
                 mcp_fail('Bu kimlikte duyuru bulunamadı: ' . mcp_clip($a['id'], 40) . '. Kimlikleri duyurulari_listele ile görebilirsiniz.');
             }
             return mcp_ok(mcp_ann_public($x));
@@ -1113,9 +1107,12 @@ function mcp_tools_read(): array
         });
 
     $T[] = mcp_def('yazilari_listele', 'okuma', 'Yazıları listele',
-        'Yazıları (menüde "Makaleler") listeler (en yeni önce): adres, başlık, özet, kategori, tarih ve taslak durumu. Yazılar bölümü sitede kapalı olabilir; sonuçta "yazilar_gorunur" alanı bunu söyler (kapalıyken yazılar hazırlanabilir ama ziyaretçilere görünmez).',
-        sc_obj(['taslaklar_dahil' => sc_bool('true ise taslak yazılar da gelir. Varsayılan false (yalnızca yayındakiler).')]),
-        $RO, function (array $a): array {
+        'Yazıları (menüde "Makaleler") listeler (en yeni önce): adres, başlık, özet, kategori, tarih ve taslak durumu. Taslak yazılar yayınlanmamış metindir ve yalnızca "Sayfa içerikleri" izniyle (taslaklar_dahil) görülür; yalnızca okuma izni olan anahtarlara yayındaki yazılar gelir. Yazılar bölümü sitede kapalı olabilir; sonuçta "yazilar_gorunur" alanı bunu söyler (kapalıyken yazılar hazırlanabilir ama ziyaretçilere görünmez).',
+        sc_obj(['taslaklar_dahil' => sc_bool('true ise taslak yazılar da gelir; yalnızca "Sayfa içerikleri" izni olan anahtarlar kullanabilir (yayınlanmamış yazının başlığı ve özeti gizli olabilir). Varsayılan false (yalnızca yayındakiler).')]),
+        $RO, function (array $a, array $ctx): array {
+            if (!empty($a['taslaklar_dahil']) && !in_array('icerik', $ctx['principal']['scopes'], true)) {
+                mcp_fail('Taslak yazıları görmek (taslaklar_dahil) için "Sayfa içerikleri" izni gerekir; bu erişim anahtarında yok. taslaklar_dahil olmadan çağırırsanız yayındaki yazılar gelir.');
+            }
             $posts = mcp_posts();
             uasort($posts, fn($x, $y) => strcmp((string) ($y['date'] ?? ''), (string) ($x['date'] ?? '')));
             $out = [];
@@ -1131,13 +1128,15 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('yazi_getir', 'okuma', 'Yazıyı getir',
-        'Tek bir blog yazısını tüm metniyle (HTML gövde) getirir. Taslak yazılar da okunabilir.',
+        'Tek bir blog yazısını tüm metniyle (HTML gövde) getirir. Taslak (yayınlanmamış) yazılar yalnızca "Sayfa içerikleri" izni olan anahtarlara verilir; yalnızca okuma izni olan anahtar için taslak yazı "yok" gibi davranır.',
         sc_obj(['adres' => sc_str('Yazının sayfa adresi, örneğin "ar-ge-yapilanmasi".', ['minLength' => 1, 'maxLength' => 120])], ['adres']),
-        $RO, function (array $a): array {
+        $RO, function (array $a, array $ctx): array {
             $posts = mcp_posts();
             $slug = trim($a['adres']);
-            if (!isset($posts[$slug])) {
-                mcp_fail('Bu adreste yazı yok: ' . mcp_clip($slug, 60) . '. Adresler yazilari_listele ile görülür (taslaklar_dahil: true).');
+            // Taslak yazı, taslak iş ilanı gibi, "Sayfa içerikleri" izni olmayan anahtara hiç gösterilmez; var olup olmadığı da sızmasın diye iletisi aynıdır
+            $canDrafts = in_array('icerik', $ctx['principal']['scopes'], true);
+            if (!isset($posts[$slug]) || (!empty($posts[$slug]['draft']) && !$canDrafts)) {
+                mcp_fail('Bu adreste okunabilir bir yazı yok: ' . mcp_clip($slug, 60) . '. Adresler yazilari_listele ile görülür; taslak yazılar yalnızca "Sayfa içerikleri" izniyle (taslaklar_dahil: true) görülür.');
             }
             $o = mcp_post_public($slug, (array) $posts[$slug], true);
             $o['yazilar_gorunur'] = feature('blog');
@@ -1175,12 +1174,15 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('degisiklik_gecmisi', 'okuma', 'Değişiklik geçmişi',
-        'Bir içerik bölümünün önceki sürümlerini listeler (en yeni önce). Her sürüm, o değişiklikten ÖNCEKİ halin kopyasıdır ("sonraki_degisiklik" o değişikliği kimin yaptığını ve ne olduğunu söyler); "ilk_hal" işaretlisi sitenin kurulumdaki özgün halidir ve hiç silinmez. Sürüm kimliğini geri_al aracına vererek o hale dönebilirsiniz. Son 25 değişiklik ve ilk hal saklanır. Tüm bölümleri birlikte, zaman sırasıyla görmek için son_degisiklikler kullanın.',
+        'Bir içerik bölümünün önceki sürümlerini listeler (en yeni önce). Her sürüm, o değişiklikten ÖNCEKİ halin kopyasıdır ("sonraki_degisiklik" o değişikliği kimin yaptığını ve ne olduğunu söyler); "ilk_hal" işaretlisi sitenin kurulumdaki özgün halidir ve hiç silinmez. Sürüm kimliğini geri_al aracına vererek o hale dönebilirsiniz. Son 25 değişiklik ve ilk hal saklanır. ilanlar ve posts (taslak içerebilir) bölümlerinin geçmişi yalnızca "Sayfa içerikleri" izni olan anahtarlara gösterilir. Tüm bölümleri birlikte, zaman sırasıyla görmek için son_degisiklikler kullanın.',
         sc_obj(['bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü: services (hizmetler), posts (yazılar), refs (referanslar), lists (kurumsal listeler), legal (yasal metinler), texts (sayfa metinleri), settings (iletişim ve e-posta ayarları), duyurular, ilanlar (iş ilanları), features (görünürlük), seo (arama motoru ayarları).')], ['bolum']),
         $RO, function (array $a, array $ctx): array {
             $key = $a['bolum'];
             if ($key === 'ilanlar' && !in_array('icerik', $ctx['principal']['scopes'], true)) {
                 mcp_fail('İş ilanlarının geçmişini görmek için "Sayfa içerikleri" izni gerekir (taslak ilan başlıkları içerebilir); bu erişim anahtarında yok.');
+            }
+            if ($key === 'posts' && !in_array('icerik', $ctx['principal']['scopes'], true)) {
+                mcp_fail('Yazıların geçmişini görmek için "Sayfa içerikleri" izni gerekir (sürümler taslak yazıların başlığını ve metnini içerebilir); bu erişim anahtarında yok.');
             }
             $log = [];
             foreach (changelog_entries($key) as $r) {
@@ -1207,14 +1209,14 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('son_degisiklikler', 'okuma', 'Son değişiklikler',
-        'Sitede yapılan değişikliklerin günlüğü (en yeni önce): ne zaman, hangi bölümde, kim (yönetim paneli ya da yapay zekâ erişimi: kişi ve uygulama) ve ne değişti. Her içerik değişikliğinin "surum" değeri o değişiklikten ÖNCEKİ halin kimliğidir: geri_al (bolum, surum) ile o hale dönülür, degisiklik_ayrintisi ile öncesi ve sonrası görülür. "geri_alinabilir: false" olanlar içerik değişikliği değildir (şifre, erişim anahtarı, başvuru silme) ya da sürümü artık saklanmıyordur. ilanlar kayıtları (taslak ilan başlıkları içerebilir) yalnızca "Sayfa içerikleri", erisim ve guvenlik kayıtları yalnızca "Ayarlar", basvurular kayıtları yalnızca "Gelen kutusu" izni olan anahtarlara gösterilir.',
+        'Sitede yapılan değişikliklerin günlüğü (en yeni önce): ne zaman, hangi bölümde, kim (yönetim paneli ya da yapay zekâ erişimi: kişi ve uygulama) ve ne değişti. Her içerik değişikliğinin "surum" değeri o değişiklikten ÖNCEKİ halin kimliğidir: geri_al (bolum, surum) ile o hale dönülür, degisiklik_ayrintisi ile öncesi ve sonrası görülür. "geri_alinabilir: false" olanlar içerik değişikliği değildir (şifre, erişim anahtarı, başvuru silme) ya da sürümü artık saklanmıyordur. ilanlar kayıtları (taslak ilan başlıkları içerebilir) ve posts kayıtları (taslak yazıların başlığı ve metni içerebilir) yalnızca "Sayfa içerikleri", erisim ve guvenlik kayıtları yalnızca "Ayarlar", basvurular kayıtları yalnızca "Gelen kutusu" izni olan anahtarlara gösterilir.',
         sc_obj([
             'bolum' => sc_enum(array_keys(changelog_sections()), 'İsteğe bağlı: yalnızca bu bölüm. duyurular, ilanlar (iş ilanları), services (hizmetler), posts (yazılar), refs (referanslar), texts (sayfa metinleri), lists (kurumsal listeler), features (görünürlük), settings (iletişim ve e-posta), seo, basvurular, erisim (erişim anahtarları), guvenlik.'),
             'limit' => sc_int('En fazla kaç kayıt (1-100). Varsayılan 30.', ['minimum' => 1, 'maximum' => 100]),
         ]), $RO, function (array $a, array $ctx): array {
             $sections = changelog_sections();
             // Erişim anahtarı ve güvenlik kayıtları "Ayarlar", iş başvurusu kayıtları "Gelen kutusu" izni olmadan gösterilmez
-            $need = ['ilanlar' => 'icerik', 'erisim' => 'ayarlar', 'guvenlik' => 'ayarlar', 'basvurular' => 'gelen_kutusu', 'kayitlar' => 'gelen_kutusu', 'bulten' => 'gelen_kutusu'];
+            $need = ['ilanlar' => 'icerik', 'posts' => 'icerik', 'erisim' => 'ayarlar', 'guvenlik' => 'ayarlar', 'basvurular' => 'gelen_kutusu', 'kayitlar' => 'gelen_kutusu', 'bulten' => 'gelen_kutusu'];
             $can = fn(string $k): bool => !isset($need[$k]) || in_array($need[$k], $ctx['principal']['scopes'], true);
             $bolum = (string) ($a['bolum'] ?? '');
             if (!$can($bolum)) {
@@ -1241,13 +1243,16 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('degisiklik_ayrintisi', 'okuma', 'Değişiklik ayrıntısı',
-        'Bir değişikliğin alan alan öncesini ve sonrasını gösterir. bolum ve surum değerleri son_degisiklikler ya da degisiklik_gecmisi sonucundan alınır. Geri almadan önce neyin geri döneceğini görmek için kullanın. İletişim ve e-posta ayarlarının (settings) ayrıntısı için "Ayarlar" izni gerekir; SMTP şifresi hiçbir zaman gösterilmez.',
+        'Bir değişikliğin alan alan öncesini ve sonrasını gösterir. bolum ve surum değerleri son_degisiklikler ya da degisiklik_gecmisi sonucundan alınır. Geri almadan önce neyin geri döneceğini görmek için kullanın. İş ilanları (ilanlar) ve yazıların (posts) ayrıntısı taslak içerebildiği için "Sayfa içerikleri" izni gerekir. İletişim ve e-posta ayarlarının (settings) ayrıntısı için "Ayarlar" izni gerekir; SMTP şifresi hiçbir zaman gösterilmez.',
         sc_obj([
             'bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü.'),
             'surum' => sc_str('Sürüm kimliği, örneğin "20261002-153012-a1b2".', ['pattern' => '^\d{8}-\d{6}-[a-f0-9]{4}$', 'x-ipucu' => 'son_degisiklikler sonucundaki "surum" değeri']),
         ], ['bolum', 'surum']), $RO, function (array $a, array $ctx): array {
             if ($a['bolum'] === 'ilanlar' && !in_array('icerik', $ctx['principal']['scopes'], true)) {
                 mcp_fail('İş ilanlarındaki değişikliklerin ayrıntısı için "Sayfa içerikleri" izni gerekir (taslak ilan başlıkları içerebilir); bu erişim anahtarında yok.');
+            }
+            if ($a['bolum'] === 'posts' && !in_array('icerik', $ctx['principal']['scopes'], true)) {
+                mcp_fail('Yazılardaki değişikliklerin ayrıntısı için "Sayfa içerikleri" izni gerekir (taslak yazıların başlığı ve metni içerebilir); bu erişim anahtarında yok.');
             }
             if ($a['bolum'] === 'settings' && !in_array('ayarlar', $ctx['principal']['scopes'], true)) {
                 mcp_fail('İletişim ve e-posta ayarlarındaki değişikliklerin ayrıntısı için "Ayarlar" izni gerekir; bu erişim anahtarında yok. Özetini son_degisiklikler ile görebilirsiniz.');

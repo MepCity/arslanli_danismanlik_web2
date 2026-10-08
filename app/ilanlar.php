@@ -297,6 +297,9 @@ function ilan_list_in($v, string $label, array &$errors): array
         $l = trim((string) preg_replace('/\s+/u', ' ', (string) $l));
         $l = ltrim($l, "-•*· \t");   // satır başındaki madde imi atılır
         if ($l === '') continue;
+        if (val_markup($l)) {
+            $errors[] = val_markup_error($label, 'bir madde');   // düz metin: HTML işareti yazılamaz
+        }
         if (mb_strlen($l) > 300) {
             $errors[] = $label . ': bir madde en fazla 300 karakter olabilir ("' . mb_substr($l, 0, 40) . '…").';
             $l = mb_substr($l, 0, 300);
@@ -356,6 +359,9 @@ function ilan_validate(array $in, ?array $old = null): array
     // Adres, ilan ilk kez yayınlanana kadar her kayıtta güncel başlıktan yeniden üretilir (çalışma başlığı adrese yapışmasın);
     // yayınlandıktan sonra değişmez (paylaşılmış bağlantılar bozulmasın)
     $x['slug'] = (string) ($old['published'] ?? '') !== '' && (string) ($old['slug'] ?? '') !== '' ? (string) $old['slug'] : ilan_slug($x['title'], $x['id']);
+    foreach (['title' => 'Pozisyon adı', 'area' => 'Alan / bölüm', 'experience' => 'Deneyim', 'summary' => 'Özet'] as $k => $label) {
+        if (val_markup($x[$k])) $errors[] = val_markup_error('', $label);   // düz metin alanları: HTML işareti yazılamaz
+    }
     if ($x['title'] === '') $errors[] = 'Pozisyon adı zorunludur.';
     if ($x['area'] === '') $errors[] = 'Alan / bölüm zorunludur.';
     if (!in_array($x['city'], ilan_cities(), true)) $errors[] = 'Şehir listeden seçilmeli ("Uzaktan" da seçilebilir).';
@@ -406,16 +412,17 @@ function ilan_delete(string $id): bool
  * Geri yüklenecek (yedekten ya da geçmişten gelen) ilan verisini temizler: yalnızca dizi öğeler, geçerli kimlik ve adres,
  * her öğe ilan_validate'ten geçer; geçmeyenler atılır. Kimlik ve adres tekrarı atılır / benzersizleştirilir.
  */
-function ilan_clean_restore(array $data): array
+function ilan_clean_restore(array $data, array &$dropped = []): array
 {
     $out = [];
     $ids = [];
     $slugs = [];
-    foreach ($data as $x) {
-        if (!is_array($x) || !is_string($x['id'] ?? null) || !preg_match('/^[a-f0-9]{10}$/D', $x['id']) || isset($ids[$x['id']])) continue;
-        if (!is_string($x['slug'] ?? null) || !preg_match('/^[a-z0-9-]+$/D', $x['slug'])) continue;
+    foreach ($data as $n => $x) {
+        $w = 'İlan ' . ((int) $n + 1);
+        if (!is_array($x) || !is_string($x['id'] ?? null) || !preg_match('/^[a-f0-9]{10}$/D', $x['id']) || isset($ids[$x['id']])) { $dropped[] = $w . ': kimliği geçersiz ya da tekrarlı.'; continue; }
+        if (!is_string($x['slug'] ?? null) || !preg_match('/^[a-z0-9-]+$/D', $x['slug'])) { $dropped[] = $w . ': adresi geçersiz.'; continue; }
         [$v, $errs] = ilan_validate($x, $x);
-        if ($errs) continue;
+        if ($errs) { $dropped[] = $w . ' («' . mb_substr(val_line($x['title'] ?? ''), 0, 40) . '»): ' . $errs[0]; continue; }
         if (is_string($x['updated'] ?? null) && $x['updated'] !== '') $v['updated'] = $x['updated'];
         $v['slug'] = $x['slug'];   // geri yüklenen adres korunur (yayınlanmışsa bağlantılar çalışmaya devam eder)
         $base = $v['slug'];
@@ -439,9 +446,9 @@ function ilan_restore_opened(?array $set = null): array
  * Yedekten ya da geçmişten gelen ilan verisini temizleyip kaydeder; geri yükleme sonucunda başvuruya yeniden açılan ilanları
  * ilan_restore_opened() ile bildirir. Dolu veri tamamen geçersizse hiçbir şey yazılmaz (false).
  */
-function ilan_restore_all(array $data): bool
+function ilan_restore_all(array $data, array &$dropped = []): bool
 {
-    $clean = ilan_clean_restore($data);
+    $clean = ilan_clean_restore($data, $dropped);
     if ($data && !$clean) return false;
     return (bool) ilan_locked(function () use ($clean): bool {
         $before = array_column(array_filter(ilan_all(), 'ilan_active'), 'title', 'id');

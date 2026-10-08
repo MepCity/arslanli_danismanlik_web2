@@ -43,6 +43,7 @@ return [
             ],
             '5. Arama motorları' => [
                 'blog.seo.baslik_bolum' => ['Bölüm sayfasının sekme başlığı', '{bolum} · {sayfa}', 'line', 'Bir bölüm seçilince tarayıcı sekmesinde görünür. {bolum} yerine bölümün adı, {sayfa} yerine sayfanın adı (Sayfa adları) gelir.', ['vars' => ['bolum' => 'bölümün adı', 'sayfa' => 'sayfanın adı'], 'need' => ['bolum'], 'max' => 60]],
+                'blog.seo.description_bolum' => ['Bölüm sayfasının arama motoru açıklaması', 'Arslanlı Bülteni, {bolum} bölümü: {n} yazı. Hibe, teşvik ve Ar-Ge konularında sade ve somut yazılar.', 'text', 'Bir bölüm seçilince Google sonuçlarında görünür; sayfada görünmez. {bolum} yerine bölümün adı, {n} yerine bölümdeki yazı sayısı gelir.', ['vars' => ['bolum' => 'bölümün adı', 'n' => 'bölümdeki yazı sayısı'], 'need' => ['bolum'], 'max' => 320]],
                 'blog.seo.description' => ['Arama motoru açıklaması', 'Arslanlı Bülteni: Ar-Ge yapılanması, kalite belgelendirme, yatırım teşvikleri ve hibe programları üzerine sade ve somut yazılar.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['max' => 320]],
             ],
         ],

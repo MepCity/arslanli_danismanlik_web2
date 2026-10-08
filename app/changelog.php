@@ -563,16 +563,21 @@ function changelog_diff(string $key, $before, $after): array
                 }
                 return is_bool($c) ? cl_bool($c) : (is_scalar($c) ? (string) $c : '');
             };
-            $smtp = fn($c) => empty($c['mail']['smtp']['host']) ? 'Kapalı (sunucunun e-posta fonksiyonu)'
-                : $c['mail']['smtp']['host'] . ':' . ($c['mail']['smtp']['port'] ?? '') . ' · ' . ($c['mail']['smtp']['secure'] ?? '') . ' · ' . ($c['mail']['smtp']['user'] ?? '');
+            // SMTP üç hâlde: panelde seçim yok (yapılandırma dosyası), panelde kayıtlı, panelde kapalı
+            $smtpRaw = fn($raw) => !array_key_exists('smtp', (array) ($raw['mail'] ?? [])) ? 'Panelde seçim yok (yapılandırma dosyası geçerli)'
+                : (empty($raw['mail']['smtp']['host']) ? 'Kapalı (sunucunun e-posta fonksiyonu)'
+                    : $raw['mail']['smtp']['host'] . ':' . ($raw['mail']['smtp']['port'] ?? '') . ' · ' . ($raw['mail']['smtp']['secure'] ?? '') . ' · ' . ($raw['mail']['smtp']['user'] ?? ''));
             $rows = cl_rows([
                 'Şirket adı' => $get('name'), 'Telefon' => $get('phone'), 'WhatsApp' => $get('whatsapp'), 'E-posta' => $get('email'), 'Adres' => $get('address'),
                 'Kısa adres' => $get('address_short'), 'Harita bağlantısı' => $get('maps_url'), 'Yetkili' => $get('company.authorized'),
                 'Vergi dairesi' => $get('company.tax_office'), 'Vergi numarası' => $get('company.tax_number'),
                 'Instagram' => $get('social.Instagram'), 'LinkedIn' => $get('social.LinkedIn'), 'Facebook' => $get('social.Facebook'), 'X' => $get('social.X'),
                 'Bildirimlerin gittiği adres' => $get('mail.to'), 'Gönderen adresi' => $get('mail.from'), 'Gönderen adı' => $get('mail.from_name'),
-                'Form kayıtlarını sakla' => $get('store_submissions'), 'SMTP' => $smtp,
+                'Form kayıtlarını sakla' => $get('store_submissions'),
             ], $cb, $ca);
+            if ($smtpRaw($b) !== $smtpRaw($a)) {
+                $rows[] = ['SMTP', $smtpRaw($b), $smtpRaw($a)];
+            }
             // Şifre hiçbir zaman gösterilmez; yalnızca değiştiği söylenir
             $pb = (string) ($cb['mail']['smtp']['pass'] ?? '');
             $pa = (string) ($ca['mail']['smtp']['pass'] ?? '');
@@ -634,14 +639,16 @@ function changelog_restore(string $key, string $rev, bool $keepMail = false): bo
     if (changelog_note() === '') {
         changelog_note('Geri alma');
     }
-    if ($key === 'duyurular') {
-        return ann_save_all($data);     // duyurular kendi dosyasında durur
-    }
-    if ($key === 'ilanlar') {
-        return ilan_restore_all($data);    // iş ilanları da kendi dosyasında durur; temizlenir ve yeniden açılan ilanlar bildirilir
-    }
+    $keptNote = [];
     if ($key === 'settings' && $keepMail) {
         $cur = content_get('settings', []);
+        foreach (['to' => 'Bildirimlerin gideceği adres', 'from' => 'Gönderen adresi'] as $mk => $ml) {
+            $was = (string) ($data['mail'][$mk] ?? '');
+            $now = (string) (settings_apply(config_inherited(), (array) $cur)['mail'][$mk] ?? '');
+            if ($was !== '' && $was !== $now) {
+                $keptNote[] = $ml . ' sürümde ' . $was . ' idi; yapay zekâ erişimiyle geri alırken e-posta ayarları değişmez, şu anki adres (' . $now . ') korundu.';
+            }
+        }
         foreach (['mail', 'store_submissions'] as $k) {
             unset($data[$k]);
             if (is_array($cur) && array_key_exists($k, $cur)) {
@@ -649,5 +656,13 @@ function changelog_restore(string $key, string $rev, bool $keepMail = false): bo
             }
         }
     }
-    return content_put($key, $data);
+    // Eski sürüm ham yazılmaz: her bölüm normal kayıtla aynı temizleme ve doğrulamadan geçer (app/restore.php); geçmeyen öğeler atılır,
+    // hiç geçerli öğe kalmazsa bölüm değişmez. Duyurular ve iş ilanları kendi dosyalarında durur ve orada temizlenir.
+    $ok = restore_store($key, $data, true);
+    if ($keptNote) {
+        $r = restore_report();
+        $r['notes'] = array_merge($r['notes'], $keptNote);
+        restore_report($r);
+    }
+    return $ok;
 }

@@ -15,6 +15,7 @@ $preset = [
     [3, 76, 62, -5, 'blue'],
 ];
 $slugs = array_keys($refs);
+$preset = array_values(array_filter($preset, fn($p) => isset($slugs[$p[0]])));   // az referans olsa da boş kaşe ve sıfıra bölme olmasın
 ?>
 
 <section class="kmasa pagehead" aria-labelledby="refs-title">
@@ -31,7 +32,7 @@ $slugs = array_keys($refs);
           <button class="btn btn--sm" type="button" data-stamp-one><?= e(t('referans.masa.bir')) ?></button>
           <button class="btn btn--sm" type="button" data-clear><?= e(t('referans.masa.temizle')) ?></button>
         </div>
-        <p class="kmasa__next" aria-live="polite"><?= th('referans.masa.siradaki', ['ad' => ['html' => '<b data-next-name>' . e($refs[$slugs[count($preset) % count($slugs)]]) . '</b>']]) ?></p>
+        <p class="kmasa__next" aria-live="polite"><?= th('referans.masa.siradaki', ['ad' => ['html' => '<b data-next-name>' . e($slugs ? $refs[$slugs[count($preset) % count($slugs)]] : '') . '</b>']]) ?></p>
       </div>
     </div>
   </div>
@@ -45,7 +46,7 @@ $slugs = array_keys($refs);
         <div class="desk__layer" data-layer>
           <?php foreach ($preset as [$i, $x, $y, $rot, $ink]): $slug = $slugs[$i]; ?>
             <span class="imp imp--<?= $ink ?>" data-preset style="left:<?= $x ?>%;top:<?= $y ?>%;--rot:<?= $rot ?>deg">
-              <span class="imp__logo" style="--src:url('<?= ref_ink_url($slug) ?>')"></span>
+              <span class="imp__logo" style="--src:url('<?= e(ref_ink_url($slug)) ?>')"></span>
             </span>
           <?php endforeach; ?>
         </div>
@@ -66,7 +67,7 @@ $slugs = array_keys($refs);
       fn($slug, $name) => ['slug' => $slug, 'name' => $name, 'src' => ref_ink_url($slug)],
       $slugs,
       array_values($refs)
-  ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+  ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 </section>
 
 <section class="defter section" aria-labelledby="defter-title">
@@ -77,15 +78,15 @@ $slugs = array_keys($refs);
     </header>
 
     <div class="book">
-      <?php foreach (array_chunk($refs, (int) ceil(count($refs) / 2), true) as $p => $chunk): ?>
+      <?php foreach (array_chunk($refs, (int) max(1, ceil(count($refs) / 2)), true) as $p => $chunk): ?>
         <div class="book__page">
           <p class="book__cols" aria-hidden="true"><span><?= e(t('referans.defter.sutun_sira')) ?></span><span><?= e(t('referans.defter.sutun_kurum')) ?></span><span><?= e(t('referans.defter.sutun_kase')) ?></span></p>
-          <ol class="ledger" role="list" start="<?= $p * (int) ceil(count($refs) / 2) + 1 ?>">
-            <?php $n = $p * (int) ceil(count($refs) / 2); foreach ($chunk as $slug => $name): $n++; ?>
+          <ol class="ledger" role="list" start="<?= $p * (int) max(1, ceil(count($refs) / 2)) + 1 ?>">
+            <?php $n = $p * (int) max(1, ceil(count($refs) / 2)); foreach ($chunk as $slug => $name): $n++; ?>
               <li class="ledger__row">
                 <span class="ledger__no" aria-hidden="true"><?= nn($n) ?></span>
                 <span class="ledger__name"><?= e($name) ?></span>
-                <span class="ledger__ink" aria-hidden="true" style="--src:url('<?= ref_ink_url($slug) ?>')"></span>
+                <span class="ledger__ink" aria-hidden="true" style="--src:url('<?= e(ref_ink_url($slug)) ?>')"></span>
               </li>
             <?php endforeach; ?>
           </ol>

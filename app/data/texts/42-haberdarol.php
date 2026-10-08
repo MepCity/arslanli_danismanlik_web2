@@ -68,7 +68,7 @@ return [
                 'haberdarol.sonraki.etiket' => ['Sonraki sayfa bağlantısının küçük yazısı', 'Sonraki evrak · {no}', 'line', '{no} yerine Misyonumuz sayfasının evrak numarası gelir. Bağlantının büyük yazısı o sayfanın adıdır (Sayfa adları).', ['vars' => ['no' => 'Misyonumuz sayfasının numarası'], 'need' => ['no'], 'max' => 50]],
             ],
             '10. Arama motorları' => [
-                'haberdarol.seo.description' => ['Arama motoru açıklaması', 'Sizi ilgilendiren hibe ve teşvik çağrıları açıldığında, program şartları değiştiğinde ya da kapanış tarihi yaklaştığında e-postayla haber verelim. Kuponu doldurun.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['max' => 320]],
+                'haberdarol.seo.description' => ['Arama motoru açıklaması', 'Hibe ve teşvik çağrıları açıldığında, program şartları değiştiğinde ya da kapanış tarihi yaklaştığında e-postayla haber verelim. Kuponu doldurun.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['max' => 320]],
             ],
         ],
     ],

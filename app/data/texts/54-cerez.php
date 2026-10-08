@@ -47,7 +47,7 @@ return [
                 'cerez.sonraki.ad' => ['Sonraki sayfa bağlantısının büyük yazısı', 'KVKK metni', 'line', 'KVKK Aydınlatma Metni sayfasına götürür; küçük yazı (Sonraki evrak) Yasal metinler grubundadır.', ['max' => 50]],
             ],
             '5. Arama motorları' => [
-                'cerez.seo.description' => ['Arama motoru açıklaması', '{firma} web sitesinin tarayıcınızda ne sakladığı ve ne saklamadığı: ziyaretçi sayfalarında çerez, analiz aracı ve reklam takibi kullanılmaz; ziyaret sayacı çerezsizdir.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['firma'], 'max' => 320]],
+                'cerez.seo.description' => ['Arama motoru açıklaması', '{firma} sitesinin tarayıcınızda ne sakladığı ve ne saklamadığı: çerez, analiz aracı ve reklam takibi yok; ziyaret sayacı çerezsizdir.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['vars' => ['firma'], 'max' => 320]],
             ],
         ],
     ],

@@ -18,7 +18,7 @@ if (gsap && ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
 let lenis = null;
 if (!reduced && window.Lenis && gsap) {
   lenis = new window.Lenis({ duration: 1.1, smoothWheel: true, wheelMultiplier: 0.95 });
-  lenis.on('scroll', ScrollTrigger.update);
+  if (ScrollTrigger) lenis.on('scroll', ScrollTrigger.update);   // ScrollTrigger yalnızca kullanan sayfalarda yüklenir
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
 }
@@ -166,6 +166,7 @@ if (gsap && !reduced) {
     const amp = 0.05 + energy * 0.55;
     for (const { g, bars } of groups) {
       if (!g.isConnected || (g.closest('.fih') && !menuOpen)) continue;
+      if (!menuOpen && hdr?.classList.contains('is-hidden')) continue;   // üst bilgi yukarı kaçmışken görünmeyen logo dalgası hesaplanmaz
       for (let i = 0; i < bars.length; i++) {
         const s = 1 + amp * Math.sin(time * (2.2 + seeds[i]) + i * 0.7) * seeds[i];
         bars[i].style.setProperty('--s', s.toFixed(3));
@@ -174,24 +175,9 @@ if (gsap && !reduced) {
   });
 }
 
-/* ---------- Görünüm tetikleyicileri ---------- */
-
-const watch = '[data-rise], [data-stamp], .annot, [data-hl], [data-on]';
-if ('IntersectionObserver' in window && !reduced) {
-  const io = new IntersectionObserver((entries) => {
-    for (const en of entries) {
-      if (!en.isIntersecting) continue;
-      en.target.classList.add('is-on');
-      en.target.dispatchEvent(new CustomEvent('on'));
-      io.unobserve(en.target);
-    }
-  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.01 });
-  document.querySelectorAll(watch).forEach((el) => io.observe(el));
-  window.__observe = (el) => io.observe(el);
-} else {
-  document.querySelectorAll(watch).forEach((el) => el.classList.add('is-on'));
-  window.__observe = (el) => el.classList.add('is-on');
-}
+/* ---------- Görünüm tetikleyicileri ----------
+ * [data-rise], [data-stamp], .annot, [data-hl], [data-on] öğelerine görününce is-on sınıfı eklenir. Bu iş GSAP ve bu dosya inmeden başlasın
+ * diye layout.php içindeki küçük bir satır içi betikte yapılır (window.__observe oradan gelir). */
 
 /* ---------- Formlar ---------- */
 

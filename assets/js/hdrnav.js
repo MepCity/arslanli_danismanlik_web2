@@ -6,7 +6,7 @@
   const label = document.querySelector('[data-folio]');
   if (!nav || !label) return;
 
-  const home = label.innerHTML;
+  const home = [...label.childNodes].map((n) => n.cloneNode(true));   // özgün içerik düğüm olarak saklanır (HTML metnine çevrilip geri ayrıştırılmaz)
 
   // Üst bilgi aşağı kaydırınca gizlenir; klavyeyle içine odaklanan ziyaretçi için geri gelir
   const hdr = document.querySelector('[data-hdr]');
@@ -31,7 +31,7 @@
     const name = a.querySelector('.hnav__t')?.textContent || '';
     label.replaceChildren(...build(a.dataset.no || '', name));
   };
-  const reset = () => { label.innerHTML = home; };
+  const reset = () => { label.replaceChildren(...home.map((n) => n.cloneNode(true))); };
 
   nav.querySelectorAll('a').forEach((a) => {
     a.addEventListener('pointerenter', () => show(a));

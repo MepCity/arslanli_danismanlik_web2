@@ -23,7 +23,7 @@ return [
                 'hizmetler.eleme.ve' => ['Durum cümlesinde dosyaları birbirine bağlayan sözcük', 've', 'line', '“A, B ve C” biçimindeki sıralamada son iki dosyanın arasına gelir.', ['max' => 12, 'js' => true]],
             ],
             '3. Dosya kartları' => [
-                'hizmetler.dosya.sekme' => ['Dosya sırtındaki etiketin okunuşu', 'Dosya {no}: {baslik} dosyasını öne getir', 'line', 'Görünmez; ekran okuyucular içindir. {no} yerine dosya numarası, {baslik} yerine dosyanın adı gelir.', ['vars' => ['no' => 'dosya numarası', 'baslik' => 'dosyanın adı'], 'need' => ['no', 'baslik'], 'max' => 90]],
+                'hizmetler.dosya.sekme' => ['Dosya sırtındaki etiketin okunuşu', 'Dosya {no} {sekme}: {baslik} dosyasını öne getir', 'line', 'Görünmez; ekran okuyucular içindir. {no} yerine dosya numarası, {sekme} yerine dosya sırtındaki kısa yazı, {baslik} yerine dosyanın adı gelir. Sırtta görünen "numara + kısa yazı" ifadesi başta aynen geçmelidir (sesle denetim).', ['vars' => ['no' => 'dosya numarası', 'sekme' => 'sırtın kısa yazısı', 'baslik' => 'dosyanın adı'], 'need' => ['no', 'baslik'], 'max' => 90]],
                 'hizmetler.dosya.no_etiket' => ['Kartta dosya numarası etiketi', 'Dosya No', 'line', '', ['max' => 24]],
                 'hizmetler.dosya.icindekiler' => ['Kartta program listesinin başlığı', 'Dosyada', 'line', '', ['max' => 24]],
                 'hizmetler.dosya.kimin_icin' => ['Kartta “kimin için” etiketi', 'Kimin için:', 'line', '', ['max' => 24]],
@@ -39,7 +39,7 @@ return [
                 'hizmetler.sonraki.etiket' => ['Sonraki sayfa bağlantısının küçük yazısı', 'Sonraki evrak · {no}', 'line', '{no} yerine sonraki sayfanın evrak numarası gelir. Bağlantının büyük yazısı sonraki sayfanın adıdır (Sayfa adları).', ['vars' => ['no' => 'sonraki sayfanın numarası'], 'need' => ['no'], 'max' => 40]],
             ],
             '6. Arama motorları' => [
-                'hizmetler.seo.description' => ['Arama motoru açıklaması', 'TÜBİTAK, KOSGEB, Sanayi ve Teknoloji Bakanlığı, Ticaret Bakanlığı, AB projeleri, sınai mülkiyet, kalite belgelendirme, yatırım danışmanlığı ve yatırım kredilerinde başvuru dosyası ve yürütme.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['max' => 320]],
+                'hizmetler.seo.description' => ['Arama motoru açıklaması', 'TÜBİTAK, KOSGEB, Sanayi ve Ticaret bakanlıkları, AB projeleri, sınai mülkiyet, kalite belgelendirme, yatırım danışmanlığı ve kredilerde başvuru ve yürütme.', 'text', 'Google sonuçlarında görünür; sayfada görünmez. 150-160 karakter önerilir.', ['max' => 320]],
             ],
         ],
     ],

@@ -14,7 +14,7 @@ $secures = ['ssl' => 'SSL (genellikle 465 numaralı port)', 'tls' => 'TLS (genel
 
 function ay_url_ok(string $u): bool
 {
-    return mb_strlen($u) <= 500 && preg_match('#^https://[^\s/]+\.[^\s/]+#i', $u) && filter_var($u, FILTER_VALIDATE_URL) !== false;
+    return settings_url_ok($u);
 }
 
 require_once APP . '/mailer.php';   // mail_address_ok(): e-posta adreslerinin sıkı denetimi; deneme e-postası
@@ -44,8 +44,12 @@ if (($rest[0] ?? '') === 'deneme' && $method === 'POST') {
 }
 
 /* ---------- Mevcut (geçerli) değerler ---------- */
-$smtpNow = cfg('mail.smtp');
-$smtpNow = is_array($smtpNow) && !empty($smtpNow['host']) ? $smtpNow : null;
+// SMTP üç hâlden birindedir (bkz. smtp_state): panelde seçim yok (yapılandırma dosyası geçerli), panelden kaydedilmiş, panelde kapatılmış
+$smtpSt    = smtp_state();
+$smtpMode  = $smtpSt['mode'];
+$smtpShow  = $smtpMode === 'panel' ? $smtpSt['panel'] : ($smtpMode === 'miras' ? $smtpSt['inherited'] : null);   // alanlarda görünen bağlantı bilgisi
+$smtpPanel = $smtpMode === 'panel' ? $smtpSt['panel'] : null;                                                   // panelde kayıtlı olan (şifre yeniden yazma kuralı buna göre)
+$smtpNow   = smtp_tuple(cfg('mail.smtp'));                                                                       // şu an gerçekten kullanılan
 $socialNow = (array) cfg('social', []);
 
 $v = [
@@ -63,14 +67,14 @@ $v = [
     'mail_from'     => (string) cfg('mail.from'),
     'mail_from_name' => (string) cfg('mail.from_name'),
     'store'         => (bool) cfg('store_submissions'),
-    'smtp_on'       => $smtpNow !== null,
-    'smtp_host'     => (string) ($smtpNow['host'] ?? ''),
-    'smtp_port'     => (string) ($smtpNow['port'] ?? '465'),
-    'smtp_secure'   => (string) ($smtpNow['secure'] ?? 'ssl'),
-    'smtp_user'     => (string) ($smtpNow['user'] ?? ''),
+    'smtp_mode'     => $smtpMode,
+    'smtp_host'     => (string) ($smtpShow['host'] ?? ''),
+    'smtp_port'     => (string) ($smtpShow['port'] ?? '465'),
+    'smtp_secure'   => (string) ($smtpShow['secure'] ?? 'ssl'),
+    'smtp_user'     => (string) ($smtpShow['user'] ?? ''),
 ];
 foreach ($networks as $k => $_) $v['social_' . $k] = (string) ($socialNow[$k] ?? '');
-$storedPass = (string) ($smtpNow['pass'] ?? '');
+$storedPass = $smtpMode === 'panel' ? $smtpSt['panel_pass'] : '';   // yalnızca panelden yazılmış şifre; yapılandırma dosyasındaki şifre buraya hiç gelmez
 $errors = [];
 
 /* ---------- Kaydet ---------- */
@@ -80,7 +84,8 @@ if ($method === 'POST' && ($rest[0] ?? '') === '') {
     }
     foreach ($networks as $k => $_) $v['social_' . $k] = post_str('social_' . $k, 500);
     $v['store']       = post_bool('store');
-    $v['smtp_on']     = post_bool('smtp_on');
+    // SMTP hâli: alan gönderilmediyse (eski form) mevcut hâl korunur; sayfayı SMTP alanlarına dokunmadan kaydetmek hâli değiştirmez
+    $v['smtp_mode']   = in_array($_POST['smtp_mode'] ?? '', ['miras', 'panel', 'kapali'], true) ? (string) $_POST['smtp_mode'] : $smtpMode;
     $v['smtp_secure'] = isset($secures[$_POST['smtp_secure'] ?? '']) ? (string) $_POST['smtp_secure'] : 'ssl';
     $newPass          = is_string($_POST['smtp_pass'] ?? null) ? mb_substr((string) $_POST['smtp_pass'], 0, 200) : '';
 
@@ -111,12 +116,17 @@ if ($method === 'POST' && ($rest[0] ?? '') === '') {
     if (!mail_address_ok($v['mail_from'])) $errors[] = 'Gönderen e-posta adresi geçerli değil.';
     if ($v['mail_from_name'] === '') $errors[] = 'Gönderen adını yazın. Örnek: Arslanlı Web Sitesi';
     $port = (int) $v['smtp_port'];
-    if ($v['smtp_on']) {
+    foreach (['name' => 'Şirket adı', 'address' => 'Açık adres', 'address_short' => 'Kısa adres', 'authorized' => 'Yetkili kişi', 'tax_office' => 'Vergi dairesi',
+        'tax_number' => 'Vergi numarası', 'mail_from_name' => 'Gönderen adı', 'smtp_user' => 'SMTP kullanıcı adı'] as $k => $label) {
+        if (val_markup($v[$k])) $errors[] = val_markup_error('', $label);   // düz metin alanları: HTML işareti yazılamaz
+    }
+    if ($v['smtp_mode'] === 'panel') {
         if ($v['smtp_host'] === '' || !preg_match('/^[A-Za-z0-9.\-]+$/', $v['smtp_host'])) $errors[] = 'SMTP sunucu adını yazın. Örnek: mail.siteniz.com';
         if (!ctype_digit($v['smtp_port']) || $port < 1 || $port > 65535) $errors[] = 'SMTP port numarası 1 ile 65535 arasında bir sayı olmalı.';
         // Kayıtlı şifre başka bir sunucuya ya da hesaba kendiliğinden gönderilmez: bağlantı bilgileri değiştiyse (ya da SMTP yeni açılıyorsa) şifre yeniden yazılır
-        $smtpChanged = $smtpNow === null || $v['smtp_host'] !== (string) ($smtpNow['host'] ?? '') || $port !== (int) ($smtpNow['port'] ?? 465)
-            || $v['smtp_secure'] !== (string) ($smtpNow['secure'] ?? 'ssl') || $v['smtp_user'] !== (string) ($smtpNow['user'] ?? '');
+        // Karşılaştırma panelde kayıtlı bilgiyle yapılır: yapılandırma dosyasından gelen bilgi ve şifre panele taşınmaz, şifre yeniden yazılır
+        $smtpChanged = $smtpPanel === null || $v['smtp_host'] !== $smtpPanel['host'] || $port !== $smtpPanel['port']
+            || $v['smtp_secure'] !== $smtpPanel['secure'] || $v['smtp_user'] !== $smtpPanel['user'];
         if ($smtpChanged && $newPass === '' && $v['smtp_user'] !== '') $errors[] = 'SMTP sunucusu, portu, güvenlik türü ya da kullanıcı adı değiştiğinde şifreyi yeniden yazın.';
     }
 
@@ -132,13 +142,19 @@ if ($method === 'POST' && ($rest[0] ?? '') === '') {
         $s['mail']['to'] = $v['mail_to'];
         $s['mail']['from'] = $v['mail_from'];
         $s['mail']['from_name'] = $v['mail_from_name'];
-        $s['mail']['smtp'] = $v['smtp_on'] ? [
-            'host'   => $v['smtp_host'],
-            'port'   => $port,
-            'secure' => $v['smtp_secure'],
-            'user'   => $v['smtp_user'],
-            'pass'   => $newPass !== '' ? $newPass : $storedPass,
-        ] : null;
+        if ($v['smtp_mode'] === 'panel') {
+            $s['mail']['smtp'] = [
+                'host'   => $v['smtp_host'],
+                'port'   => $port,
+                'secure' => $v['smtp_secure'],
+                'user'   => $v['smtp_user'],
+                'pass'   => $newPass !== '' ? $newPass : $storedPass,
+            ];
+        } elseif ($v['smtp_mode'] === 'kapali') {
+            $s['mail']['smtp'] = null;       // açıkça kapalı: yerel dosyadaki SMTP de yok sayılır
+        } else {
+            unset($s['mail']['smtp']);       // seçim yok: yapılandırma dosyası ne diyorsa o; içerik deposuna SMTP bilgisi ve şifre yazılmaz
+        }
         if (content_put('settings', $s)) {
             adm_flash('Ayarlar kaydedildi.');
             adm_go('ayarlar');
@@ -152,6 +168,10 @@ $t = fn(string $k, string $label, array $o = []) => ui_text($k, $label, $v[$k], 
 
 $waHref = $v['whatsapp'] !== '' ? 'https://wa.me/' . rawurlencode($v['whatsapp']) : '#';
 $statusNow = $smtpNow ? 'SMTP ile (' . $smtpNow['host'] . ')' : 'sunucunun e-posta fonksiyonu';
+$smtpWhere = ['miras' => 'Kaynak: yapılandırma dosyası (storage/config.local.php); panelde SMTP için bir seçim kaydedilmemiş.', 'panel' => 'Kaynak: panelde kayıtlı SMTP ayarları.',
+    'kapali' => 'Kaynak: panelde SMTP kapatılmış; yapılandırma dosyasında SMTP ayarı olsa bile kullanılmaz.'][$smtpMode];
+$smtpModes = ['miras' => 'Yapılandırma dosyasından (panelde ayar yok)', 'panel' => 'Panelde ayarla', 'kapali' => 'Kapalı: sunucunun kendi e-posta fonksiyonu'];
+$smtpInh   = $smtpSt['inherited'];
 
 ob_start();
 if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong> ' . implode(' ', array_map('e', $errors)));
@@ -200,7 +220,7 @@ if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong> ' . implode(' ', arr
     ?>
 
     <?= ui_card('E-posta', implode('', [
-        '<p class="ay__status">' . ui_icon($smtpNow ? 'check-circle' : 'envelope-simple') . '<span>Şu an: <strong>' . e($statusNow) . '</strong> gönderiliyor.</span></p>',
+        '<p class="ay__status">' . ui_icon($smtpNow ? 'check-circle' : 'envelope-simple') . '<span>Şu an: <strong>' . e($statusNow) . '</strong> gönderiliyor. ' . e($smtpWhere) . '</span></p>',
         '<div class="grid2">',
         $t('mail_to', 'Bildirimlerin gideceği adres', ['type' => 'email', 'required' => true, 'maxlength' => 120, 'help' => 'Sitedeki formlar doldurulunca haber veren e-posta buraya gelir.']),
         $t('mail_from', 'Gönderen adres', ['type' => 'email', 'required' => true, 'maxlength' => 120, 'help' => 'Sitenin kendi alan adından bir adres olmalı (örneğin noreply@siteniz.com); aksi halde iletiler spam sayılabilir.']),
@@ -208,8 +228,9 @@ if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong> ' . implode(' ', arr
         $t('mail_from_name', 'Gönderen adı', ['required' => true, 'maxlength' => 80, 'help' => 'Bildirimlerde gönderen olarak görünür.']),
         ui_toggle('store', 'Form kayıtlarını panelde de sakla', $v['store'], ['help' => 'Açıkken her form gönderimi "Form kayıtları" bölümünde de durur; e-posta ulaşmasa bile kayıp olmaz. İş başvuruları bu seçimden bağımsız olarak her zaman saklanır.']),
         '<div class="ay__smtp">',
-        ui_toggle('smtp_on', 'SMTP ile gönder', $v['smtp_on'], ['help' => 'E-postalar daha güvenilir ulaşır. Bilgileri e-posta hizmetinizden (barındırma firmanız) alabilirsiniz. Kapalıyken sunucunun kendi e-posta fonksiyonu kullanılır.']),
-        '<div class="ay__smtp-fields" data-smtp-fields' . ($v['smtp_on'] ? '' : ' hidden') . '>',
+        ui_select('smtp_mode', 'SMTP (e-postayı hesabınızla gönderme)', $smtpModes, $v['smtp_mode'], ['help' => 'SMTP ile e-postalar daha güvenilir ulaşır; bilgileri e-posta hizmetinizden (barındırma firmanız) alabilirsiniz. “Yapılandırma dosyasından” seçiliyken sunucudaki storage/config.local.php ne diyorsa o geçerlidir ve şifre hiçbir zaman panele ya da içerik deposuna kopyalanmaz.']),
+        '<p class="fld__help" data-smtp-inherit' . ($v['smtp_mode'] === 'miras' ? '' : ' hidden') . '>' . ($smtpInh ? 'Yapılandırma dosyasındaki ayar: <strong>' . e($smtpInh['host'] . ':' . $smtpInh['port']) . '</strong>, ' . e($smtpInh['secure']) . ($smtpInh['user'] !== '' ? ', kullanıcı ' . e($smtpInh['user']) : '') . '. Şifre dosyada kalır; burada gösterilmez.' : 'Yapılandırma dosyasında SMTP ayarı yok; sunucunun kendi e-posta fonksiyonu kullanılır.') . '</p>',
+        '<div class="ay__smtp-fields" data-smtp-fields' . ($v['smtp_mode'] === 'panel' ? '' : ' hidden') . '>',
         '<div class="grid2">',
         $t('smtp_host', 'Sunucu', ['maxlength' => 120, 'placeholder' => 'mail.siteniz.com', 'autocomplete' => 'off']),
         $t('smtp_port', 'Port', ['maxlength' => 5, 'inputmode' => 'numeric', 'autocomplete' => 'off']),
@@ -217,7 +238,7 @@ if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong> ' . implode(' ', arr
         ui_select('smtp_secure', 'Güvenlik', $secures, $v['smtp_secure'], ['help' => 'Bilmiyorsanız SSL ve 465 genellikle çalışır.']),
         '<div class="grid2">',
         $t('smtp_user', 'Kullanıcı adı', ['maxlength' => 160, 'autocomplete' => 'off', 'help' => 'Çoğunlukla tam e-posta adresidir.']),
-        ui_text('smtp_pass', 'Şifre', '', ['type' => 'password', 'maxlength' => 200, 'autocomplete' => 'new-password', 'placeholder' => $storedPass !== '' ? 'Kayıtlı şifre korunuyor' : '', 'help' => $storedPass !== '' ? 'Değiştirmek istemiyorsanız boş bırakın.' : '']),
+        ui_text('smtp_pass', 'Şifre', '', ['type' => 'password', 'maxlength' => 200, 'autocomplete' => 'new-password', 'placeholder' => $storedPass !== '' ? 'Kayıtlı şifre korunuyor' : '', 'help' => ($storedPass !== '' ? 'Değiştirmek istemiyorsanız boş bırakın. ' : '') . 'Panelden yazdığınız şifre sitenin içerik deposunda (storage/content/settings.json) düz metin olarak durur; yedek dosyasına ve değişiklik geçmişi sürümlerine girmez (geçmiş sürümlerinden silinir). Önceki bir sürüme ya da yedeğe dönerseniz, bağlantı bilgisi aynıysa şu anki şifre korunur; değilse SMTP ayarı geri yüklenmez ve şifreyi yeniden yazmanız gerekir. Daha güvenlisi, şifreyi sunucudaki storage/config.local.php dosyasına yazıp yukarıda “Yapılandırma dosyasından”ı seçmektir.']),
         '</div>',
         '</div></div>',
     ]), ['id' => 'eposta', 'desc' => 'Sitedeki formlardan gelen iletilerin nereye ve nasıl gideceği.']) ?>
@@ -231,8 +252,8 @@ if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong> ' . implode(' ', arr
 </div>
 <script>
 (function () {
-  var t = document.getElementById('f-smtp-on'), box = document.querySelector('[data-smtp-fields]');
-  if (t && box) t.addEventListener('change', function () { box.hidden = !t.checked; });
+  var t = document.getElementById('f-smtp-mode'), box = document.querySelector('[data-smtp-fields]'), inh = document.querySelector('[data-smtp-inherit]');
+  if (t && box) t.addEventListener('change', function () { box.hidden = t.value !== 'panel'; if (inh) inh.hidden = t.value !== 'miras'; });
   var wa = document.getElementById('f-whatsapp'), a = document.querySelector('[data-wa-try]');
   if (wa && a) wa.addEventListener('input', function () {
     var n = wa.value.replace(/[\s+\-()]+/g, '');
