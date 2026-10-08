@@ -5,7 +5,7 @@
 .vz-cols { margin-top: 20px; align-items: start; }
 
 /* Grafik: tek seri; sütunlar panel lacivertinin bir açık tonu, eksen ve çizgiler geri planda */
-.vz-chart { --vz: #2c5aa0; position: relative; border-radius: var(--r); }
+.vz-chart { --vz: var(--pen); position: relative; border-radius: var(--r); }
 .vz-chart:focus-visible { outline: 2px solid var(--navy); outline-offset: 4px; }
 .vz-chart svg { display: block; width: 100%; height: auto; }
 .vz-grid { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
@@ -15,11 +15,11 @@
 .vz-bar.is-on { fill: var(--navy-d); }
 .vz-hit { fill: transparent; }
 .vz-tip {
-  position: absolute; z-index: 2; display: grid; gap: 1px; padding: 8px 11px; border-radius: 9px; pointer-events: none; white-space: nowrap;
-  background: var(--ink); color: #fff; font-size: 12.5px; box-shadow: 0 10px 24px -12px rgba(12, 24, 48, .6);
+  position: absolute; z-index: 2; display: grid; gap: 1px; padding: 8px 11px; border-radius: var(--r); pointer-events: none; white-space: nowrap;
+  background: var(--ink); color: var(--paper); font-size: 12.5px; box-shadow: 0 10px 24px -12px rgba(12, 24, 48, .6);
 }
 .vz-tip strong { font-size: 14px; font-weight: 650; }
-.vz-tip__d, .vz-tip__v { color: #b9c4d8; }
+.vz-tip__d, .vz-tip__v { color: var(--side-ink); }
 
 .vz-details { font-size: 13.5px; }
 .vz-details summary { cursor: pointer; color: var(--navy); font-weight: 550; width: max-content; }
@@ -34,13 +34,13 @@
 .vz-rank__l small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); }
 .vz-rank__n { font-variant-numeric: tabular-nums; font-weight: 600; }
 .vz-rank__bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--navy-soft); overflow: hidden; }
-.vz-rank__bar i { display: block; height: 100%; border-radius: 0 3px 3px 0; background: #2c5aa0; }
+.vz-rank__bar i { display: block; height: 100%; border-radius: 0 3px 3px 0; background: var(--pen); }
 
 .vz-note { display: flex; gap: 10px; align-items: flex-start; margin-top: 20px; font-size: 13px; color: var(--muted); max-width: 90ch; }
-.vz-note .i { margin-top: 1px; color: #a0aabb; }
+.vz-note .i { margin-top: 1px; color: var(--ink-3); }
 
 /* Genel bakıştaki ziyaretçi kartı */
 .vz-mini { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .vz-mini div { display: grid; gap: 2px; }
-.vz-mini b { font: 650 26px/1.1 var(--fd); letter-spacing: -.02em; }
+.vz-mini b { font: 800 30px/1.1 var(--fd); font-stretch: 70%;  }
 .vz-mini span { font-size: 12.5px; color: var(--muted); }

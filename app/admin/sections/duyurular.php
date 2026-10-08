@@ -47,7 +47,7 @@ if ($id === null) {
             . '<span class="list__side">' . $badges . '<span class="list__go">' . ui_icon('caret-right') . '</span></span></a>';
     }
     $body = '<div class="chips">' . $chips . '</div>'
-        . ($rows ? '<div class="list" style="margin:0 -22px -22px;border-top:1px solid var(--line)">' . $rows . '</div>'
+        . ($rows ? '<div class="list" style="border-top:1px solid var(--line)">' . $rows . '</div>'
                  : '<div class="empty">' . ui_icon('megaphone') . '<strong>Bu filtrede duyuru yok</strong><a class="btn btn--soft btn--sm" href="' . adm_url('duyurular/yeni') . '">Yeni duyuru</a></div>');
     adm_layout('Duyurular', ui_card('', $body), [
         'section'  => 'duyurular',
@@ -130,7 +130,7 @@ if ($errors) echo ui_alert(e(implode(' ', $errors)));
   </aside>
 </form>
 <?php if (!$isNew): ?>
-  <?= ui_card('Duyuruyu sil', '<form method="post" action="' . adm_url('duyurular/' . $a['id'] . '/sil') . '" data-confirm="Bu duyuru kalıcı olarak silinsin mi?">' . adm_csrf_field() . '<p class="muted" style="margin-bottom:12px">Duyuru sitedeki takvimden ve listelerden kalkar. Yanlışlıkla silerseniz Geçmiş bölümünden geri alabilirsiniz.</p><button class="btn btn--danger btn--sm" type="submit">' . ui_icon('trash') . 'Duyuruyu sil</button></form>', ['class' => 'card--danger']) ?>
+  <?= ui_card('Duyuruyu sil', '<form method="post" action="' . adm_url('duyurular/' . $a['id'] . '/sil') . '" data-confirm="Bu duyuru kalıcı olarak silinsin mi?" data-confirm-detail="Duyuru sitedeki takvimden ve listelerden kalkar. Yanlışlıkla silerseniz Geçmiş bölümünden geri alabilirsiniz.">' . adm_csrf_field() . '<p class="muted" style="margin-bottom:12px">Duyuru sitedeki takvimden ve listelerden kalkar. Yanlışlıkla silerseniz Geçmiş bölümünden geri alabilirsiniz.</p><button class="btn btn--danger btn--sm" type="submit">' . ui_icon('trash') . 'Duyuruyu sil</button></form>', ['class' => 'card--danger']) ?>
 <?php endif; ?>
 <?php
 adm_layout($isNew ? 'Yeni duyuru' : 'Duyuruyu düzenle', (string) ob_get_clean(), [

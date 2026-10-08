@@ -3,12 +3,12 @@
 .ay > .alert { margin: 0; }
 .ay__form { display: grid; gap: 20px; }
 .ay .card[id] { scroll-margin-top: 96px; }
-.ay__nav { position: sticky; top: 72px; z-index: 5; padding: 8px 0; background: var(--bg, #f4f6f9); }
+.ay__nav { position: sticky; top: 72px; z-index: 5; padding: 8px 0; background: var(--bg, var(--paper)); }
 .ay__try { font-weight: 600; color: var(--navy); white-space: nowrap; }
-.ay__status { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 12px; background: var(--navy-soft); color: var(--navy); font-size: 14px; }
+.ay__status { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: var(--r); background: var(--navy-soft); color: var(--navy); font-size: 14px; }
 .ay__status .i { width: 20px; height: 20px; flex: none; }
 .ay__smtp { display: grid; gap: 16px; padding-top: 18px; border-top: 1px solid var(--line); }
-.ay__smtp-fields { display: grid; gap: 18px; padding: 18px; border-radius: 12px; background: var(--raised); border: 1px solid var(--line); }
+.ay__smtp-fields { display: grid; gap: 18px; padding: 18px; border-radius: var(--r); background: var(--raised); border: 1px solid var(--line); }
 .ay__smtp-fields[hidden] { display: none; }
 .ay__test { display: grid; gap: 14px; }
 
@@ -22,9 +22,9 @@
 /* Güvenlik ve yedek */
 .ay__block { display: grid; gap: 14px; }
 .ay__block + .ay__block { padding-top: 22px; border-top: 1px solid var(--line); }
-.ay__block h3 { font: 650 15px/1.3 var(--fd); }
+.ay__block h3 { font: 800 18px/1.3 var(--fd); font-stretch: 70%; text-transform: uppercase; }
 .ay__row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .ay__file { max-width: 460px; }
-.ay__file::file-selector-button { margin-right: 12px; border: 0; border-radius: 8px; padding: 6px 12px; background: var(--navy-soft); color: var(--navy); font: 600 13px var(--fb, inherit); cursor: pointer; }
+.ay__file::file-selector-button { margin-right: 12px; border: 0; border-radius: var(--r); padding: 6px 12px; background: var(--navy-soft); color: var(--navy); font: 600 13px var(--fb, inherit); cursor: pointer; }
 .ay__meta { color: var(--muted); font-size: 13.5px; }
 @media (max-width: 760px) { .ay__nav { top: 60px; } }

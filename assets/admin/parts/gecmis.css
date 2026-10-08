@@ -25,6 +25,6 @@
 .hx-diff tbody th { text-align: left; font-weight: 600; padding: 11px 14px; vertical-align: top; border-top: 1px solid var(--line); }
 .hx-diff td { padding: 11px 14px; vertical-align: top; border-top: 1px solid var(--line); border-left: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; }
 .hx-diff tbody tr:first-child th, .hx-diff tbody tr:first-child td { border-top: 0; }
-.hx-diff td.is-old { background: #fdf6f5; color: var(--text-2); }
-.hx-diff td.is-new { background: #f4faf6; }
+.hx-diff td.is-old { background: var(--red-soft); color: var(--text-2); }
+.hx-diff td.is-new { background: var(--ok-soft); }
 .hx-none { color: var(--muted); font-style: italic; }

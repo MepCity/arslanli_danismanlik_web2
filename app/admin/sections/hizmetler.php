@@ -232,9 +232,19 @@ if ($errors) echo ui_alert('<strong>Kaydedilemedi.</strong><ul class="errs"><li>
   if (sel && sw) sel.addEventListener('change', function () { sw.style.setProperty('--c', sel.options[sel.selectedIndex].getAttribute('data-hex')); });
   var ta = document.getElementById('f-law-text'), ack = f.querySelector('[data-law-ack]');
   var orig = <?= json_encode(trim($origLaw), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;
+  var soru = 'Mevzuat alıntısı değişiyor.\n\nBu metin resmî mevzuattan birebir alıntıdır. Değişikliği kanunun güncel metniyle karşılaştırdınız mı? Kaydetmek için Tamam\'a basın.';
   f.addEventListener('submit', function (e) {
-    if (orig !== '' && ta && ta.value.trim() !== orig) {
-      if (window.confirm('Mevzuat alıntısı değişiyor.\n\nBu metin resmî mevzuattan birebir alıntıdır. Değişikliği kanunun güncel metniyle karşılaştırdınız mı? Kaydetmek için Tamam\'a basın.')) ack.value = '1'; else e.preventDefault();
+    if (orig !== '' && ta && ta.value.trim() !== orig && !f.__lawOk) {
+      // Biçimli onay penceresi (admin.js); yoksa ya da açılamazsa yerel onay sorulur. Onaylanırsa aynı gönderici ve alanlarla yeniden gönderilir.
+      if (window.admAsk) {
+        e.preventDefault();
+        var sb = e.submitter || null;
+        window.admAsk(soru, { opener: sb, title: 'Mevzuat alıntısı değişiyor. Kanunun güncel metniyle karşılaştırdınız mı?', detail: 'Bu metin resmî mevzuattan birebir alıntıdır.', yes: 'Evet, kaydet', danger: false }).then(function (ok) {
+          if (!ok) return;
+          ack.value = '1'; f.__lawOk = true;
+          try { if (f.requestSubmit) f.requestSubmit(sb || undefined); else f.submit(); } finally { f.__lawOk = false; }
+        });
+      } else if (window.confirm(soru)) ack.value = '1'; else e.preventDefault();
     }
   });
 })();

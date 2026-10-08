@@ -461,10 +461,10 @@ function ui_rich(string $name, string $label, string $html, array $o = []): stri
         ['link', 'Bağlantı ekle', '↗'], ['clear', 'Biçimi temizle', '⌫'],
     ];
     $bar = '';
-    foreach ($tools as [$cmd, $tip, $txt]) $bar .= '<button type="button" class="rt__btn" data-rt="' . $cmd . '" title="' . e($tip) . '" aria-label="' . e($tip) . '">' . $txt . '</button>';
+    foreach ($tools as [$cmd, $tip, $txt]) $bar .= '<button type="button" class="rt__btn" data-rt="' . $cmd . '" title="' . e($tip) . '" aria-label="' . e(in_array($cmd, ['h2', 'h3', 'ol'], true) ? strip_tags($txt) . ' ' . $tip : $tip) . '">' . $txt . '</button>';   // görünen yazı erişilebilir adın içinde yer alır
     return '<div class="fld"><p class="fld__label">' . e($label) . '</p>'
         . '<div class="rt" data-rt-wrap><div class="rt__bar" role="toolbar" aria-label="Metin biçimlendirme">' . $bar . '</div>'
-        . '<div class="rt__area prose-admin" contenteditable="true" role="textbox" aria-multiline="true" data-rt-area>' . $html . '</div>'
+        . '<div class="rt__area prose-admin" contenteditable="true" role="textbox" aria-multiline="true" aria-label="' . e($label) . '" data-rt-area>' . $html . '</div>'
         . '<textarea name="' . e($name) . '" hidden data-rt-out>' . e($html) . '</textarea></div>'
         . (!empty($o['help']) ? '<p class="fld__help">' . $o['help'] . '</p>' : '') . '</div>';
 }
@@ -474,7 +474,9 @@ function ui_card(string $title, string $body, array $o = []): string
 {
     $desc = !empty($o['desc']) ? '<p class="card__desc">' . $o['desc'] . '</p>' : '';
     $act  = $o['actions'] ?? '';
-    return '<section class="card' . (!empty($o['class']) ? ' ' . $o['class'] : '') . '"' . (!empty($o['id']) ? ' id="' . e($o['id']) . '"' : '') . '>'
+    // Başlığı zaten kendi numarasıyla başlayan karta ("1. Sekme başlığı") otomatik folyo numarası basılmaz
+    $nonum = preg_match('/^\s*\d+[.)]/u', $title) ? ' card--nonum' : '';
+    return '<section class="card' . $nonum . (!empty($o['class']) ? ' ' . $o['class'] : '') . '"' . (!empty($o['id']) ? ' id="' . e($o['id']) . '"' : '') . '>'
         . ($title !== '' ? '<header class="card__head"><div><h2 class="card__title">' . e($title) . '</h2>' . $desc . '</div>' . $act . '</header>' : '')
         . '<div class="card__body">' . $body . '</div></section>';
 }

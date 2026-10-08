@@ -1,28 +1,28 @@
 /* Görünürlük bölümü */
 .vis { display: grid; gap: 20px; }
-.vis__group { font: 650 15px/1.2 var(--fd); color: var(--text-2); margin: 10px 2px -6px; letter-spacing: -.01em; }
+.vis__group { font: 800 18px/1.2 var(--fd); font-stretch: 70%; text-transform: uppercase; color: var(--text-2); margin: 10px 2px -6px; letter-spacing: .005em; }
 .vis__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 @media (max-width: 1100px) { .vis__grid { grid-template-columns: 1fr; } }
 .vis__foot { display: flex; justify-content: flex-end; }
 
 .vis-card .card__body { display: grid; gap: 14px; }
 .vis-card__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; }
-.vis-card__ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--navy-soft); color: var(--navy); transition: background-color .25s, color .25s; }
+.vis-card__ic { width: 42px; height: 42px; border-radius: var(--r); display: grid; place-items: center; background: var(--navy-soft); color: var(--navy); transition: background-color .25s, color .25s; }
 .vis-card__ic .i { width: 21px; height: 21px; }
 .vis-card__t { display: grid; gap: 4px; justify-items: start; }
-.vis-card__t h3 { font: 650 17px/1.2 var(--fd); letter-spacing: -.01em; }
+.vis-card__t h3 { font: 800 20px/1.2 var(--fd); font-stretch: 70%; text-transform: uppercase; letter-spacing: .005em; }
 .vis-card__off { display: none; }
 .vis-card.is-off .vis-card__on { display: none; }
 .vis-card.is-off .vis-card__off { display: inline-flex; }
-.vis-card.is-off .vis-card__ic { background: #eef1f5; color: #98a2b3; }
-.vis-card.is-off .vis-card__where { opacity: .55; }
+.vis-card.is-off .vis-card__ic { background: var(--paper-2); color: var(--ink-3); }
+.vis-card.is-off .vis-card__where li { color: var(--ink-3); text-decoration: line-through; }
 .vis-card__tgl { align-self: center; }
 .vis-card__label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .vis-card__where { display: grid; gap: 7px; margin-top: -6px; transition: opacity .25s; }
 .vis-card__where li { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; color: var(--text-2); }
 .vis-card__where .i { width: 16px; height: 16px; margin-top: 2px; color: var(--ok); }
-.vis-card.is-off .vis-card__where .i { color: #98a2b3; }
-.vis-card__note { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; color: var(--text-2); background: var(--raised); border-radius: 10px; padding: 10px 12px; }
+.vis-card.is-off .vis-card__where .i { color: var(--ink-3); }
+.vis-card__note { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; color: var(--text-2); background: var(--raised); border-radius: var(--r); padding: 10px 12px; }
 .vis-card__note .i { width: 16px; height: 16px; margin-top: 2px; color: var(--muted); }
 .vis-card.is-off .vis-card__note { background: var(--warn-soft); color: var(--warn); }
 .vis-card.is-off .vis-card__note .i { color: var(--warn); }
@@ -30,8 +30,8 @@
 .vis-card__links { display: flex; gap: 8px; margin-left: auto; }
 
 /* Menü önizlemesi: sitenin üst çubuğunun küçük bir kopyası */
-.vis-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; padding: 14px 18px; border-radius: 12px; background: var(--ink); color: #e9edf4; font-size: 14px; }
+.vis-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; padding: 14px 18px; border-radius: var(--r); background: var(--ink); color: var(--paper); font-size: 14px; }
 .vis-nav__i { transition: opacity .25s, max-width .3s; white-space: nowrap; }
-.vis-nav__i.is-off { opacity: .28; text-decoration: line-through; }
-.vis-nav__cta { margin-left: auto; padding: 6px 14px; border-radius: 999px; background: var(--coral); color: var(--ink); font-weight: 600; font-size: 13px; }
+.vis-nav__i.is-off { opacity: .6; text-decoration: line-through; }
+.vis-nav__cta { margin-left: auto; padding: 6px 14px; border-radius: var(--r); background: var(--hl); color: var(--ink); font-weight: 600; font-size: 13px; }
 @media (max-width: 560px) { .vis-nav__cta { margin-left: 0; } .vis-card__head { grid-template-columns: auto minmax(0, 1fr); } .vis-card__tgl { grid-column: 1 / -1; } }

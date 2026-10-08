@@ -89,6 +89,9 @@ if (!$bare) {
     if (!isset($pending['ilanlar'])) foreach (ilan_all() as $x) $palette[] = ['t' => $x['title'], 'k' => 'İş ilanı', 'u' => adm_url('ilanlar/' . $x['id'])];
 }
 $unread = $bare ? [] : adm_unread();
+// Sayfa başlığının üstündeki "Bölüm 05 · İçerik" satırı: bölümün menüdeki sırası ve grubu
+$folioNo = 0; $folioGroup = ''; $_n = 0;
+foreach ($nav as [$_g, $_items]) { foreach ($_items as $_it) { $_n++; if ($_it[0] === $section) { $folioNo = $_n; $folioGroup = $_g; } } }
 ?><!doctype html>
 <html lang="tr">
 <head>
@@ -97,7 +100,6 @@ $unread = $bare ? [] : adm_unread();
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($title) ?> · Yönetim · <?= e(cfg('short_name') ?: cfg('name')) ?></title>
 <link rel="icon" href="<?= url('assets/img/favicon.png') ?>">
-<link rel="stylesheet" href="<?= asset('admin/fonts.css') ?>">
 <link rel="stylesheet" href="<?= asset('admin/admin.css') ?>">
 <?php foreach (glob(ROOT . '/assets/admin/parts/*.css') ?: [] as $_css): ?><link rel="stylesheet" href="<?= asset('admin/parts/' . basename($_css)) ?>">
 <?php endforeach; ?>
@@ -114,15 +116,16 @@ $unread = $bare ? [] : adm_unread();
       <span>Yönetim</span>
     </a>
     <nav class="side__nav">
-      <?php foreach ($nav as [$group, $items]): ?>
+      <?php $folio = 0; foreach ($nav as [$group, $items]): ?>
         <div class="side__group">
           <?php if ($group !== ''): ?><p class="side__label"><?= e($group) ?></p><?php endif; ?>
           <?php foreach ($items as [$key, $path, $label, $ic]):
+              $folio++;
               $badge = $unread[$key] ?? 0;
               $off   = isset($sectionFeature[$key]) && !feature($sectionFeature[$key]); ?>
             <a class="side__link<?= $section === $key ? ' is-on' : '' ?>" href="<?= adm_url($path) ?>"<?= $section === $key ? ' aria-current="page"' : '' ?>>
-              <?= ui_icon($ic) ?><span><?= e($label) ?></span>
-              <?php if ($badge): ?><em class="side__badge" title="<?= $badge ?> yeni kayıt"><?= $badge > 99 ? '99+' : $badge ?></em><?php elseif ($off): ?><em class="side__off" title="Sitede kapalı">Kapalı</em><?php endif; ?>
+              <span class="side__no" aria-hidden="true"><?= sprintf('%02d', $folio) ?></span><span><?= e($label) ?></span>
+              <?php if ($badge): ?><em class="side__badge" title="<?= $badge ?> yeni kayıt"><?= $badge > 99 ? '99+' : $badge ?><span class="sr"> yeni kayıt</span></em><?php elseif ($off): ?><em class="side__off" title="Sitede kapalı">Kapalı</em><?php endif; ?>
             </a>
           <?php endforeach; ?>
         </div>
@@ -143,19 +146,23 @@ $unread = $bare ? [] : adm_unread();
           <nav class="crumbs" aria-label="Konum">
             <?php foreach ($o['crumbs'] as [$cl, $cu]): ?><a href="<?= e($cu) ?>"><?= e($cl) ?></a><?= ui_icon('caret-right') ?><?php endforeach; ?>
           </nav>
+        <?php elseif ($folioNo): ?>
+          <p class="top__folio"><i>Bölüm</i> <b><?= sprintf('%02d', $folioNo) ?></b><?= $folioGroup !== '' ? ' · ' . e($folioGroup) : '' ?></p>
         <?php endif; ?>
         <h1 class="top__title"><?= e($title) ?></h1>
         <?php if (!empty($o['subtitle'])): ?><p class="top__sub"><?= $o['subtitle'] ?></p><?php endif; ?>
       </div>
       <div class="top__actions">
         <?= $o['actions'] ?? '' ?>
-        <button class="top__search" type="button" data-palette-open aria-label="Panelde ara">
-          <?= ui_icon('magnifying-glass') ?><span>Ara</span><kbd>⌘K</kbd>
+        <button class="top__search" type="button" data-palette-open aria-label="Ara" aria-keyshortcuts="Meta+K Control+K">
+          <?= ui_icon('magnifying-glass') ?><span>Ara</span><kbd class="kbd-cmd" aria-hidden="true"></kbd>
         </button>
       </div>
     </header>
 
-    <main class="content<?= !empty($o['wide']) ? ' content--wide' : '' ?>" id="main" tabindex="-1">
+    <?php // Kart folyo numarası ("01 ...") yalnızca üstten alta tek sütun dizilen, kartları hep aynı olan ve en az iki kartı bulunan sayfalarda basılır; bkz. admin.css ".content--fol"
+      $folioSections = ['ayarlar', 'seo', 'yasal', 'kurumsal', 'guvenlik', 'mcp']; ?>
+    <main class="content<?= !empty($o['wide']) ? ' content--wide' : '' ?><?= in_array($section, $folioSections, true) && substr_count((string) $content, 'class="card__title"') >= 2 ? ' content--fol' : '' ?>" id="main" tabindex="-1">
       <?php if (isset($sectionFeature[$section]) && !feature($sectionFeature[$section])): ?>
         <div class="alert alert--off" role="status"><?= ui_icon('eye-slash') ?><div><strong><?= e($featureNames[$sectionFeature[$section]]) ?> şu an sitede kapalı.</strong> Ziyaretçiler bu bölümü görmüyor; buradaki içeriği hazırlamaya devam edebilirsiniz. <a href="<?= adm_url('gorunurluk') ?>">Görünürlük ayarından açın</a></div></div>
       <?php endif; ?>
@@ -184,8 +191,9 @@ $unread = $bare ? [] : adm_unread();
 <?php endif; ?>
 
 <?php if ($flash): ?>
-  <div class="toast toast--<?= e($flash[1]) ?>" role="status" data-toast><?= ui_icon($flash[1] === 'err' ? 'warning-circle' : 'check-circle') ?><span><?= e($flash[0]) ?></span></div>
+  <div class="toast toast--<?= e($flash[1]) ?>" role="status" data-toast><?= ui_icon($flash[1] === 'err' ? 'warning-circle' : 'check-circle') ?><span><?= e($flash[0]) ?></span><button class="toast__x" type="button" data-toast-x aria-label="Bildirimi kapat">×</button></div>
 <?php endif; ?>
+<script>/* admin.js yüklenemezse silme ve geri alma onayları yine yerel pencereyle sorulur */document.addEventListener('submit', function (e) { if (window.admAsk) return; var m = e.target.getAttribute && e.target.getAttribute('data-confirm'); if (m && !window.confirm(m)) e.preventDefault(); });</script>
 <script src="<?= asset('admin/admin.js') ?>" defer></script>
 </body>
 </html>

@@ -121,10 +121,10 @@ foreach ($rows as $r) {
 $search = '<form method="get" action="' . adm_url('kayitlar') . '" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">'
     . '<div class="chips">' . $chips . '</div>'
     . ($tur ? '<input type="hidden" name="tur" value="' . e($tur) . '">' : '')
-    . '<div style="display:flex;gap:8px"><input class="inp" type="search" name="q" value="' . e($q) . '" placeholder="İsim, e-posta, il ara" style="min-height:34px;width:220px"><button class="btn btn--ghost btn--sm" type="submit">' . ui_icon('magnifying-glass') . 'Ara</button></div></form>';
+    . '<div style="display:flex;gap:8px;flex-wrap:wrap"><input class="inp" type="search" name="q" value="' . e($q) . '" placeholder="İsim, e-posta, il ara" style="min-height:36px;width:min(220px,100%)"><button class="btn btn--ghost btn--sm" type="submit">' . ui_icon('magnifying-glass') . 'Ara</button></div></form>';
 
 $body = $search . ($rows
-    ? '<div class="tbl-wrap" style="margin:0 -22px -22px;border-top:1px solid var(--line)"><table class="tbl"><thead><tr><th>Tarih</th><th>Form</th>' . ($isSus ? '<th>Neden şüpheli</th>' : '') . '<th>' . implode('</th><th>', array_map('e', array_keys($shown))) . '</th><th><span class="sr">' . ($isSus ? 'İşlemler' : 'Sil') . '</span></th></tr></thead><tbody>' . $tbl . '</tbody></table></div>'
+    ? '<div class="tbl-wrap" style="border-top:1px solid var(--line)"><table class="tbl"><thead><tr><th>Tarih</th><th>Form</th>' . ($isSus ? '<th>Neden şüpheli</th>' : '') . '<th>' . implode('</th><th>', array_map('e', array_keys($shown))) . '</th><th><span class="sr">' . ($isSus ? 'İşlemler' : 'Sil') . '</span></th></tr></thead><tbody>' . $tbl . '</tbody></table></div>'
     : '<div class="empty">' . ui_icon('tray') . '<strong>' . ($q ? 'Aramanızla eşleşen kayıt yok' : ($isSus ? 'Şüpheli kayıt yok' : 'Henüz kayıt yok')) . '</strong></div>');
 
 adm_layout('Form kayıtları', ui_card('', $body), [

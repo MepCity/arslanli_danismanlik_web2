@@ -1,11 +1,11 @@
 /* Sayfa metinleri */
 .txs { display: flex; gap: 8px; align-items: center; }
 .txs__box { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); color: var(--muted); box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s; }
-.txs__box:hover { border-color: #b7c1d0; }
-.txs__box:focus-within { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(24, 61, 114, .14); color: var(--navy); }
+.txs__box:hover { border-color: var(--ink-2); }
+.txs__box:focus-within { border-color: var(--navy); outline: 2.5px solid var(--pen); outline-offset: 1px; color: var(--navy); }
 .txs__box .i { width: 19px; height: 19px; flex: none; }
 .txs__in { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 15px; color: var(--text); }
-.txs__in::placeholder { color: #8f9aae; }
+.txs__in::placeholder { color: var(--ink-3); }
 .txs__in::-webkit-search-cancel-button { display: none; }
 .txs .btn { height: 46px; padding: 0 20px; }
 
@@ -18,21 +18,21 @@
 
 /* Sol liste */
 .txn { position: sticky; top: 96px; display: grid; gap: 2px; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--shadow); max-height: calc(100vh - 120px); overflow-y: auto; }
-.txn__item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 7px 10px; border-radius: 8px; color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 520; transition: background-color .15s, color .15s; }
-.txn__item .i { width: 18px; height: 18px; flex: none; color: #8793a8; }
+.txn__item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 7px 10px; border-radius: var(--r); color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 520; transition: background-color .15s, color .15s; }
+.txn__item .i { width: 18px; height: 18px; flex: none; color: var(--ink-3); }
 .txn__item:hover { background: var(--raised); color: var(--text); }
 .txn__item.is-on { background: var(--navy-soft); color: var(--navy); font-weight: 620; }
 .txn__item.is-on .i { color: var(--navy); }
 .txn__name { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
-.txn__n { flex: none; font-style: normal; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; background: var(--coral-soft); color: #b5473b; white-space: nowrap; }
+.txn__n { flex: none; font-style: normal; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: var(--r); background: var(--coral-soft); color: var(--red); white-space: nowrap; }
 
 /* Grup başlığı */
 .txg { display: flex; align-items: center; gap: 14px; padding: 2px 2px 0; }
-.txg__ic { width: 44px; height: 44px; border-radius: 12px; background: var(--ink); color: #fff; display: grid; place-items: center; flex: none; }
+.txg__ic { width: 44px; height: 44px; border-radius: var(--r); background: var(--ink); color: var(--paper); display: grid; place-items: center; flex: none; }
 .txg__ic .i { width: 22px; height: 22px; }
-.txg__t { font: 650 20px/1.2 var(--fd); letter-spacing: -.015em; }
+.txg__t { font: 800 24px/1.2 var(--fd); font-stretch: 70%; text-transform: uppercase; letter-spacing: .005em; }
 .txg__m { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
-.txg__m b { color: #b5473b; font-weight: 650; }
+.txg__m b { color: var(--red); font-weight: 650; }
 .txt__count { color: var(--muted); font-size: 14px; }
 .txt__count strong { color: var(--text); }
 .txt__more { color: var(--muted); font-size: 13.5px; text-align: center; }
@@ -50,7 +50,7 @@
 .txf.is-changed .txf__tools { display: inline-flex; }
 .txf__reset { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); border-radius: 999px; font: inherit; font-size: 12.5px; font-weight: 560; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
 .txf__reset .i { width: 14px; height: 14px; }
-.txf__reset:hover { background: var(--navy-soft); border-color: #c5d2e8; color: var(--navy); }
+.txf__reset:hover { background: var(--navy-soft); border-color: var(--pen); color: var(--navy); }
 .txf__ctx { font-size: 12.5px; color: var(--muted); margin-top: -3px; }
 .txf__help { font-size: 12.5px; color: var(--muted); }
 .txf .fld { display: block; }
@@ -70,7 +70,7 @@
   .txt { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .txn { position: static; display: flex; gap: 6px; max-height: none; overflow-x: auto; overflow-y: hidden; padding: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .txn::-webkit-scrollbar { display: none; }
-  .txn__item { flex: none; white-space: nowrap; min-height: 36px; padding: 5px 12px; border-radius: 999px; }
+  .txn__item { flex: none; white-space: nowrap; min-height: 36px; padding: 5px 12px; border-radius: var(--r); }
   .txn__name { flex: none; }
 }
 @media (max-width: 560px) {
@@ -84,27 +84,27 @@
 }
 
 /* Grup listesindeki metin sayısı */
-.txn__c { flex: none; min-width: 24px; text-align: right; font-size: 12px; font-weight: 600; color: #8793a8; font-variant-numeric: tabular-nums; }
+.txn__c { flex: none; min-width: 24px; text-align: right; font-size: 12px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .txn__item.is-on .txn__c { color: var(--navy); }
 
 /* Alan: tür ve sınır sayacı, biçim ve yer tutucu düğmeleri, hata */
 .txf__meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-top: -2px; }
 .txf__type { letter-spacing: .02em; }
 .txf__cnt { font-variant-numeric: tabular-nums; }
-.txf__cnt.is-over { color: #b5473b; font-weight: 650; }
+.txf__cnt.is-over { color: var(--red); font-weight: 650; }
 .txf__bar, .txf__vars { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .txf__barl { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 2px; }
-.txf__fmt, .txf__var { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 560; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
-.txf__fmt:hover, .txf__var:hover { background: var(--navy-soft); border-color: #c5d2e8; color: var(--navy); }
-.txf__fmt--red { color: #b5473b; }
-.txf__fmt--mark { background-image: linear-gradient(transparent 55%, #fde68a 55%); }
+.txf__fmt, .txf__var { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); border-radius: var(--r); font: inherit; font-size: 12.5px; font-weight: 560; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
+.txf__fmt:hover, .txf__var:hover { background: var(--navy-soft); border-color: var(--pen); color: var(--navy); }
+.txf__fmt--red { color: var(--red); }
+.txf__fmt--mark { background-image: linear-gradient(transparent 55%, var(--hl) 55%); }
 .txf__var { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .txf__var small { font-size: 11.5px; font-weight: 500; color: var(--muted); }
-.txf__var.is-need { border-color: #c5d2e8; background: var(--navy-soft); }
-.txf__err { margin: 0; padding: 8px 12px; border-radius: var(--r); background: var(--coral-soft); color: #9a3a2f; font-size: 13px; line-height: 1.45; }
+.txf__var.is-need { border-color: var(--pen); background: var(--navy-soft); }
+.txf__err { margin: 0; padding: 8px 12px; border-radius: var(--r); background: var(--coral-soft); color: var(--red); font-size: 13px; line-height: 1.45; }
 .txf__err[hidden] { display: none; }
-.txf.has-error .inp { border-color: #d9695a; box-shadow: 0 0 0 3px rgba(217, 105, 90, .15); }
-.txf.has-error::before { opacity: 1; background: #d9695a; }
+.txf.has-error .inp { border-color: var(--red); box-shadow: 0 0 0 3px rgba(176, 47, 30, .2); }
+.txf.has-error::before { opacity: 1; background: var(--red); }
 
 @media (max-width: 560px) {
   .txf__var small { display: none; }

@@ -50,7 +50,7 @@ if ($id === null) {
             . '<span class="list__side">' . $stateBadge($x) . '<span class="badge' . ($apps ? ' badge--coral' : '') . '">' . $apps . ' başvuru</span><span class="list__go">' . ui_icon('caret-right') . '</span></span></a>';
     }
     $body = '<div class="chips">' . $chips . '</div>'
-        . ($rows ? '<div class="list" style="margin:0 -22px -22px;border-top:1px solid var(--line)">' . $rows . '</div>'
+        . ($rows ? '<div class="list" style="border-top:1px solid var(--line)">' . $rows . '</div>'
                  : '<div class="empty">' . ui_icon('file-text') . '<strong>' . ($n[''] ? 'Bu filtrede ilan yok' : 'Henüz iş ilanı yok') . '</strong><span>' . ($n[''] ? '' : 'İlan açtığınızda Kariyer sayfasında "Açık pozisyonlar" olarak görünür. Genel başvuru formu ilan olmasa da çalışmaya devam eder.') . '</span><a class="btn btn--soft btn--sm" href="' . adm_url('ilanlar/yeni') . '">Yeni ilan ekle</a></div>');
     adm_layout('İş ilanları', ui_card('', $body), [
         'section'  => 'ilanlar',

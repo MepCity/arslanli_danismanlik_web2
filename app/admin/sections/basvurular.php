@@ -139,7 +139,7 @@ foreach ($rows as $r) {
     $items .= '<div class="list__row" style="align-items:start"><div class="list__main">'
         . '<span class="list__meta"><span>' . e(date('d.m.Y H:i', $t)) . '</span>' . ($iid === '' && !empty($d['pozisyon']) ? '<span>' . e($d['pozisyon']) . '</span>' : '') . '</span>'
         . '<span class="list__title" style="font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">' . e(trim(($d['ad'] ?? '') . ' ' . ($d['soyad'] ?? ''))) . $badges . $where . '</span>'
-        . '<span class="list__meta"><a href="mailto:' . e($d['email'] ?? '') . '">' . e($d['email'] ?? '') . '</a><a href="tel:' . e(preg_replace('/\s+/', '', (string) ($d['telefon'] ?? ''))) . '">' . e($d['telefon'] ?? '') . '</a>' . ($meta ? '<span>' . implode(' · ', $meta) . '</span>' : '') . '</span>'
+        . '<span class="list__meta"><a href="mailto:' . e($d['email'] ?? '') . '">' . e($d['email'] ?? '') . '</a>' . (($d['telefon'] ?? '') !== '' ? '<a href="tel:' . e(preg_replace('/\s+/', '', (string) ($d['telefon'] ?? ''))) . '">' . e($d['telefon'] ?? '') . '</a>' : '') . ($meta ? '<span>' . implode(' · ', $meta) . '</span>' : '') . '</span>'
         . (!empty($d['mesaj']) ? '<details style="margin-top:6px"><summary style="cursor:pointer;color:var(--navy);font-size:13.5px">Ön yazıyı göster</summary><p style="margin-top:6px;max-width:70ch;color:var(--text-2)">' . nl2br(e($d['mesaj'])) . '</p></details>' : '')
         . ($why ? '<ul class="spam-why" aria-label="Neden şüpheli">' . $why . '</ul>' : '')
         . '</div><div class="list__side">' . $cv . $rel . $del . '</div></div>';

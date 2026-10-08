@@ -469,6 +469,7 @@ if ($tab === 'ayarlar') {
 <script>
 <?= $probeJs ?>
 document.addEventListener('click', function (e) {
+  if (window.admAsk) return;   // admin.js yüklüyse onayı biçimli pencere sorar; yüklenmediyse yerel onay çalışır
   var b = e.target.closest('[data-confirm-btn]');
   if (b && !window.confirm(b.getAttribute('data-confirm-btn'))) e.preventDefault();
 });

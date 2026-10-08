@@ -573,13 +573,18 @@ if ($yaz !== null) {
       start.addEventListener('click', function () {
         var n = +bek.value;
         if (!n) return;
-        if (!window.confirm(nf.format(n) + ' aboneye e-posta gönderilecek. Gönderim başladıktan sonra metin ve alıcılar değiştirilemez. Başlatılsın mı?')) return;
-        var h = d.createElement('input');
-        h.type = 'hidden'; h.name = 'islem'; h.value = 'baslat';
-        form.appendChild(h);
-        sync();
-        if (form.requestSubmit) form.requestSubmit(); else { form.dispatchEvent(new Event('submit')); form.submit(); }
-        h.remove();
+        var soru = nf.format(n) + ' aboneye e-posta gönderilecek. Gönderim başladıktan sonra metin ve alıcılar değiştirilemez. Başlatılsın mı?';
+        var git = function () {
+          var h = d.createElement('input');
+          h.type = 'hidden'; h.name = 'islem'; h.value = 'baslat';
+          form.appendChild(h);
+          sync();
+          if (form.requestSubmit) form.requestSubmit(); else { form.dispatchEvent(new Event('submit')); form.submit(); }
+          h.remove();
+        };
+        // Biçimli onay penceresi (admin.js); yoksa ya da açılamazsa yerel onay sorulur
+        if (window.admAsk) window.admAsk(soru, { opener: start, title: nf.format(n) + ' aboneye e-posta gönderilsin mi?', detail: 'Gönderim başladıktan sonra metin ve alıcılar değiştirilemez.', yes: 'Gönderimi başlat', danger: true }).then(function (ok) { if (ok) git(); });
+        else if (window.confirm(soru)) git();
       });
     })();
     </script>

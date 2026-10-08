@@ -46,9 +46,9 @@ if (!adm_logged()) {
     $err = adm_flash();
     ob_start(); ?>
     <div class="login">
-      <div class="login__brand"><img src="<?= asset('admin/logo-light.webp') ?>" alt="<?= e(cfg('name')) ?>"><span>Yönetim paneli</span></div>
+      <div class="login__brand"><img src="<?= asset('img/logo.png') ?>" alt="<?= e(cfg('name')) ?>" width="150" height="54"><span>Yönetim</span></div>
       <form class="login__card" method="post" action="<?= adm_url('giris') ?>">
-        <span class="login__wave" aria-hidden="true"><?php for ($i = 0; $i < 18; $i++): ?><i style="--h:<?= round(0.25 + 0.75 * abs(sin($i * 0.8) * cos($i * 0.27)), 2) ?>;--i:<?= $i ?>"></i><?php endfor; ?></span>
+        <p class="login__bar" aria-hidden="true"><b>A</b>Yetkili girişi</p>
         <div>
           <h1>Tekrar hoş geldiniz</h1>
           <p>Sitenin içeriğini, duyuruları ve gelen başvuruları buradan yönetirsiniz.</p>

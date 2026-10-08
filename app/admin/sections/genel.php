@@ -134,7 +134,7 @@ ob_start(); ?>
             . '<span><span class="tl__title">' . e($ev['title']) . '</span><span class="tl__type"><i class="mk mk--' . e($ev['type']) . '"></i>' . e($ev['label']) . ($ev['kurum'] ? ' · ' . e($ev['kurum']) : '') . '</span></span>'
             . '<span class="badge' . ($left <= 7 ? ' badge--coral' : '') . '">' . $txt . '</span></a>';
     }
-    echo ui_card('Yaklaşan tarihler', $tl ? '<div class="tl" style="margin:-18px -22px -22px">' . $tl . '</div>' : '<div class="empty">' . ui_icon('calendar-blank') . '<strong>Yaklaşan bir tarih yok</strong><span>Duyurulara tarih eklediğinizde burada ve sitedeki takvimde görünür.</span><a class="btn btn--soft btn--sm" href="' . adm_url('duyurular/yeni') . '">Duyuru ekle</a></div>', [
+    echo ui_card('Yaklaşan tarihler', $tl ? '<div class="tl">' . $tl . '</div>' : '<div class="empty">' . ui_icon('calendar-blank') . '<strong>Yaklaşan bir tarih yok</strong><span>Duyurulara tarih eklediğinizde burada ve sitedeki takvimde görünür.</span><a class="btn btn--soft btn--sm" href="' . adm_url('duyurular/yeni') . '">Duyuru ekle</a></div>', [
         'desc'    => 'Sitedeki takvimde işaretli olan, bugünden sonraki tarihler.',
         'actions' => '<a class="btn btn--ghost btn--sm" href="' . adm_url('duyurular') . '">Tüm duyurular</a>',
     ]);
