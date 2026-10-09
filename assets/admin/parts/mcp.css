@@ -89,7 +89,7 @@
 .mx-tabs { margin: 0; }
 .mx-pane { display: grid; gap: 14px; animation: mx-in .3s var(--ease); }
 .mx-lead { color: var(--text-2); max-width: 74ch; text-wrap: pretty; }
-.mx-steps { display: grid; gap: 12px; counter-reset: s; max-width: 760px; }
+.mx-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; counter-reset: s; max-width: 760px; }
 .mx-steps > li { position: relative; counter-increment: s; padding-left: 40px; min-height: 28px; display: block; padding-top: 2px; }
 .mx-steps > li > .mx-inline, .mx-steps > li > .mx-code { margin-top: 8px; }
 .mx-steps > li::before {
@@ -101,7 +101,7 @@
 .mx-inline code { flex: 1; min-width: 0; display: flex; align-items: center; padding: 8px 12px; border-radius: var(--r); background: var(--raised); border: 1px solid var(--line); font-size: 13px; overflow-wrap: anywhere; word-break: break-all; }
 .mx-inline .btn { height: auto; }
 .mx-code { position: relative; border-radius: var(--r); background: var(--ink); color: var(--paper); min-width: 0; }
-.mx-code pre { margin: 0; padding: 16px 18px; padding-right: 110px; overflow-x: auto; font: 500 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; tab-size: 2; }
+.mx-code pre { margin: 0; padding: 16px 18px; padding-right: 110px; overflow-x: auto; font: 500 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
 .mx-code code { background: none; padding: 0; color: inherit; font: inherit; border-radius: 0; }
 .mx-code .mx-copy { position: absolute; right: 10px; top: 10px; background: rgba(255, 255, 255, .1); color: var(--paper); border-color: rgba(255, 255, 255, .16); }
 .mx-code .mx-copy:hover { background: rgba(255, 255, 255, .18); }
