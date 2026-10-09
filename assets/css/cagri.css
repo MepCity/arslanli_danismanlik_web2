@@ -173,6 +173,7 @@
 
 .cg__empty { padding: clamp(26px, 4vw, 52px) 0 6px; text-align: center; }
 .cg__empty .cg__stars { margin: 0 0 20px; }
+.cg__act { margin: 20px 0 0; }
 .cg__none { max-width: 52ch; margin: 0 auto 12px; font-family: var(--font-serif); font-size: var(--t-body); color: var(--ink-2); }
 
 /* ---------- Açılış: satırlar sırayla yerine oturur, damga basılır ---------- */

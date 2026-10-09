@@ -34,7 +34,7 @@ $groups = [
     ],
     'Ziyaretçiyle iletişim' => [
         ['bulten', 'Bülten (Haberdar ol)', 'envelope-simple',
-            ['Haberdar Ol sayfası (kupon)', 'Sağ kenardaki Bülten sekmesi ve kayıt penceresi', 'Altbilgideki "Bültene kayıt ol" bağlantısı', 'İletişim sayfasındaki "Sonraki evrak" kartı'],
+            ['Haberdar Ol sayfası (kupon)', 'Sağ kenardaki Bülten sekmesi ve kayıt penceresi', 'Altbilgideki "Haberdar ol" bağlantısı', 'İletişim sayfasındaki "Sonraki evrak" kartı'],
             'Haberdar Ol sayfası ve kayıt penceresi kalkar; yeni bülten kaydı alınmaz.',
             'kayitlar', 'haberdarol', ''],
         ['whatsapp', 'WhatsApp düğmesi', 'chat-circle',

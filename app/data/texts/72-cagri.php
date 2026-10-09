@@ -42,7 +42,7 @@ return [
             '5. Yaklaşan tarih yokken' => [
                 'cagri.bos.yildiz' => ['Boş çizelge işareti', '*** yaklaşan tarih yok ***', 'line', '', ['max' => 60]],
                 'cagri.bos.metin' => ['Boş çizelge açıklaması', 'Şu anda takvimde yaklaşan bir tarih görünmüyor. Yeni bir çağrı açıldığında başlangıç, son başvuru ve sonuç günleri bu çizelgeye işlenir.', 'text'],
-                'cagri.bos.bulten' => ['Bülten bağlantısı', 'Yeni çağrılardan haberdar olmak için bültene kayıt olun', 'line', 'Bülten bölümü açıksa görünür.', ['max' => 80]],
+                'cagri.bos.bulten' => ['Bülten düğmesi', 'Haberdar ol', 'line', 'Bülten bölümü açıksa görünür; tıklanınca kayıt penceresi açılır.', ['max' => 40]],
             ],
         ],
     ],

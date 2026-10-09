@@ -61,7 +61,7 @@ return [
                 'genel.footer.ek3' => ['Üçüncü ek: adres etiketi', 'Ek-3 · Adres', 'line', 'Adresin üstündeki küçük etiket.', ['max' => 40]],
                 'genel.footer.copyright' => ['Telif satırı', '© {kurulus}–{yil} {firma}', 'line', 'En altta, sol tarafta.', ['vars' => ['kurulus', 'yil', 'firma']]],
                 'genel.footer.nav_label' => ['Alt bağlantıların erişilebilirlik adı', 'Yasal', 'line', 'Görünmez; ekran okuyucular içindir.'],
-                'genel.footer.bulten' => ['Alt bağlantı: bültene kayıt', 'Bültene kayıt ol', 'line', 'Bülten bölümü açıksa en altta görünür.', ['max' => 40]],
+                'genel.footer.bulten' => ['Alt bağlantı: bültene kayıt', 'Haberdar ol', 'line', 'Bülten bölümü açıksa en altta görünür.', ['max' => 40]],
             ],
             '6. Kaşe' => [
                 'genel.kase.label' => ['Kaşenin erişilebilirlik açıklaması', 'Firma kaşesi: {firma}, {adres}, {vergi_dairesi} Vergi Dairesi {vergi_no}', 'text', 'Görünmez; ekran okuyucular içindir.', ['vars' => ['firma', 'adres', 'vergi_dairesi', 'vergi_no']]],

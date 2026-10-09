@@ -185,7 +185,7 @@ $forms = [
             'email'       => [t('formlar.alan.eposta'), 'required|email'],
         ],
     ],
-    // Bülten kaydı: her sayfadaki "Bültene kayıt ol" penceresi ve Haberdar Ol kuponu aynı formu gönderir
+    // Bülten kaydı: her sayfadaki "Haberdar ol" penceresi ve Haberdar Ol kuponu aynı formu gönderir
     'bulten' => [
         'subject' => 'Web sitesi: bülten kaydı',
         'fields'  => [

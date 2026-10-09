@@ -59,7 +59,7 @@ $i = 0;
           <div class="cg__empty">
             <p class="cg__stars" aria-hidden="true"><?= e(t('cagri.bos.yildiz')) ?></p>
             <p class="cg__none"><?= th('cagri.bos.metin') ?></p>
-            <?php if (feature('bulten')): ?><p class="cg__none"><a class="link" href="<?= url('haberdarol') ?>" data-nl-open><?= e(t('cagri.bos.bulten')) ?></a></p><?php endif; ?>
+            <?php if (feature('bulten')): ?><p class="cg__act"><a class="btn btn--ink" href="<?= url('haberdarol') ?>" data-nl-open><?= e(t('cagri.bos.bulten')) ?> <?= arrow() ?></a></p><?php endif; ?>
           </div>
         <?php else: ?>
           <?php foreach ($groups as $ym => $rows): ?>

@@ -11,7 +11,7 @@ return [
         'sections' => [
             '1. Sayfa kenarındaki sekme' => [
                 'bulten.sekme.bolge' => ['Kenardaki bülten sekmesini saran bölgenin adı', 'Bülten kaydı', 'line', 'Görünmez; ekran okuyucular içindir (sayfa bölgeleri listesinde görünür).', ['max' => 40]],
-                'bulten.sekme.metin' => ['Sekmenin yazısı', 'Bültene kayıt ol', 'line', 'Sayfanın sağ kenarında dikey durur; tıklanınca kayıt penceresi açılır. Bülten bölümü Görünürlük ayarından kapatılırsa görünmez.', ['max' => 40]],
+                'bulten.sekme.metin' => ['Sekmenin yazısı', 'Haberdar ol', 'line', 'Sayfanın sağ kenarında dikey durur; tıklanınca kayıt penceresi açılır. Bülten bölümü Görünürlük ayarından kapatılırsa görünmez.', ['max' => 40]],
             ],
             '2. Pencerenin üst şeridi' => [
                 'bulten.pencere.form' => ['Form numarası', 'Form: [kalın]ARS-B/01[/kalın]', 'rich', 'Resmî form görünümü için. Kalın yazılan kısım form kodudur.', ['max' => 40]],
@@ -45,7 +45,7 @@ return [
                 'bulten.onay.etk' => ['Ticari elektronik ileti onayı', '{firma} tarafından e-posta, SMS ve telefon yoluyla bilgilendirme ve ticari elektronik ileti gönderilmesine onay veriyorum. Onayımı dilediğim zaman geri alabilirim.', 'text', 'Hukuki bir onay metnidir; değiştirmeden önce hukuk danışmanınıza sorun.', ['vars' => ['firma'], 'need' => ['firma']]],
             ],
             '6. Gönderme' => [
-                'bulten.form.gonder' => ['Gönder düğmesi', 'Bültene kayıt ol', 'line', '', ['max' => 40]],
+                'bulten.form.gonder' => ['Gönder düğmesi', 'Haberdar ol', 'line', '', ['max' => 40]],
             ],
             '7. Kayıt alındı ekranı' => [
                 'bulten.tamam.baslik' => ['Büyük başlık', 'Kaydınız alındı.', 'line', '', ['max' => 40]],

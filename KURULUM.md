@@ -19,7 +19,7 @@ Her sayfa bu dünyadan farklı bir nesneyle çalışır:
 | Duyurular | `/duyurular` | İlan panosu: panoya iğnelenmiş ilan kâğıtları, köşede “kaç gün kaldı” damgası, çağrı takvimi, resmî kaynak bağlantısı ve takvime ekleme (`/duyurular.ics`) |
 | Açılış duyurusu | tüm sayfalar (öne çıkan duyuru varsa) | Masaya düşen acele evrak: geri sayımlı pencere; kapatılınca sol altta küçük bir etiket kalır |
 | İletişim | `/iletisim` | Boşlukları doldurulan dilekçe; gönderilince “ALINDI” kaşesi |
-| Haberdar Ol | `/haberdarol` | Dergi kuponu (bülten kaydı). Her sayfanın sağ kenarındaki “Bültene kayıt ol” sekmesi de aynı formu açar |
+| Haberdar Ol | `/haberdarol` | Dergi kuponu (bülten kaydı). Her sayfanın sağ kenarındaki “Haberdar ol” sekmesi de aynı formu açar |
 | Kariyer | `/kariyer` | Özlük dosyası: açık pozisyonlar (“kadro talep fişi”) ve genel başvuru formu; gönderilince “DOSYAYA EKLENDİ” kaşesi |
 | İş ilanı | `/kariyer/{ilan-adresi}` | Tek bir pozisyonun fişi ve kendi başvuru formu |
 | Hesap Numaralarımız | `/hesap-numaralarimiz` | POS fişi gibi basılan dekontlar |
