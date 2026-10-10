@@ -110,6 +110,7 @@ function ilan_save_all(array $items): bool
     if ($prev !== null && $prev === $json) {
         return true;   // içerik aynı: yeni sürüm ve günlük kaydı oluşmaz
     }
+    content_guard_check('ilanlar');   // panel sayfası açıldıktan sonra değişmişse ContentConflict atar; hiçbir şey yazılmamıştır
     // Geçmiş: önceki hal saklanır (ilk kayıtta "-0000" ekiyle, hiç silinmeyen özgün hal)
     $rev = null;
     if (defined('CONTENT_DIR')) {
@@ -133,6 +134,7 @@ function ilan_save_all(array $items): bool
         return false;
     }
     ilan_cache(null, true);
+    content_guard_wrote('ilanlar');
     if ($rev !== null && function_exists('changelog_record')) {
         changelog_record('ilanlar', $rev, $prev !== null ? (json_decode($prev, true) ?: []) : [], $items);
     }

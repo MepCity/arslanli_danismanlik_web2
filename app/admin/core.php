@@ -44,8 +44,46 @@ function adm_logged(): bool
         && is_string($_SESSION['pw'] ?? null) && hash_equals(adm_pw_mark(), $_SESSION['pw']);
 }
 function adm_csrf(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(16)); }
-function adm_csrf_field(): string { return '<input type="hidden" name="_csrf" value="' . e(adm_csrf()) . '">'; }
+/** CSRF alanı ve içerik depolarının damgaları (iyimser kilit: bkz. content_guard_* ve adm_conflict_message). Her panel formu bunu taşır. */
+function adm_csrf_field(): string
+{
+    $st = content_guard_field();
+    return '<input type="hidden" name="_csrf" value="' . e(adm_csrf()) . '">' . ($st !== '' ? '<input type="hidden" name="_stamps" value="' . e($st) . '">' : '');
+}
 function adm_csrf_ok(): bool { return is_string($_POST['_csrf'] ?? null) && hash_equals(adm_csrf(), $_POST['_csrf']); }
+
+/** Formdan gelen damga haritası; gelmediyse ya da bozuksa null. */
+function adm_posted_stamps(): ?array
+{
+    $raw = $_POST['_stamps'] ?? null;
+    $d = is_string($raw) ? json_decode($raw, true) : null;
+    return is_array($d) ? $d : null;
+}
+
+/**
+ * Kayıt çakışmasının bildirimi: sayfa açıldıktan sonra o depoyu kimin ne zaman değiştirdiği değişiklik günlüğündeki son kayıttan okunur.
+ */
+function adm_conflict_message(ContentConflict $e): string
+{
+    $tail = ' Değişikliğin kaybolmaması için sayfa yenilendi; lütfen düzenlemenizi yeniden yapıp kaydedin.';
+    if ($e->noStamp) {
+        return 'Bu sayfa güncel olmayabilir (sayfa sürüm bilgisi gelmedi), bu yüzden kayıt yapılmadı.' . $tail;
+    }
+    $label = changelog_sections()[$e->key][0] ?? $e->key;
+    $by = '';
+    $log = changelog_log();
+    for ($i = count($log) - 1; $i >= 0; $i--) {
+        if (($log[$i]['key'] ?? '') !== $e->key) continue;
+        $w = (array) ($log[$i]['who'] ?? []);
+        $type = (string) ($w['type'] ?? '');
+        $who = $type === 'mcp' ? 'yapay zekâ erişimi: ' . ($w['name'] ?? '') . (($w['client'] ?? '') !== '' ? ' (' . $w['client'] . ')' : '')
+             : ($type === 'panel' ? 'başka bir panel oturumu' : '');
+        $ts = strtotime((string) ($log[$i]['t'] ?? ''));
+        $by = ' (' . $label . ($who !== '' ? ', ' . $who : '') . ($ts ? ', saat ' . date('H:i', $ts) : '') . ')';
+        break;
+    }
+    return 'Bu sayfayı açtığınızdan beri başka bir değişiklik yapılmış' . ($by !== '' ? $by : ' (' . $label . ')') . '.' . $tail;
+}
 
 /** Bir sonraki sayfada gösterilecek bildirim. */
 function adm_flash(?string $msg = null, string $kind = 'ok'): ?array

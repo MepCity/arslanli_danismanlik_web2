@@ -84,6 +84,7 @@ if ($method === 'POST') {
             adm_flash('Değişiklik yok; kayıt oluşturulmadı.');
             adm_go('referanslar/' . $cur['id']);
         }
+        content_guard_require(['refs']);   // sayfa açıldıktan sonra referanslar değiştiyse logo işlenmeden reddedilir (iyimser kilit)
         $r = ref_upsert($cur['id'] ?? null, $ref['name'], $logo, $mode);
         if ($r['ok']) {
             adm_flash($isNew ? 'Referans eklendi; kaşe görünümü logodan üretildi.' : 'Referans kaydedildi.');

@@ -76,6 +76,7 @@ function ann_save_all_locked(array $items): bool
     if ($prev === $json) {
         return true;   // içerik aynı (ya da varsayılanla aynı): yeni sürüm ve günlük kaydı oluşmaz, dosya açılmaz
     }
+    content_guard_check('duyurular');   // panel sayfası açıldıktan sonra değişmişse ContentConflict atar; hiçbir şey yazılmamıştır
     // Geçmiş: önceki hal saklanır (ilk kayıtta "-0000" ekiyle, hiç silinmeyen özgün hal)
     $hdir = CONTENT_DIR . '/_history/duyurular';
     if (!is_dir($hdir)) {
@@ -93,6 +94,7 @@ function ann_save_all_locked(array $items): bool
         @unlink($tmp);
         return false;
     }
+    content_guard_wrote('duyurular');
     if (function_exists('changelog_record')) {
         changelog_record('duyurular', $rev, json_decode($prev, true) ?: [], $items);
     }

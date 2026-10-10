@@ -71,6 +71,161 @@ function content_lock(callable $fn)
     }
 }
 
+/* ---------- İyimser kilit: panel sayfası açıldıktan sonra içerik değiştiyse kayıt eskiyle ezmesin ---------- */
+
+/**
+ * Panel sayfası çizilirken her içerik deposunun "damgası" forma gizli alan olarak girer (adm_csrf_field). Damga, deponun
+ * dosya içeriğinin kısa özetidir (mtime değil: saniye çözünürlüğü yetmez); dosya yoksa "-". Panel bir kayıt isteği yaptığında
+ * (content_guard_arm), yazma kilidi altında, yazılacak deponun damgası dosyanın şimdiki damgasıyla karşılaştırılır: farklıysa
+ * sayfa açıldıktan sonra başkası (yapay zekâ erişimi ya da başka bir panel oturumu) o depoyu değiştirmiştir; hiçbir şey yazılmaz,
+ * ContentConflict atılır. Yalnızca yazılan depo denetlenir: başka bir depodaki değişiklik kaydı engellemez.
+ * Panel dışı çağıranlar (yapay zekâ erişimi, bakım) denetimi hiç açmaz; geri yükleme bilinçli üzerine yazmadır (content_guard_off).
+ */
+class ContentConflict extends Exception
+{
+    public string $key;
+    public bool $noStamp;
+    public function __construct(string $key, bool $noStamp = false)
+    {
+        parent::__construct('İçerik, sayfa açıldıktan sonra değişti: ' . $key);
+        $this->key = $key;
+        $this->noStamp = $noStamp;
+    }
+}
+
+/** Damgalı depolar. */
+function content_stamp_keys(): array
+{
+    return ['duyurular', 'ilanlar', 'services', 'posts', 'refs', 'lists', 'texts', 'legal', 'features', 'settings', 'seo'];
+}
+
+function content_stamp_file(string $key): ?string
+{
+    if ($key === 'duyurular' || $key === 'ilanlar') {
+        return ROOT . '/storage/' . $key . '.json';
+    }
+    return in_array($key, content_stamp_keys(), true) ? CONTENT_DIR . '/' . $key . '.json' : null;
+}
+
+/** Bir deponun şimdiki damgası (dosya yoksa "-"). */
+function content_stamp(string $key): string
+{
+    $f = content_stamp_file($key);
+    $h = false;
+    if ($f !== null) {
+        clearstatcache(true, $f);
+        $h = is_file($f) ? @sha1_file($f) : false;
+    }
+    return $h ? substr($h, 0, 12) : '-';
+}
+
+function &content_guard_state(): array
+{
+    static $g = ['armed' => false, 'posted' => null, 'off' => 0, 'cur' => null];
+    return $g;
+}
+
+/** Sayfa açılış görüntüsü: panel isteğinin başında, içerik okunmadan önce alınır (okuma sonradan olursa en kötü yanlış alarm çıkar, kayıp çıkmaz). */
+function content_guard_snapshot(): void
+{
+    $g = &content_guard_state();
+    if ($g['cur'] === null) {
+        $g['cur'] = [];
+        foreach (content_stamp_keys() as $k) {
+            $g['cur'][$k] = content_stamp($k);
+        }
+    }
+}
+
+/**
+ * Bu istekte yazma denetimini açar. $posted: formdan gelen damga haritası (anahtar => damga); gelmediyse null (eski sayfa ya da betik:
+ * içerik yazmaya kalkarsa reddedilir). Kayıt reddedilmeden sayfa aynı istekte yeniden çizilirse (doğrulama hatası) forma gelen damgalar korunur.
+ */
+function content_guard_arm(?array $posted): void
+{
+    content_guard_snapshot();
+    $g = &content_guard_state();
+    $g['armed'] = true;
+    $clean = null;
+    if ($posted !== null) {
+        $clean = [];
+        foreach ($posted as $k => $v) {
+            if (is_string($k) && is_string($v) && isset($g['cur'][$k]) && preg_match('/^(-|[a-f0-9]{12})$/', $v)) {
+                $clean[$k] = $v;
+                $g['cur'][$k] = $v;
+            }
+        }
+    }
+    $g['posted'] = $clean;
+}
+
+/** Forma girecek damga haritası (JSON). Panel dışında boş. */
+function content_guard_field(): string
+{
+    $g = &content_guard_state();
+    return $g['cur'] === null ? '' : (string) json_encode($g['cur']);
+}
+
+/** Yazma kilidi altında çağrılır: yazılacak deponun damgası sayfadakiyle uyuşmuyorsa ContentConflict atar. */
+function content_guard_check(string $key): void
+{
+    $g = &content_guard_state();
+    if (!$g['armed'] || $g['off'] > 0 || content_stamp_file($key) === null) {
+        return;
+    }
+    $was = is_array($g['posted']) ? ($g['posted'][$key] ?? null) : null;
+    if (!is_string($was) || $was !== content_stamp($key)) {
+        throw new ContentConflict($key, !is_string($was));
+    }
+}
+
+/** Başarılı yazımdan sonra: aynı istekte sayfa yeniden çizilirse ya da aynı depoya yeniden yazılırsa yeni damga geçerli olur. */
+function content_guard_wrote(string $key): void
+{
+    $g = &content_guard_state();
+    if (!$g['armed'] || content_stamp_file($key) === null) {
+        return;
+    }
+    $s = content_stamp($key);
+    $g['cur'][$key] = $s;
+    if (is_array($g['posted'])) {
+        $g['posted'][$key] = $s;
+    }
+}
+
+/**
+ * Denetimsiz çalıştırır: geri yükleme gibi bilinçli üzerine yazmalar ve kullanıcının düzenlemediği, güncel durumdan türetilen
+ * yan yazımlar (silinen hizmeti hedef eşleştiricisinden çıkarmak) için.
+ * @return mixed
+ */
+function content_guard_off(callable $fn)
+{
+    $g = &content_guard_state();
+    $g['off']++;
+    try {
+        return $fn();
+    } finally {
+        $g['off']--;
+    }
+}
+
+/**
+ * Yüklemeye ya da başka işe girişmeden önce erken denetim (dosya yüklenip sonra reddedilmesin). Yazma anındaki denetim yine de yapılır.
+ * @param string[] $keys
+ */
+function content_guard_require(array $keys): void
+{
+    $g = &content_guard_state();
+    if (!$g['armed'] || $g['off'] > 0) {
+        return;
+    }
+    content_lock(function () use ($keys) {
+        foreach ($keys as $k) {
+            content_guard_check($k);
+        }
+    });
+}
+
 function content_get(string $key, $default = null)
 {
     $cache = &content_cache();
@@ -120,6 +275,7 @@ function content_put_locked(string $key, $value): bool
     if ($prev !== null && $prev === $json) {
         return true;   // içerik aynı: yeni sürüm ve günlük kaydı oluşmaz
     }
+    content_guard_check($key);   // panel sayfası açıldıktan sonra değişmişse ContentConflict atar; hiçbir şey yazılmamıştır
     if ($prev !== null) {
         $rev = content_rev_id($hdir);
         if ($key === 'settings') {
@@ -145,6 +301,7 @@ function content_put_locked(string $key, $value): bool
     }
     $cache = &content_cache();
     $cache[$key] = json_decode($json, true);
+    content_guard_wrote($key);
     if (function_exists('changelog_record')) {
         changelog_record($key, $rev, $before, $cache[$key]);   // kim, neyi değiştirdi (Değişiklik geçmişi)
     }
@@ -796,7 +953,7 @@ function service_delete(string $slug): array
     if (!services_save($all)) {
         return ['ok' => false, 'errors' => ['Silinemedi: storage klasörü yazılabilir mi?']];
     }
-    goals_forget_service($slug);
+    content_guard_off(fn() => goals_forget_service($slug));   // kullanıcının düzenlemediği, güncel durumdan türeyen yan yazım: panel damgasına bağlı değil
     return ['ok' => true, 'errors' => []];
 }
 

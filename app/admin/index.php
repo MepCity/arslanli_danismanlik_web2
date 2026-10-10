@@ -70,6 +70,7 @@ if (!adm_logged()) {
 }
 
 $_SESSION['until'] = time() + 8 * 3600;
+content_guard_snapshot();   // sayfa açılış görüntüsü (iyimser kilit): içerik okunmadan önce alınır
 actor(['type' => 'panel', 'name' => 'Yönetim paneli']);   // bu istekteki değişiklikler geçmişe "panelden" diye yazılır
 
 /* ---------- Çıkış ---------- */
@@ -125,4 +126,17 @@ if (!$file || !is_file($file) || isset(adm_pending_sections()[$map[$section] ?? 
     adm_flash('Bu bölüm henüz hazır değil.', 'err');
     adm_go();
 }
-require $file;
+// Panelden gelen her kayıt isteği iyimser kilitle denetlenir: sayfa açıldıktan sonra yazılan depo değiştiyse hiçbir şey yazılmaz,
+// bildirim gösterilir ve kullanıcı aynı sayfaya (taze verilerle) döner. Yedek yükleme ve geçmişten geri alma bilinçli üzerine yazmadır (restore_store).
+if ($method === 'POST') {
+    content_guard_arm(adm_posted_stamps());
+}
+$obLevel = ob_get_level();
+try {
+    require $file;
+} catch (ContentConflict $conflict) {
+    while (ob_get_level() > $obLevel) ob_end_clean();
+    adm_flash(adm_conflict_message($conflict), 'err');
+    $back = preg_replace('#/(sil|kaldir|sirala)$#', '', $sub);   // yalnızca POST ile çalışan eylem adreslerinden listeye/sayfaya dön
+    adm_go((string) $back);
+}

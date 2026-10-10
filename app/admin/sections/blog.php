@@ -118,6 +118,7 @@ if ($method === 'POST') {
         if (isset($all[$target])) $errors[] = 'Bu sayfa adresi başka bir yazıda kullanılıyor; farklı bir adres yazın.';
     }
     if (!$errors) {
+        content_guard_require(['posts']);   // sayfa açıldıktan sonra yazılar değiştiyse görsel yüklenmeden reddedilir (iyimser kilit)
         if (post_bool('image_remove')) $post['image'] = '';
         $up = $_FILES['image'] ?? null;
         if (is_array($up) && ($up['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {

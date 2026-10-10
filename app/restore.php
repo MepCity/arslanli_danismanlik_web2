@@ -648,6 +648,13 @@ function restore_clean(string $key, $data, array &$rep)
  */
 function restore_store(string $key, $data, bool $history = false, array $opt = []): bool
 {
+    // Geri yükleme (yedekten ya da geçmişten) bilinçli üzerine yazmadır: panelin iyimser kilidi (content_guard_check) burada işlemez.
+    // Üzerine yazılan hal yine sürüm kopyası ve günlükle saklanır; geçmişten geri alınabilir.
+    return content_guard_off(fn() => restore_store_run($key, $data, $history, $opt));
+}
+
+function restore_store_run(string $key, $data, bool $history, array $opt): bool
+{
     $rep = ['key' => $key, 'dropped' => [], 'notes' => [], 'error' => null, 'history' => $history] + $opt;
     $ok = false;
     if ($key === 'duyurular') {
