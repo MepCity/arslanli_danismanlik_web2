@@ -24,11 +24,51 @@ declare(strict_types=1);
 
 const CONTENT_DIR = ROOT . '/storage/content';
 const CONTENT_HISTORY_KEEP = 25;
+const CONTENT_HISTORY_MIN_DAYS = 7;      // bu kadar günden yeni sürümler sayı sınırından bağımsız korunur (bkz. content_history_prune)
+const CONTENT_HISTORY_HARD_MAX = 200;    // her durumda bir bölümde bundan fazla sürüm tutulmaz (disk dolmasın)
+const CONTENT_HISTORY_BURST = 600;       // aynı kişinin bu kadar saniyeden kısa aralıklı yazımları tek "seri" sayılır
 
 function &content_cache(): array
 {
     static $cache = [];
     return $cache;
+}
+
+/**
+ * Yazma kilidi (yeniden girişli): panelin ve yapay zekâ erişiminin içerik yazımları tek kilitten geçer. Kilit alınınca içerik
+ * önbelleği boşaltılır; böylece işlem, istek başında okunmuş eski bir kopyayı değil, o anki dosyaları görür (eşzamanlı bir değişiklik ezilmez).
+ * İç içe çağrıda (ör. yazma aracı içinde content_put) kilit yeniden alınmaz; kendi kendini kilitlemez.
+ * @return mixed
+ */
+function content_lock(callable $fn)
+{
+    static $depth = 0;
+    if ($depth > 0) {
+        $depth++;
+        try {
+            return $fn();
+        } finally {
+            $depth--;
+        }
+    }
+    if (!is_dir(CONTENT_DIR) && !@mkdir(CONTENT_DIR, 0755, true) && !is_dir(CONTENT_DIR)) {
+        throw new RuntimeException('Yazma kilidi açılamadı.');
+    }
+    $lock = @fopen(CONTENT_DIR . '/.write.lock', 'c');
+    if (!$lock) {
+        throw new RuntimeException('Yazma kilidi açılamadı.');
+    }
+    flock($lock, LOCK_EX);
+    $depth = 1;
+    $cache = &content_cache();
+    $cache = [];   // kilit alındı: dosyalar başkası tarafından değişmiş olabilir
+    try {
+        return $fn();
+    } finally {
+        $depth = 0;
+        flock($lock, LOCK_UN);
+        fclose($lock);
+    }
 }
 
 function content_get(string $key, $default = null)
@@ -58,6 +98,15 @@ function content_put(string $key, $value): bool
     if (!preg_match('/^[a-z_]+$/', $key)) {
         return false;
     }
+    try {
+        return content_lock(fn() => content_put_locked($key, $value));   // panel ve yapay zekâ erişimi aynı kilitten geçer
+    } catch (RuntimeException $e) {
+        return false;
+    }
+}
+
+function content_put_locked(string $key, $value): bool
+{
     if (!is_dir(CONTENT_DIR) && !@mkdir(CONTENT_DIR, 0755, true)) {
         return false;
     }
@@ -80,11 +129,7 @@ function content_put(string $key, $value): bool
         } else {
             @copy($file, $hdir . '/' . $rev . '.json');
         }
-        $old = array_filter(glob($hdir . '/*.json') ?: [], fn($f) => !str_ends_with($f, '-0000.json'));
-        rsort($old);
-        foreach (array_slice($old, CONTENT_HISTORY_KEEP) as $f) {
-            @unlink($f);
-        }
+        content_history_prune($hdir, $key);
         $before = json_decode($prev, true);
     } else {
         // İlk kayıt: sitenin özgün hali "-0000" ekiyle saklanır ve hiç silinmez.
@@ -107,6 +152,65 @@ function content_put(string $key, $value): bool
         seo_changed($key);
     }
     return true;
+}
+
+/**
+ * Sürüm geçmişini budar. Yalnızca "son 25" kuralı olsaydı, silme yapan bir yazma anahtarı art arda 25 küçük yazımla silinen
+ * içeriği tutan sürümü dışarı itebilir, silme geri alınamaz hale gelirdi. Kural:
+ *  1. Sitenin ilk hali ("-0000") hiç silinmez.
+ *  2. En yeni CONTENT_HISTORY_KEEP (25) sürüm her zaman kalır.
+ *  3. Daha eski sürümler, CONTENT_HISTORY_MIN_DAYS (7) günden yeniyse sayı sınırından bağımsız kalır; ancak aynı kişinin
+ *     CONTENT_HISTORY_BURST (10 dk) içindeki ardışık yazımlarının ara sürümleri (serinin ilk sürümü kalır, o serinin başlamadan
+ *     önceki halidir) atılır. Böylece tek bir kişi kısa sürede çok sayıda yazım yaparak başka bir kişiye ait ya da seriden önceki
+ *     sürümleri dışarı itemez.
+ *  4. 7 günden eski sürümler sayı sınırının dışındaysa atılır; toplam her durumda CONTENT_HISTORY_HARD_MAX (200) ile sınırlıdır (en eskisi önce).
+ * Sürümü kimin yazdığı değişiklik günlüğünden (rev -> who) bilinir; günlükte olmayan sürümler "bilinmeyen kişi" sayılır ve ara sürüm sayılmaz.
+ */
+function content_history_prune(string $hdir, string $key): void
+{
+    $files = array_values(array_filter(glob($hdir . '/*.json') ?: [], fn($f) => !str_ends_with($f, '-0000.json')));
+    if (count($files) <= CONTENT_HISTORY_KEEP) {
+        return;
+    }
+    rsort($files);   // en yeni önce (adlar zaman damgasıyla başlar)
+    $who = [];
+    if (function_exists('changelog_log')) {
+        foreach (changelog_log() as $r) {
+            if ($r['key'] === $key && !empty($r['rev'])) {
+                $w = (array) ($r['who'] ?? []);
+                $who[(string) $r['rev']] = ($w['type'] ?? '') . '|' . ($w['name'] ?? '') . '|' . ($w['client'] ?? '');
+            }
+        }
+    }
+    $ts = function (string $f): int {
+        $d = DateTime::createFromFormat('Ymd-His', substr(basename($f), 0, 15));
+        return $d ? $d->getTimestamp() : 0;
+    };
+    $cut = time() - CONTENT_HISTORY_MIN_DAYS * 86400;
+    $keep = [];
+    $n = count($files);
+    foreach ($files as $i => $f) {
+        if ($i < CONTENT_HISTORY_KEEP) {
+            $keep[] = $f;
+            continue;
+        }
+        if ($ts($f) < $cut) {
+            @unlink($f);   // 7 günden eski ve ilk 25'in dışında
+            continue;
+        }
+        // $files[$i + 1] bir önceki (daha eski) sürümdür
+        $rev = basename($f, '.json');
+        $prev = $files[$i + 1] ?? null;
+        $prevRev = $prev !== null ? basename($prev, '.json') : null;
+        if ($prev !== null && isset($who[$rev], $who[$prevRev]) && $who[$rev] === $who[$prevRev] && $ts($f) - $ts($prev) < CONTENT_HISTORY_BURST) {
+            @unlink($f);   // aynı kişinin hemen önceki yazımından saniyeler sonraki ara sürüm
+            continue;
+        }
+        $keep[] = $f;
+    }
+    foreach (array_slice($keep, CONTENT_HISTORY_HARD_MAX) as $f) {   // $keep en yeniden eskiye sıralı
+        @unlink($f);
+    }
 }
 
 /**
@@ -1586,6 +1690,55 @@ function image_rules(string $dir): array
         'blog' => ['name' => 'Kapak görseli', 'min_w' => 800, 'min_h' => 450, 'ratio' => [1.2, 2.4]],
         default => [],
     };
+}
+
+/**
+ * Artık hiçbir içeriğin ve geri alınabilir hiçbir sürümün göstermediği yüklenmiş görselleri siler (günlük bakım: app/housekeeping.php).
+ * Kapak görseli değiştirilince ya da içerik silinince eski dosya uploads/ altında kalırdı; yedeğin 8 MB yükleme sınırını aşmasına yol açıyordu.
+ * Güvenlik: yalnızca image_store'un ürettiği adlar silinir (uploads/{klasör}/YYYYAAGG-{10 onaltılık}.webp|jpg|png); dosya en az $minDays gün
+ * eski olmalı (yüklenip henüz kaydedilmemiş görsele dokunulmaz); dosya adı, storage/*.json, storage/content/*.json ve bütün
+ * storage/content/_history/ sürümlerinde (ayarlar, yazılar, referanslar, duyurular, ilanlar, sayfa metinleri…) hiçbir yerde geçiyorsa silinmez.
+ * Kaynaklardan biri okunamazsa hiçbir şey silinmez. @return int silinen dosya sayısı
+ */
+function uploads_purge_orphans(int $minDays = 3): int
+{
+    $cut = time() - $minDays * 86400;
+    $cand = [];   // ad => [yol, ...]
+    foreach (glob(ROOT . '/uploads/*/*') ?: [] as $f) {
+        $b = basename($f);
+        if (is_file($f) && preg_match('/^\d{8}-[a-f0-9]{10}\.(webp|jpe?g|png)$/D', $b) && (int) @filemtime($f) < $cut) {
+            $cand[$b][] = $f;
+        }
+    }
+    if (!$cand) {
+        return 0;
+    }
+    $sources = array_merge(
+        glob(ROOT . '/storage/*.json') ?: [],
+        glob(CONTENT_DIR . '/*.json') ?: [],
+        glob(CONTENT_DIR . '/_history/*/*.json') ?: []
+    );
+    foreach ($sources as $src) {
+        $txt = @file_get_contents($src);
+        if ($txt === false) {
+            return 0;   // okunamayan kaynak: emin olunamaz, hiçbir şey silinmez
+        }
+        foreach (array_keys($cand) as $b) {
+            if (strpos($txt, $b) !== false) {
+                unset($cand[$b]);
+            }
+        }
+        if (!$cand) {
+            return 0;
+        }
+    }
+    $n = 0;
+    foreach ($cand as $files) {
+        foreach ($files as $f) {
+            $n += @unlink($f) ? 1 : 0;
+        }
+    }
+    return $n;
 }
 
 /**

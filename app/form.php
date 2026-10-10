@@ -55,6 +55,8 @@ function form_rate_key(string $ip): string
 
 /**
  * Hız sınırı: aynı IP'den 10 dakikada en fazla 5 gönderim; tüm sitede saatte en fazla 120 gönderim ve 30 özgeçmiş.
+ * Özgeçmiş için ayrıca istemci başına saatte en fazla 3 yükleme vardır ('cvip'): tek bir istemci sitenin saatlik 30 özgeçmiş sınırını doldurup diğer
+ * başvuranları engelleyemez; site geneli sınır yedek güvenlik olarak kalır.
  * Şüpheli bulunan gönderimler site geneli 120 sınırına sayılmaz (bkz. form_rate_site_undo); IP ve özgeçmiş sınırına sayılır.
  * Denetim ve kayıt tek bir kilit altında yapılır; aynı anda gelen istekler sınırı birlikte aşamaz.
  * Sınır dolmuşsa hangisinin dolduğu döner ('ip', 'site', 'cv'); dolmamışsa null döner ve $record verilmişse gönderim kaydedilir.
@@ -84,13 +86,18 @@ function form_rate(string $ip, bool $cv, bool $record): ?string
             }
         }
         $ipFile   = $dir . '/rate-' . hash_hmac('sha256', 'rate|' . form_rate_key($ip), (string) cfg('secret')) . '.json';   // IP'nin yalın özeti değil, site anahtarıyla anahtarlı özet
+        $cvIpFile = $dir . '/rate-cv-' . hash_hmac('sha256', 'rate-cv|' . form_rate_key($ip), (string) cfg('secret')) . '.json';   // istemci başına özgeçmiş sayacı (aynı anahtarlı özet)
         $siteFile = $dir . '/rate-site.json';
         $hits = $keep($read($ipFile), 600);
+        $cvHits = $cv ? $keep($read($cvIpFile), 3600) : [];
         $site = $read($siteFile);
         $all  = $keep($site['all'] ?? [], 3600);
         $cvs  = $keep($site['cv'] ?? [], 3600);
         if (count($hits) >= 5) {
             return 'ip';
+        }
+        if ($cv && count($cvHits) >= 3) {
+            return 'cvip';
         }
         if (count($all) >= 120) {
             return 'site';
@@ -102,7 +109,9 @@ function form_rate(string $ip, bool $cv, bool $record): ?string
             $hits[] = $now;
             $all[]  = $now;
             if ($cv) {
-                $cvs[] = $now;
+                $cvs[]    = $now;
+                $cvHits[] = $now;
+                @file_put_contents($cvIpFile, json_encode($cvHits));
             }
             @file_put_contents($ipFile, json_encode($hits));
             @file_put_contents($siteFile, json_encode(['all' => $all, 'cv' => $cvs]));
@@ -283,6 +292,7 @@ $rlMsg   = [
     'ip'   => t('formlar.sunucu.cok_gonderim_ip'),
     'site' => t('formlar.sunucu.cok_gonderim_site'),
     'cv'   => t('formlar.sunucu.cok_basvuru'),
+    'cvip' => t('formlar.sunucu.cok_basvuru_ip'),
 ];
 if (($rl = form_rate($ip, $type === 'kariyer', false)) !== null) {
     respond(false, $rlMsg[$rl], [], 429);
@@ -410,7 +420,7 @@ $spam = spam_score($type, $data, [
     'ua'       => (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
     'lang'     => (string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''),
     'fetch'    => $_SERVER['HTTP_SEC_FETCH_SITE'] ?? null,
-    'records'  => spam_records(),
+    'records'  => spam_records_tail(),   // son kayıtlar yeter; dosyanın tamamı her gönderimde belleğe alınmaz
     'honeypot' => $honeypot,
 ]);
 $suspect = $spam['score'] >= SPAM_LIMIT;
@@ -433,6 +443,9 @@ if (cfg('store_submissions') || in_array($type, ['kariyer', 'bulten'], true) || 
     $line  = json_encode(['id' => bin2hex(random_bytes(6)), 'form' => $type, 'time' => date('c'), 'ip' => $ip, 'data' => $suspect ? spam_trim($type, $data) : $data]
         + ($suspect ? ['spam' => $spam] : []), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     $saved = $line !== false && @file_put_contents(ROOT . '/storage/submissions.jsonl', $line . "\n", FILE_APPEND | LOCK_EX) !== false;
+    if ($saved) {
+        spam_limit_file();   // dosya toplam sınırı aştıysa en eski kayıtlar düşer (boyut denetimi dosyayı okumaz)
+    }
 }
 
 /**

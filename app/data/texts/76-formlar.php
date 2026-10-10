@@ -45,6 +45,7 @@ return [
                 'formlar.sunucu.cok_gonderim_ip' => ['Aynı kişiden çok fazla gönderim', 'Kısa sürede çok fazla gönderim yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.', 'text'],
                 'formlar.sunucu.cok_gonderim_site' => ['Siteye çok fazla gönderim', 'Şu anda çok fazla gönderim alınıyor. Lütfen bir süre sonra tekrar deneyin.', 'text'],
                 'formlar.sunucu.cok_basvuru' => ['Çok fazla iş başvurusu', 'Şu anda çok fazla başvuru alınıyor. Lütfen bir süre sonra tekrar deneyin ya da özgeçmişinizi e-posta ile gönderin.', 'text'],
+                'formlar.sunucu.cok_basvuru_ip' => ['Aynı kişiden çok fazla iş başvurusu', 'Bu bağlantıdan kısa sürede çok fazla özgeçmiş gönderildi. Lütfen bir saat sonra tekrar deneyin ya da özgeçmişinizi e-posta ile gönderin.', 'text'],
                 'formlar.sunucu.iletilemedi' => ['Mesaj hiçbir yoldan alınamadıysa', 'Mesajınız şu anda iletilemedi. Lütfen telefonla ya da e-posta ile ulaşın.', 'text'],
                 'formlar.sunucu.dosya_cok_buyuk' => ['Gönderilen dosya çok büyükse', 'Gönderilen dosya çok büyük. Lütfen en fazla 5 MB boyutunda bir dosya seçin.', 'text'],
                 'formlar.sunucu.dosya_kaydedilemedi' => ['Özgeçmiş dosyası sunucuya yazılamadıysa', 'Dosya kaydedilemedi. Lütfen daha sonra tekrar deneyin ya da e-posta ile gönderin.', 'text'],

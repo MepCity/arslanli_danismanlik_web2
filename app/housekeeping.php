@@ -108,6 +108,7 @@ function housekeeping_run(bool $force = false): ?array
 
         // 4. Ayarların geçmiş sürümlerinde kalmış SMTP şifreleri
         $done['gecmis_sifre'] = settings_history_scrub();
+        $done['yukleme'] = uploads_purge_orphans();   // hiçbir içeriğin ve sürümün göstermediği eski yüklenmiş görseller
 
         // Damga en sonda güncellenir (yazı da yapılır: boş dosya "hiç çalışmadı" sayılır)
         ftruncate($fh, 0);

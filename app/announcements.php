@@ -63,6 +63,11 @@ function ann_all(): array
 /** Dosyaya güvenli yazım: önce geçici dosya, sonra yer değiştirme. */
 function ann_save_all(array $items): bool
 {
+    return content_lock(fn() => ann_save_all_locked($items));   // paneldeki ve yapay zekâ erişimindeki yazımlar aynı kilitten geçer
+}
+
+function ann_save_all_locked(array $items): bool
+{
     $items = array_values($items);
     $json  = json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     // Dosya yokken önceki hal varsayılan duyurulardır (ilk kayıtta sitenin özgün hali olarak saklanır)
@@ -79,11 +84,7 @@ function ann_save_all(array $items): bool
     $hasOrig = (bool) glob($hdir . '/*-0000.json');
     $rev = $hasOrig ? content_rev_id($hdir) : date('Ymd-His') . '-0000';
     @file_put_contents($hdir . '/' . $rev . '.json', $prev, LOCK_EX);
-    $old = array_filter(glob($hdir . '/*.json') ?: [], fn($f) => !str_ends_with($f, '-0000.json'));
-    rsort($old);
-    foreach (array_slice($old, CONTENT_HISTORY_KEEP) as $f) {
-        @unlink($f);
-    }
+    content_history_prune($hdir, 'duyurular');   // sayıya ek olarak 7 günlük yaş koruması ve aynı kişinin ardışık yazımlarının ara sürümlerini atma
     $tmp = ANN_FILE . '.' . bin2hex(random_bytes(4)) . '.tmp';
     if (@file_put_contents($tmp, $json, LOCK_EX) === false) {
         return false;

@@ -342,6 +342,21 @@ function restore_seo_clean($data, array &$rep): ?array
         $rep['error'] = 'SEO ayarları dosyasında geçerli bir alan yok. Geri yüklenmedi.';
         return null;
     }
+    // Arama motoru doğrulama kodları ve IndexNow anahtarı sitenin kime ait olduğunu söyler: yedekten geri yüklemede yönetici açıkça istemedikçe
+    // (restore formundaki kutu) şu anki değerler kalır; geçmiş sürümü geri alınırken değişir (yedekten gelen geçmiş sürümleri alınırken aynı kural uygulanır).
+    $codesOk = (!empty($rep['history']) && empty($rep['import'])) || !empty($rep['seo_codes']);
+    if (!$codesOk) {
+        $cur = (array) content_get('seo', []);
+        foreach (['verify' => 'Arama motoru doğrulama kodları', 'indexnow_key' => 'IndexNow anahtarı'] as $k => $label) {
+            if (($out[$k] ?? null) != ($cur[$k] ?? null)) {
+                $rep['notes'][] = $label . ' yedekteki değerle değiştirilmedi, mevcut hali korundu; değiştirmek için geri yüklerken “Arama motoru doğrulama kodlarını ve IndexNow anahtarını da geri yükle” kutusunu işaretleyin.';
+            }
+            unset($out[$k]);
+            if (isset($cur[$k])) {
+                $out[$k] = $cur[$k];
+            }
+        }
+    }
     return $out;
 }
 
@@ -414,7 +429,7 @@ function restore_settings_clean($data, array &$rep): ?array
     }
     // Bildirim ve gönderen adresi, ziyaretçilerin kişisel verilerinin e-postayla nereye gideceğini belirler: yedekten geri yüklemede yönetici açıkça
     // istemedikçe (restore formundaki kutu) şu anki değerler korunur; geçmiş sürümü geri alınırken değişir ama sonuçta eski ve yeni adres yazılır.
-    $routesOk = !empty($rep['history']) || !empty($rep['mail_routes']);
+    $routesOk = (!empty($rep['history']) && empty($rep['import'])) || !empty($rep['mail_routes']);   // 'import': yedekten gelen geçmiş sürümü (restore_history_clean)
     $effBefore = settings_apply(config_inherited(), $cur)['mail'];
     if (is_array($data['mail'] ?? null)) {
         $m = $data['mail'];
@@ -508,6 +523,68 @@ function settings_history_scrub(): int
         }
     }
     return $n;
+}
+
+/* ---------- Yedekten gelen geçmiş sürümleri ---------- */
+
+/** Bir yedekten alınabilecek geçmiş sürümü sayısı: bölüm başına CONTENT_HISTORY_KEEP'in altında kalır ki gerçek geçmiş yer açmak için silinmesin. */
+function restore_history_room(string $key): int
+{
+    $have = array_filter(glob(CONTENT_DIR . '/_history/' . $key . '/*.json') ?: [], fn($f) => !str_ends_with($f, '-0000.json'));
+    return max(0, CONTENT_HISTORY_KEEP - 1 - count($have));
+}
+
+/**
+ * Yedekteki bir geçmiş sürümünü doğrular ve diske yazılacak metni döndürür; kabul edilmezse null ($why nedeni söyler).
+ * Geçmiş sürümü ileride geri alınabildiği için canlı veriyle AYNI temizleme ve doğrulamadan geçer (restore_clean); ayarlar sürümlerinde bildirim/gönderen
+ * adresi ve SEO sürümlerinde doğrulama kodları, ilgili kutu işaretli değilse şu anki değerle değiştirilir (aksi halde geçmişten geri alarak
+ * onaysız değiştirilebilirdi). Gelecek tarihli sürüm ve sitenin özgün hali ("-0000") alınmaz; SMTP şifresi yazılmaz.
+ * @param array $opt ['mail_routes' => bool, 'seo_codes' => bool]
+ */
+function restore_history_clean(string $key, string $rev, $val, array $opt, ?string &$why = null): ?string
+{
+    $dt = DateTime::createFromFormat('Ymd-His', substr($rev, 0, 15));
+    if (!$dt || $dt->format('Ymd-His') !== substr($rev, 0, 15)) {
+        $why = 'sürüm adındaki tarih geçersiz.';
+        return null;
+    }
+    if ($dt->getTimestamp() > time() + 300) {
+        $why = 'sürüm gelecek tarihli.';
+        return null;
+    }
+    if (str_ends_with($rev, '-0000')) {
+        $why = 'sitenin özgün hali yedekten alınmaz.';
+        return null;
+    }
+    if (!is_array($val)) {
+        $why = 'içerik geçerli bir liste değil.';
+        return null;
+    }
+    $dropped = [];
+    $rep = ['key' => $key, 'dropped' => [], 'notes' => [], 'error' => null, 'history' => true, 'import' => true] + $opt;
+    if ($key === 'duyurular') {
+        $clean = ann_clean_restore($val, $dropped);
+        $bad = $val && !$clean;
+    } elseif ($key === 'ilanlar') {
+        $clean = ilan_clean_restore($val, $dropped);
+        $bad = $val && !$clean;
+    } elseif (in_array($key, restore_stores(), true)) {
+        $clean = restore_clean($key, $val, $rep);
+        $bad = $clean === null;
+        $dropped = $rep['dropped'];
+        if ($bad) {
+            $why = (string) ($rep['error'] ?? 'içerik doğrulamadan geçmedi.');
+        }
+    } else {
+        $why = 'bilinmeyen bölüm.';
+        return null;
+    }
+    if ($bad) {
+        $why = $why ?: 'hiçbir öğe doğrulamadan geçmedi.';
+        return null;
+    }
+    $json = (string) json_encode($clean, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    return $key === 'settings' ? settings_strip_secrets($json)[0] : $json;
 }
 
 /* ---------- Giriş noktası ---------- */

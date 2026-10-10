@@ -13,7 +13,10 @@ declare(strict_types=1);
  * Her yazım kilit altında yapılır ve geçici dosya + yer değiştirme ile atomiktir. storage/ klasörü web'e kapalıdır.
  */
 
-const MCP_LOG_KEEP = 2000;
+const MCP_LOG_KEEP = 2000;          // günlükte tutulan satır sayısı (son 3 günün kayıtları dışında kesin sınır)
+const MCP_LOG_MAX = 4000;           // son 3 günün kayıtları korunsa bile her durumda en çok bu kadar satır
+const MCP_LOG_KEY_SHARE = 500;      // bir anahtarın günlükte tutabileceği en çok satır (toplamın dörtte biri)
+const MCP_LOG_PROTECT_DAYS = 3;     // bu kadar günden yeni kayıtlar toplam sınıra (MCP_LOG_KEEP) takılıp silinmez
 
 /** Verilebilecek izinler: ad => [başlık, açıklama, kişisel veri içerir mi] */
 function mcp_scopes(): array
@@ -94,20 +97,13 @@ function mcp_json_update(string $name, callable $fn)
     }
 }
 
-/** Yazma araçları arasında karşılıklı dışlama: aynı anda iki yazım birbirinin üzerine yazmasın. */
+/**
+ * Yazma araçları arasında karşılıklı dışlama: aynı anda iki yazım birbirinin üzerine yazmasın.
+ * Kilit, panelin kayıt yoluyla paylaşılır (bkz. content_lock: storage/content/.write.lock); içerik önbelleği kilit alınınca yenilenir.
+ */
 function mcp_write_lock(callable $fn)
 {
-    $lock = @fopen(mcp_dir() . '/.write.lock', 'c');
-    if (!$lock) {
-        throw new RuntimeException('Yazma kilidi açılamadı.');
-    }
-    try {
-        flock($lock, LOCK_EX);
-        return $fn();
-    } finally {
-        flock($lock, LOCK_UN);
-        fclose($lock);
-    }
+    return content_lock($fn);
 }
 
 /** Rastgele base62 metin (kriptografik). */
@@ -207,7 +203,11 @@ function mcp_key_by_secret(string $secret): ?array
     if (!preg_match('/^arsl_[0-9A-Za-z]{40}$/', $secret)) {
         return null;
     }
-    $h = mcp_hash($secret);
+    return mcp_key_by_hash(mcp_hash($secret));
+}
+
+function mcp_key_by_hash(string $h): ?array
+{
     foreach (mcp_keys() as $k) {
         if (isset($k['hash']) && hash_equals((string) $k['hash'], $h)) {
             return $k;
@@ -309,35 +309,73 @@ function mcp_authenticate(string $token): ?array
     if ($token === '' || strlen($token) > 200) {
         return null;
     }
+    if (str_starts_with($token, 'arat_')) {
+        return mcp_principal_by_hash(mcp_hash($token), true);
+    }
+    if (!preg_match('/^arsl_[0-9A-Za-z]{40}$/', $token)) {
+        return null;
+    }
+    return mcp_principal_by_hash(mcp_hash($token), false);
+}
+
+/**
+ * Anahtar ya da OAuth belirtecinin özetinden kimlik; her çağrıda dosyalardan taze okur (iptal, süre ve izin değişikliği anında görünür).
+ * @return array{key_id:string, name:string, scopes:array, client:string, via:string, th:string}|null
+ */
+function mcp_principal_by_hash(string $h, bool $oauth): ?array
+{
     $key = null;
     $client = '';
     $via = 'key';
-    if (str_starts_with($token, 'arat_')) {
+    $oauthScopes = null;
+    if ($oauth) {
         $via = 'oauth';
-        $h = mcp_hash($token);
         $d = mcp_json_read('oauth');
         $row = $d['access'][$h] ?? null;
         if (!is_array($row) || (int) ($row['expires'] ?? 0) <= time()) {
             return null;
         }
         $key = mcp_key_get((string) ($row['key_id'] ?? ''));
+        // Belirteçte kayıtlı (daraltılmış) izinler varsa anahtarın izinleriyle kesiştirilir; kayıtlı izin alanı olmayan eski satırlar anahtarın izinleriyle çalışır
+        if (is_array($row['scopes'] ?? null)) {
+            $oauthScopes = (array) $row['scopes'];
+        }
         $client = (string) ($d['clients'][$row['client_id'] ?? '']['name'] ?? '');
         if ($client === '') {
             $client = 'OAuth uygulaması';
         }
     } else {
-        $key = mcp_key_by_secret($token);
+        $key = mcp_key_by_hash($h);
     }
     if (!$key || !mcp_key_active($key)) {
         return null;
     }
+    $scopes = mcp_clean_scopes((array) ($key['scopes'] ?? []));
+    if ($oauthScopes !== null) {
+        $scopes = mcp_clean_scopes(array_values(array_intersect($scopes, $oauthScopes)));
+    }
     return [
         'key_id' => (string) $key['id'],
         'name'   => (string) $key['name'],
-        'scopes' => mcp_clean_scopes((array) ($key['scopes'] ?? [])),
+        'scopes' => $scopes,
         'client' => $client,
         'via'    => $via,
+        'th'     => $h,
     ];
+}
+
+/**
+ * Kimliği yeniden doğrular (yazma kilidi alındıktan sonra: kilitte beklerken anahtar iptal edilmiş, süresi dolmuş ya da izni daraltılmış olabilir).
+ * İstekteki kimlik her zaman mcp_authenticate'ten gelir ve belirteç özetini ("th") taşır; özet taşımayan dahili kimlikler (komut satırı
+ * sınama düzeneği) doğrulanacak bir belirteçleri olmadığından olduğu gibi kabul edilir.
+ */
+function mcp_reauthenticate(array $pr): ?array
+{
+    $h = (string) ($pr['th'] ?? '');
+    if ($h !== '') {
+        return mcp_principal_by_hash($h, ($pr['via'] ?? 'key') === 'oauth');
+    }
+    return $pr;
 }
 
 /* =========================================================================
@@ -427,7 +465,47 @@ function mcp_ip_blocked(string $bucket, int $max, int $window): bool
    Denetim kaydı
    ========================================================================= */
 
-/** Tek satırlık kayıt ekler; son MCP_LOG_KEEP satır tutulur. */
+/**
+ * Günlük satırlarını budar. Yalnızca "son 2000" kuralı olsaydı, herhangi bir anahtar dakikada 120 okumayla ~17 dakikada başkalarının
+ * kayıtlarını dışarı iterdi. Kural: (1) bir anahtar en çok MCP_LOG_KEY_SHARE (500) satır tutar, fazlasının en eskisi atılır;
+ * (2) toplam MCP_LOG_KEEP (2000) satırı aşarsa en eski satırlar atılır, ancak son MCP_LOG_PROTECT_DAYS (3) günün kayıtları
+ * (anahtar payı içinde) atılmaz; (3) her durumda toplam MCP_LOG_MAX (4000) ile sınırlıdır.
+ * @param string[] $lines eskiden yeniye ham satırlar
+ * @return string[]
+ */
+function mcp_log_prune(array $lines): array
+{
+    if (count($lines) <= MCP_LOG_KEEP) {
+        return $lines;
+    }
+    $cut = time() - MCP_LOG_PROTECT_DAYS * 86400;
+    $per = [];
+    $keep = [];   // satır indisi => genç mi
+    for ($i = count($lines) - 1; $i >= 0; $i--) {   // en yeniden eskiye
+        $r = json_decode($lines[$i], true);
+        $k = is_array($r) ? (string) ($r['key'] ?? '') : '';
+        $per[$k] = ($per[$k] ?? 0) + 1;
+        if ($per[$k] > MCP_LOG_KEY_SHARE) {
+            continue;   // bu anahtarın payı doldu: daha eski kaydı atılır
+        }
+        $t = is_array($r) && isset($r['time']) ? (int) strtotime((string) $r['time']) : 0;
+        $keep[$i] = $t >= $cut;
+    }
+    krsort($keep);   // en yeni önce
+    $out = [];
+    $n = 0;
+    foreach ($keep as $i => $young) {
+        $n++;
+        if ($n > MCP_LOG_MAX || ($n > MCP_LOG_KEEP && !$young)) {
+            continue;
+        }
+        $out[$i] = $lines[$i];
+    }
+    ksort($out);
+    return array_values($out);
+}
+
+/** Tek satırlık kayıt ekler; bütçe için bkz. mcp_log_prune. */
 function mcp_log(array $entry): void
 {
     $file = mcp_dir() . '/log.jsonl';
@@ -450,7 +528,7 @@ function mcp_log(array $entry): void
                 $lines[] = $l;
             }
             if (count($lines) > MCP_LOG_KEEP) {
-                $lines = array_slice($lines, -MCP_LOG_KEEP);
+                $lines = mcp_log_prune($lines);
                 ftruncate($fh, 0);
                 rewind($fh);
                 fwrite($fh, implode('', $lines));

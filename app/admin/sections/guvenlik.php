@@ -107,18 +107,30 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
     $zip = new ZipArchive();
     if ($zip->open($up['tmp_name']) !== true) $back('Dosya açılamadı; geçerli bir ZIP yedeği değil.');
 
-    $maxEach = 20 * 1024 * 1024; $maxAll = 200 * 1024 * 1024;
-    $total = 0;
-    for ($i = 0; $i < $zip->numFiles; $i++) $total += (int) ($zip->statIndex($i)['size'] ?? 0);
-    if ($total > $maxAll) { $zip->close(); $back('Yedek açıldığında çok büyük (200 MB üstü); güvenlik için işlem durduruldu.'); }
+    $maxEach = 20 * 1024 * 1024; $maxAll = 200 * 1024 * 1024; $maxFiles = 3000;
+    if ($zip->numFiles > $maxFiles) { $zip->close(); $back('Yedekte çok fazla dosya var (' . $maxFiles . ' üstü); güvenlik için işlem durduruldu.'); }
+    $declared = 0;
+    for ($i = 0; $i < $zip->numFiles; $i++) $declared += (int) ($zip->statIndex($i)['size'] ?? 0);
+    if ($declared > $maxAll) { $zip->close(); $back('Yedek açıldığında çok büyük (200 MB üstü); güvenlik için işlem durduruldu.'); }
 
-    $read = function (int $i, int $size) use ($zip, $maxEach): ?string {
-        if ($size > $maxEach) return null;
+    // Asıl sınır GERÇEKTEN okunan baytlara uygulanır: ZIP başlığındaki boyut yanlış beyan edilmiş olabilir. Dosyalar akışla, parça parça okunur;
+    // tek dosya $maxEach'i ya da toplam $maxAll'ı aşınca okuma kesilir (toplam aşılırsa işlem durdurulur).
+    $total = 0; $overflow = false;
+    $read = function (int $i, int $size) use ($zip, $maxEach, $maxAll, &$total, &$overflow): ?string {
+        if ($overflow || $size > $maxEach) return null;
         $fp = $zip->getStream($zip->getNameIndex($i));
         if (!$fp) return null;
-        $data = stream_get_contents($fp, $maxEach + 1);
+        $data = ''; $big = false;
+        while (!feof($fp)) {
+            $chunk = fread($fp, 65536);
+            if ($chunk === false || $chunk === '') break;
+            $total += strlen($chunk);
+            if ($total > $maxAll) { $overflow = true; $big = true; break; }
+            $data .= $chunk;
+            if (strlen($data) > $maxEach) { $big = true; break; }
+        }
         fclose($fp);
-        return ($data === false || strlen($data) > $maxEach) ? null : $data;
+        return $big ? null : $data;
     };
     $nContent = 0; $nImg = 0; $skipped = 0; $recordsSeen = false;
     $stores = [];       // anahtar => çözülmüş içerik: önce hepsi okunur, sonra bağımlılık sırasıyla doğrulanıp yazılır
@@ -126,9 +138,14 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
     $engelNote = '';
     $infoNotes = [];     // bilgi notları: neyin değiştiği / değişmediği (reddedilen öğe değil)
     $mailRoutes = post_bool('posta_adresleri');   // varsayılan kapalı: yedek, bildirimlerin gideceği adresi değiştiremez
+    $seoCodes   = post_bool('seo_kodlari');       // varsayılan kapalı: yedek, arama motoru doğrulama kodlarını ve IndexNow anahtarını değiştiremez
+    $before     = (array) content_get('settings', []);   // iletinin sonunda "kayıtları sakla" ve SMTP durumunun değişip değişmediğini söylemek için
+    $hist       = [];                                    // bölüm => [sürüm => [sıra, boyut]]: geçmiş sürümleri döngüden sonra, doğrulanıp sınırlanarak alınır
     $histKeys = array_keys(array_filter(changelog_sections(), fn($x) => !empty($x[2])));
     $secretsNote = false;
+    $changelogLabel = array_map(fn($x) => $x[0], changelog_sections());
     for ($i = 0; $i < $zip->numFiles; $i++) {
+        if ($overflow) { $zip->close(); $back('Yedek açıldığında çok büyük (200 MB üstü); güvenlik için işlem durduruldu.'); }
         $st = $zip->statIndex($i);
         $nm = (string) ($st['name'] ?? '');
         if ($nm === '' || str_ends_with($nm, '/') || $nm === 'BENIOKU.txt') continue;
@@ -145,17 +162,9 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
             if (!is_array($val)) { $skipped++; continue; }
             $stores[$m[1]] = $val;
         } elseif (preg_match('#^content/_history/([a-z_]+)/(\d{8}-\d{6}-[a-f0-9]{4})\.json$#', $nm, $m)) {
-            // Geçmiş sürümleri alınır (değişiklik geçmişi yedekle birlikte taşınsın) ama HAM İÇERİK OLARAK UYGULANMAZ: bir sürüm geri alınırken
-            // changelog_restore() onu normal kayıtla aynı kurallardan geçirir (app/restore.php). Burada yalnızca biçim denetlenir; SMTP şifresi çıkarılır.
+            // Geçmiş sürümleri döngüden sonra alınır (aşağıda): her biri canlı veriyle aynı doğrulamadan geçer, sayısı sınırlanır
             if (!in_array($m[1], $histKeys, true)) { $skipped++; continue; }
-            $raw = $read($i, $size);
-            $val = $raw === null ? null : json_decode($raw, true);
-            if ($val === null && trim((string) $raw) !== 'null') { $skipped++; continue; }
-            if ($m[1] === 'settings') [$raw] = settings_strip_secrets((string) $raw);
-            $dir = CONTENT_DIR . '/_history/' . $m[1];
-            if (!is_dir($dir) && !@mkdir($dir, 0755, true)) { $skipped++; continue; }
-            if (!is_file($dir . '/' . $m[2] . '.json')) @file_put_contents($dir . '/' . $m[2] . '.json', $raw, LOCK_EX);
-            $nContent++;
+            $hist[$m[1]][$m[2]] = [$i, $size];
         } elseif ($nm === 'bulten/bastirilanlar.json') {
             $raw = $read($i, $size);
             $val = $raw === null ? null : json_decode($raw, true);
@@ -182,13 +191,38 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
             $skipped++;
         }
     }
+    if ($overflow) { $zip->close(); $back('Yedek açıldığında çok büyük (200 MB üstü); güvenlik için işlem durduruldu.'); }
+    // Geçmiş sürümleri: sunucudaki mevcut geçmiş korunur (aynı adlı sürümün üzerine yazılmaz, hiçbir şey silinmez); yedekten en yeni sürümler,
+    // bölüm başına yer kaldığı kadar alınır. Gelecek tarihli, özgün hal ("-0000") olan ya da doğrulamadan geçmeyen sürüm alınmaz.
+    $histOk = 0; $histNo = 0; $histWhy = [];
+    foreach ($hist as $hk => $revs) {
+        krsort($revs);
+        $room = restore_history_room($hk);
+        $dir = CONTENT_DIR . '/_history/' . $hk;
+        foreach ($revs as $rev => [$hi, $hsize]) {
+            if (is_file($dir . '/' . $rev . '.json')) { $skipped++; continue; }   // zaten var: mevcut sürüm korunur
+            $raw = $read($hi, $hsize);
+            if ($overflow) { $zip->close(); $back('Yedek açıldığında çok büyük (200 MB üstü); güvenlik için işlem durduruldu.'); }
+            $why = null;
+            $json = $raw === null ? null : restore_history_clean($hk, $rev, json_decode($raw, true), ['mail_routes' => $mailRoutes, 'seo_codes' => $seoCodes], $why);
+            if ($json === null && $raw === null) $why = 'okunamadı ya da çok büyük.';
+            if ($json === null || $room <= 0) {
+                $histNo++;
+                if ($json === null && count($histWhy) < 3) $histWhy[] = ($changelogLabel[$hk] ?? $hk) . ' ' . $rev . ': ' . $why;
+                continue;
+            }
+            if ((!is_dir($dir) && !@mkdir($dir, 0755, true)) || @file_put_contents($dir . '/' . $rev . '.json', $json, LOCK_EX) === false) { $histNo++; continue; }
+            $room--; $histOk++; $nContent++;
+        }
+    }
+    if ($histNo) $report[] = 'Geçmiş sürümleri: ' . $histNo . ' sürüm alınmadı (gelecek tarihli, geçersiz ya da yer kalmadı)' . ($histWhy ? ' — ' . implode('; ', $histWhy) : '') . '.';
     // Bağımlılık sırası: hizmetler hedef eşleştiriciden (kurumsal listeler) önce
     $order = ['services', 'refs', 'posts', 'lists', 'texts', 'legal', 'features', 'settings', 'seo', 'duyurular', 'ilanlar'];
     uksort($stores, fn($a, $b) => array_search($a, $order, true) <=> array_search($b, $order, true));
     $secName = changelog_sections();
     foreach ($stores as $key => $val) {
         $label = $secName[$key][0] ?? $key;
-        if (restore_store($key, $val, false, ['mail_routes' => $mailRoutes])) {
+        if (restore_store($key, $val, false, ['mail_routes' => $mailRoutes, 'seo_codes' => $seoCodes])) {
             $nContent++;
             if ($key === 'settings' && is_array($val['mail']['smtp'] ?? null) && !empty($val['mail']['smtp']['host'])) $secretsNote = true;   // yalnızca yedekte SMTP ayarı varsa
         } else {
@@ -205,6 +239,11 @@ if (($rest[0] ?? '') === 'geri-yukle' && $method === 'POST') {
     if ($report) $msg .= ' Normal kayıttaki kurallara uymayan öğeler alınmadı: ' . restore_report_text($report, 8);
     if ($infoNotes) $msg .= ' Bilgi: ' . restore_report_text($infoNotes, 8);
     $msg .= $engelNote;
+    $after = (array) content_get('settings', []);
+    $subB = !empty($before['store_submissions']); $subA = !empty($after['store_submissions']);
+    $smtpB = smtp_state($before)['mode'] === 'kapali'; $smtpA = smtp_state($after)['mode'] === 'kapali';
+    if ($subB !== $subA) $msg .= ' DİKKAT: “form kayıtlarını sakla” ayarı yedekle ' . ($subA ? 'açıldı' : 'kapandı') . '.';
+    if ($smtpB !== $smtpA) $msg .= ' DİKKAT: panelde “e-posta (SMTP) kapalı” seçimi yedekle ' . ($smtpA ? 'yapıldı' : 'kaldırıldı') . '; İletişim ve şirket sayfasından e-posta gönderim ayarını kontrol edin.';
     if ($secretsNote) $msg .= ' E-posta (SMTP) şifresi yedeğe girmediği için geri yüklenmedi; panelde SMTP kayıtlıysa ve bağlantı bilgisi aynıysa şu anki şifre korundu, değilse İletişim ve şirket sayfasında şifreyi yeniden yazın.';
     if ($recordsSeen) $msg .= ' Form kayıtları gizlilik nedeniyle geri yüklenmez.';
     if (ilan_restore_opened()) $msg .= ' DİKKAT: şu iş ilanları geri yüklemeyle başvuruya açıldı: ' . implode(', ', ilan_restore_opened()) . '.';
@@ -281,6 +320,7 @@ if ($hasZip) {
         . '<div class="fld"><label class="fld__label" for="f-yedek">Yedek dosyası (.zip)</label><input class="inp ay__file" type="file" id="f-yedek" name="yedek" accept=".zip,application/zip" required aria-describedby="f-yedek-h">'
         . '<p class="fld__help" id="f-yedek-h">En fazla 50 MB. Sunucunuzun yükleme sınırı ' . e((string) $limit) . '.</p></div>'
         . ui_toggle('posta_adresleri', 'Bildirim ve gönderen e-posta adreslerini de geri yükle', false, ['help' => 'Kapalıyken yedekteki ayarlardan “bildirimlerin gideceği adres” ve “gönderen adres” alınmaz; şu anki adresler kalır. Yalnızca kendi aldığınız bir yedeği geri yüklüyorsanız işaretleyin: formlardan gelen kişisel veriler bu adrese e-postalanır.'])
+        . ui_toggle('seo_kodlari', 'Arama motoru doğrulama kodlarını ve IndexNow anahtarını da geri yükle', false, ['help' => 'Kapalıyken yedekteki SEO ayarlarından Google, Bing ve Yandex doğrulama kodları ile IndexNow anahtarı alınmaz; şu anki değerler kalır. Kendi sitenizin yedeğini geri yüklüyorsanız işaretleyebilirsiniz; başka bir siteden alınmış yedekte işaretlemeyin.'])
         . '<div><button class="btn btn--ghost" type="submit">' . ui_icon('upload-simple') . 'Geri yükle</button></div></form></div>';
 } else {
     $backup = ui_alert('Bu sunucuda ZIP desteği (ZipArchive) kapalı olduğu için yedek alınamıyor. Barındırma firmanızdan "php-zip" eklentisini açmasını isteyin.', 'warn');

@@ -513,9 +513,22 @@ function bulten_alicilar(array $f): array
    Abonelikten ayrılma
    ========================================================================= */
 
+/**
+ * Ayrılma bağlantılarının imza anahtarı: form güvenlik anahtarından "bulten-ayril" etiketiyle türetilir. Formların belirteçleri ve hız sınırı
+ * dosyaları aynı ham anahtarı kullandığından, ayrılma imzası onlarla aynı anahtara bağlı kalmasın diye amaca özel anahtar kullanılır.
+ */
+function bulten_ayril_anahtari(string $anahtar): string
+{
+    return hash_hmac('sha256', 'bulten-ayril', $anahtar);
+}
+
+/**
+ * Adresin ayrılma imzası. Yeni bağlantılar her zaman şimdiki anahtardan türetilen anahtarla imzalanır; eski (türetmesiz) imzalar yalnızca
+ * doğrulanır (bkz. bulten_imza_gecerli).
+ */
 function bulten_imza(string $email, ?string $anahtar = null): string
 {
-    return hash_hmac('sha256', $email, $anahtar ?? (string) cfg('secret'));
+    return hash_hmac('sha256', $email, bulten_ayril_anahtari($anahtar ?? (string) cfg('secret')));
 }
 
 /** config.php ile gelen varsayılan form güvenlik anahtarı: herkesçe bilindiği için ayrılma bağlantılarında hiçbir zaman geçerli sayılmaz. */
@@ -568,7 +581,12 @@ function bulten_imza_gecerli(string $email, string $k): bool
     $varsayilan = bulten_varsayilan_anahtar();
     foreach (array_unique($anahtarlar) as $a) {
         // Varsayılan anahtar herkesçe bilinir: onunla üretilmiş imza (dosyada eskiden kalmış olsa bile) kabul edilmez
-        if ($a !== '' && $a !== $varsayilan && hash_equals(bulten_imza($email, $a), $k)) {
+        if ($a === '' || $a === $varsayilan) {
+            continue;
+        }
+        // Türetilmiş anahtarla üretilen imza (yeni bağlantılar) ya da bu sürümden önce gönderilmiş e-postalardaki ham anahtarla üretilen imza:
+        // ayrılma hakkı yasal zorunluluk olduğundan eski e-postalardaki bağlantılar çalışmaya devam eder. Yeni bağlantılar eski biçimde üretilmez.
+        if (hash_equals(bulten_imza($email, $a), $k) || hash_equals(hash_hmac('sha256', $email, $a), $k)) {
             return true;
         }
     }
@@ -1082,7 +1100,8 @@ function bulten_taslak_kaydet(string $id, string $konu, string $html, array $f)
             'filter_desc' => bulten_suzgec_metni($f),
             'created'     => (string) ($eski['created'] ?? date('c')),
             'updated'     => date('c'),
-            'who'         => $eski['who'] ?? actor(),
+            'who'         => $eski['who'] ?? actor(),   // ilk hazırlayan
+            'edited_by'   => actor(),                   // son yazan: panel ya da hangi yapay zekâ erişimi (yeniden yazan değişirse güncellenir)
             'recipients'  => [],
         ];
         return bulten_yaz(bulten_gonderim_dosya($id), $c) ? $c : 'Kaydedilemedi: storage klasörü yazılabilir mi?';
@@ -1131,7 +1150,7 @@ function bulten_baslat(string $id, string $konu, string $html, array $f, ?int $b
             'updated'     => date('c'),
             'finished'    => '',
             'who'         => actor(),
-            'draft_by'    => $eski['who'] ?? null,
+            'draft_by'    => $eski['edited_by'] ?? $eski['who'] ?? null,   // taslağı son yazan: gönderimi onaylayan kişi metnin kimden geldiğini görür
             'recipients'  => array_map(fn($a) => $a + ['status' => 'bekliyor', 'time' => '', 'error' => ''], $alicilar),
         ];
         return bulten_yaz(bulten_gonderim_dosya($id), $c) ? $c : 'Kaydedilemedi: storage klasörü yazılabilir mi?';

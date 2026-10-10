@@ -73,6 +73,11 @@ function ilan_all(): array
  */
 function ilan_locked(callable $fn)
 {
+    return content_lock(fn() => ilan_locked_inner($fn));   // önce ortak içerik kilidi (panel ve yapay zekâ aynı sırayla alır), sonra ilanların kendi kilidi
+}
+
+function ilan_locked_inner(callable $fn)
+{
     static $held = false;
     if ($held) {
         return $fn();
@@ -114,9 +119,7 @@ function ilan_save_all(array $items): bool
         $rev = $hasOrig ? content_rev_id($hdir) : date('Ymd-His') . '-0000';
         if ($prev !== null) {
             @copy(ILAN_FILE, $hdir . '/' . $rev . '.json');
-            $old = array_filter(glob($hdir . '/*.json') ?: [], fn($f) => !str_ends_with($f, '-0000.json'));
-            rsort($old);
-            foreach (array_slice($old, CONTENT_HISTORY_KEEP) as $f) @unlink($f);
+            content_history_prune($hdir, 'ilanlar');
         } else {
             @file_put_contents($hdir . '/' . $rev . '.json', '[]', LOCK_EX);   // hiç ilan yokken: boş liste de bir "önceki hal"dir
         }

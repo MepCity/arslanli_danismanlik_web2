@@ -16,6 +16,8 @@ declare(strict_types=1);
 const SPAM_LIMIT    = 6;      // bu puan ve üzeri şüpheli sayılır
 const SPAM_DAYS     = 30;     // şüpheli kayıt bu kadar gün sonra kendiliğinden silinir
 const SPAM_MAX      = 300;    // en fazla bu kadar şüpheli kayıt tutulur; fazlası (en eskiler) silinir
+const SPAM_ROWS_MAX = 10000;  // kayıt dosyasında (her türden) en fazla bu kadar kayıt; aşılınca en eskiler düşer
+const SPAM_FILE_MAX = 6291456; // kayıt dosyasının en fazla bayt boyutu (6 MB); aşılınca en eskiler düşer. Dosya her okumada belleğe alındığı için bellek sınırını aşmasın diye
 const SPAM_TEXT_MAX = 1000;   // şüpheli kaydın serbest metin alanları bu kadar karakterle saklanır
 
 /** Formun alanları: ad parçaları, firma (ya da sektör), telefon ve serbest metin alanları. */
@@ -350,6 +352,109 @@ function spam_records(): array
 }
 
 /**
+ * Kayıt dosyasının yalnızca son $bytes baytındaki kayıtlar (en yeni sonda). Gönderim yolu bunu kullanır: yinelenen metin ve e-posta denetimi
+ * için son kayıtlar yeter, dosyanın tamamı her gönderimde belleğe alınmaz. Baştaki yarım satır atılır.
+ */
+function spam_records_tail(int $bytes = 1048576): array
+{
+    $file = ROOT . '/storage/submissions.jsonl';
+    $fp   = is_file($file) ? @fopen($file, 'r') : false;
+    if (!$fp) {
+        return [];
+    }
+    $rows = [];
+    try {
+        flock($fp, LOCK_SH);
+        $size = (int) (fstat($fp)['size'] ?? 0);
+        if ($size > $bytes) {
+            fseek($fp, $size - $bytes);
+            fgets($fp);   // kesilmiş ilk satır
+        }
+        while (($line = fgets($fp)) !== false) {
+            $r = json_decode($line, true);
+            if (is_array($r)) {
+                $rows[] = $r;
+            }
+        }
+    } finally {
+        flock($fp, LOCK_UN);
+        fclose($fp);
+    }
+    return $rows;
+}
+
+/**
+ * Kayıt dosyası sınırı aşıldıysa (SPAM_FILE_MAX bayt ya da SPAM_ROWS_MAX kayıt) en eski kayıtları, sınırın yüzde 90'ına inene kadar düşürür:
+ * önce en eski şüpheli kayıtlar, yetmezse en eski kayıtlar (özgeçmiş dosyalarıyla). Boyut denetimi dosyayı okumaz; yalnızca aşıldıysa dosya yeniden yazılır.
+ * Kayıt sayısı sınırı da bu yeniden yazma sırasında uygulanır: boyut sınırının altında kalan ama çok kısa kayıtlarla dolmuş dosya, boyut sınırına varana dek tutulur.
+ * @return int düşürülen kayıt sayısı
+ */
+function spam_limit_file(): int
+{
+    $file = ROOT . '/storage/submissions.jsonl';
+    clearstatcache(true, $file);
+    $size = is_file($file) ? @filesize($file) : false;
+    if ($size === false || $size <= SPAM_FILE_MAX) {
+        return 0;
+    }
+    $drop = [];   // düşecek kayıtların sırası
+    $i = 0;
+    $gone = [];
+    spam_rewrite(function (array $r) use (&$drop, &$i, &$gone): ?array {
+        if (isset($drop[$i++])) {
+            spam_cv_delete($r);
+            $gone[] = $r;
+            return null;
+        }
+        return $r;
+    }, function (array $rows) use (&$drop): void {
+        $len = array_map(fn($r) => strlen((string) json_encode($r, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)) + 1, $rows);
+        $bytes = array_sum($len);
+        $count = count($rows);
+        $maxB  = (int) (SPAM_FILE_MAX * 0.9);
+        $maxN  = (int) (SPAM_ROWS_MAX * 0.9);
+        foreach ([true, false] as $onlySuspect) {   // önce şüpheliler, sonra (gerekirse) en eskiler
+            foreach ($rows as $k => $r) {
+                if ($bytes <= $maxB && $count <= $maxN) {
+                    break 2;
+                }
+                if (isset($drop[$k]) || ($onlySuspect && empty($r['spam']))) {
+                    continue;
+                }
+                $drop[$k] = true;
+                $bytes -= $len[$k];
+                $count--;
+            }
+        }
+    });
+    spam_forget_subscribers($gone);
+    return count($gone);
+}
+
+/**
+ * Silinen kayıtlar arasında bülten kaydı varsa, o adreslerin bülten deposundaki izlerini (ad, adres) temizler: kaydı kalmayan kişinin adı ve adresi
+ * bir yerde durmasın (bkz. bulten_adres_unut: adresin başka kaydı kalmışsa dokunmaz, ayrılma tercihi anahtarlı özet olarak korunur).
+ * Kayıt dosyası kilidi dışında çağrılmalıdır.
+ */
+function spam_forget_subscribers(array $gone): void
+{
+    $emails = [];
+    foreach ($gone as $r) {
+        $d = is_array($r['data'] ?? null) ? $r['data'] : [];
+        if (in_array($r['form'] ?? '', ['bulten', 'haberdarol'], true) && is_scalar($d['email'] ?? null) && trim((string) $d['email']) !== '') {
+            $emails[strtolower(trim((string) $d['email']))] = true;
+        }
+    }
+    if (!$emails) {
+        return;
+    }
+    require_once APP . '/bulten.php';
+    foreach (array_keys($emails) as $e) {
+        bulten_adres_unut($e);
+    }
+}
+
+/**
  * Kayıt dosyasını ayrıcalıklı kilit altında yeniden yazar. $fn her kayıt için çağrılır: kaydı (değiştirilmiş olabilir) döndürür, silinecekse null.
  * $once verilirse $fn çağrılmadan önce, aynı kilit altında, dosyadaki tüm kayıtlarla bir kez çağrılır (ör. kaç şüpheli kayıt olduğunu saymak için).
  * Okuma, karar ve yazma tek kilit altındadır: yeni gönderimler aynı dosyaya aynı kilitle eklendiği için yeniden yazma sırasında gelen kayıt kaybolmaz.
@@ -409,6 +514,7 @@ function spam_cv_delete(array $r): void
  */
 function spam_purge(): int
 {
+    $limited = spam_limit_file();   // toplam boyut ve kayıt sayısı sınırı (süre sınırından bağımsız)
     $min = time() - SPAM_DAYS * 86400;
     $old = function (array $r) use ($min): bool {
         $t = strtotime((string) ($r['time'] ?? ''));
@@ -416,12 +522,13 @@ function spam_purge(): int
     };
     $sus = array_filter(spam_records(), fn($r) => !empty($r['spam']));
     if (count($sus) <= SPAM_MAX && !array_filter($sus, $old)) {
-        return 0;
+        return $limited;
     }
     $n = 0;
+    $gone = [];
     $extra = 0;   // sınırı aşan şüpheli kayıt sayısı: dosyanın başındaki (en eski) bu kadar şüpheli kayıt silinir
     $seen = 0;
-    spam_rewrite(function (array $r) use ($old, &$n, &$extra, &$seen): ?array {
+    spam_rewrite(function (array $r) use ($old, &$n, &$extra, &$seen, &$gone): ?array {
         if (empty($r['spam'])) {
             return $r;
         }
@@ -430,11 +537,13 @@ function spam_purge(): int
             return $r;
         }
         spam_cv_delete($r);
+        $gone[] = $r;
         $n++;
         return null;
     }, function (array $rows) use (&$extra): void {
         // Sayım yazmayla aynı kilit altında yapılır: aynı anda çalışan iki temizlik gereğinden fazla kayıt silmez
         $extra = max(0, count(array_filter($rows, fn($r) => !empty($r['spam']))) - SPAM_MAX);
     });
-    return $n;
+    spam_forget_subscribers($gone);   // kaydı kalmayan bülten adreslerinin ad ve adresi bülten deposundan da silinir
+    return $n + $limited;
 }

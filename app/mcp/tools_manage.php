@@ -572,7 +572,7 @@ function mcp_tools_manage(): array
         });
 
     $T[] = mcp_def('eposta_ayarlarini_guncelle', 'ayarlar', 'E-posta ayarlarını güncelle',
-        'Formlardan (iletişim, bülten, iş başvurusu) gelen bildirimlerin gönderim ayarlarını değiştirir. Yalnızca verdiğiniz alanlar değişir. DİKKAT: bildirim_adresi değişirse ziyaretçilerin kişisel verilerini içeren bildirimler o adrese gider; yalnızca kullanıcının açıkça verdiği adresi yazın ve onay alın. bildirim_adresi ya da kayitlari_sakla değiştirilirken ayrıca "Gelen kutusu" izni gerekir (bu iki alan ziyaretçilerin kişisel verilerinin nereye gittiğini belirler). SMTP üç durumdan birindedir (eposta_ayarlarini_getir smtp_kaynak): yapilandirma (panelde seçim yok; sunucudaki storage/config.local.php geçerli, şifresi panele ve içerik deposuna HİÇ kopyalanmaz), panel (bu araçla kaydedilmiş) ve kapali. SMTP alanlarına dokunmayan bir çağrı bu durumu değiştirmez. SMTP şifresi yalnızca yazılır, bir daha okunamaz ve işlem kaydına yazılmaz; yedek dosyalarına ve dışa aktarılan geçmişe girmez. SMTP sunucusu, portu, güvenlik türü ya da kullanıcı adı değişirken (ya da SMTP panelde yeni açılırken) smtp_sifre de aynı çağrıda verilmelidir; bunlar değişmiyorsa smtp_sifre verilmeden panelde kayıtlı şifre korunur. Değişiklikten sonra deneme_epostasi_gonder ile sınayın.',
+        'Formlardan (iletişim, bülten, iş başvurusu) gelen bildirimlerin gönderim ayarlarını değiştirir. Yalnızca verdiğiniz alanlar değişir. DİKKAT: bildirim_adresi değişirse ziyaretçilerin kişisel verilerini içeren bildirimler o adrese gider; yalnızca kullanıcının açıkça verdiği adresi yazın ve onay alın. bildirim_adresi, kayitlari_sakla, gonderen_adresi ya da herhangi bir smtp_* alanı (SMTP kipini açıp kapatmak ya da kaynağını değiştirmek dahil) değiştirilirken ayrıca "Gelen kutusu" izni gerekir (bu alanlar ziyaretçilerin kişisel verilerinin nereye gittiğini belirler); izinsiz anahtar yalnızca gonderen_adi alanını değiştirebilir. SMTP üç durumdan birindedir (eposta_ayarlarini_getir smtp_kaynak): yapilandirma (panelde seçim yok; sunucudaki storage/config.local.php geçerli, şifresi panele ve içerik deposuna HİÇ kopyalanmaz), panel (bu araçla kaydedilmiş) ve kapali. SMTP alanlarına dokunmayan bir çağrı bu durumu değiştirmez. SMTP şifresi yalnızca yazılır, bir daha okunamaz ve işlem kaydına yazılmaz; yedek dosyalarına ve dışa aktarılan geçmişe girmez. SMTP sunucusu, portu, güvenlik türü ya da kullanıcı adı değişirken (ya da SMTP panelde yeni açılırken) smtp_sifre de aynı çağrıda verilmelidir; bunlar değişmiyorsa smtp_sifre verilmeden panelde kayıtlı şifre korunur. Değişiklikten sonra deneme_epostasi_gonder ile sınayın.',
         sc_obj([
             'bildirim_adresi' => sc_str('Form bildirimlerinin gideceği e-posta adresi.', ['maxLength' => 200]),
             'gonderen_adresi' => sc_str('Bildirimlerin "kimden" adresi (sitenin alan adına ait bir adres olmalı, örneğin noreply@...).', ['maxLength' => 200]),
@@ -624,9 +624,25 @@ function mcp_tools_manage(): array
                 $v['smtp_guvenlik'] = array_key_exists('smtp_guvenlik', $a) ? $a['smtp_guvenlik'] : $basis['secure'];
             }
             $v['smtp_acik'] = $mode === 'panel' ? true : ($mode === 'kapali' ? false : $cur['smtp_acik']);
-            // Bildirim adresi ve kayıtların saklanması kişisel verinin nereye gittiğini belirler: gelen kutusu izni de aranır
-            if (($v['bildirim_adresi'] !== $cur['bildirim_adresi'] || $v['kayitlari_sakla'] !== $cur['kayitlari_sakla']) && !in_array('gelen_kutusu', $ctx['principal']['scopes'], true)) {
-                mcp_fail('bildirim_adresi ya da kayitlari_sakla değiştirilirken ayrıca "Gelen kutusu" izni gerekir; bu erişim anahtarında yok. Bu iki alan ziyaretçilerin kişisel verilerinin nereye gittiğini belirler. Diğer alanları bu ikisi olmadan gönderebilirsiniz.');
+            // Kişisel verinin nereye gideceğini belirleyen her alan "Gelen kutusu" iznini de ister: bildirim adresi, kayıtların saklanması,
+            // gönderen adresi (iletilemeyen iletinin geri dönüş yolu: "MAIL FROM"/"-f") ve SMTP sunucusu/portu/güvenliği/kullanıcısı/şifresi/kipi.
+            // Aksi halde yalnızca "ayarlar" izni olan bir anahtar bildirimleri kendi SMTP sunucusuna yönlendirebilirdi.
+            $kisisel = [];
+            if ($v['bildirim_adresi'] !== $cur['bildirim_adresi']) $kisisel[] = 'bildirim_adresi';
+            if ($v['kayitlari_sakla'] !== $cur['kayitlari_sakla']) $kisisel[] = 'kayitlari_sakla';
+            if ($v['gonderen_adresi'] !== $cur['gonderen_adresi']) $kisisel[] = 'gonderen_adresi';
+            $hasPass = array_key_exists('smtp_sifre', $a) && (string) $a['smtp_sifre'] !== '';
+            $tuple = ['host' => $v['smtp_sunucu'], 'port' => $v['smtp_port'], 'secure' => $v['smtp_guvenlik'], 'user' => $v['smtp_kullanici']];
+            if ($mode !== $st['mode']) $kisisel[] = 'smtp_kaynak/smtp_acik (SMTP kipi)';
+            if ($mode === 'panel') {
+                $p0 = $st['panel'];
+                foreach (['smtp_sunucu' => 'host', 'smtp_port' => 'port', 'smtp_guvenlik' => 'secure', 'smtp_kullanici' => 'user'] as $ak => $bk) {
+                    if ($p0 === null || $p0[$bk] !== $tuple[$bk]) $kisisel[] = $ak;
+                }
+                if ($hasPass) $kisisel[] = 'smtp_sifre';
+            }
+            if ($kisisel && !in_array('gelen_kutusu', $ctx['principal']['scopes'], true)) {
+                mcp_fail('Bu değişiklik için ayrıca "Gelen kutusu" izni gerekir; bu erişim anahtarında yok. Bu alanlar ziyaretçilerin kişisel verilerinin nereye gittiğini belirler: ' . implode(', ', array_unique($kisisel)) . '. Gelen kutusu izni gerektirenler: bildirim_adresi, kayitlari_sakla, gonderen_adresi ve bütün smtp_* alanları (SMTP kipi dahil). Yalnızca gonderen_adi değiştirilebilir.');
             }
             $errors = [];
             // Panelle aynı sıkı denetim: adresler başlıklara ve gönderim komutlarına girer (tırnak, boşluk, ters eğik çizgi, satır sonu kabul edilmez)
@@ -640,10 +656,8 @@ function mcp_tools_manage(): array
             if ($errors) {
                 mcp_fail("Ayarlar kaydedilmedi:\n- " . implode("\n- ", $errors));
             }
-            $hasPass = array_key_exists('smtp_sifre', $a) && (string) $a['smtp_sifre'] !== '';
             // Panelde kayıtlı şifre yalnızca kaydedildiği sunucu, port, güvenlik türü ve kullanıcıyla kullanılır; biri değişirse şifre yeniden verilmelidir.
             // Yapılandırma dosyasındaki şifre panele hiç kopyalanmaz: oradan panele geçiş de şifrenin yeniden verilmesini gerektirir.
-            $tuple = ['host' => $v['smtp_sunucu'], 'port' => $v['smtp_port'], 'secure' => $v['smtp_guvenlik'], 'user' => $v['smtp_kullanici']];
             $same = $st['panel'] !== null && $st['panel'] === $tuple;
             if ($mode === 'panel' && !$hasPass && $v['smtp_kullanici'] !== '' && !$same) {
                 mcp_fail('SMTP sunucusu, portu, güvenlik türü ya da kullanıcı adı değişirken (ya da SMTP panele yeni kaydedilirken) smtp_sifre alanını da verin; kayıtlı ya da yapılandırma dosyasındaki şifre başka bir sunucuya gönderilmez ve içerik deposuna kopyalanmaz.');

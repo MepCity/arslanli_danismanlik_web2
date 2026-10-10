@@ -24,6 +24,12 @@ if ($section === 'giris' && $method === 'POST') {
     }
     if (adm_csrf_ok() && password_verify((string) ($_POST['password'] ?? ''), adm_hash())) {
         session_regenerate_id(true);
+        // Girişten önceki oturumdan hiçbir şey taşınmaz (oturum sabitlemeye karşı); yalnızca bekleyen bildirim korunur. CSRF belirteci yenilenir:
+        // giriş formundaki belirteç, giriş yapılmamış bir oturumda üretildiği için girişten sonra geçerli kalmamalı.
+        $flash = $_SESSION['flash'] ?? null;
+        $_SESSION = [];
+        if ($flash !== null) $_SESSION['flash'] = $flash;
+        $_SESSION['csrf']  = bin2hex(random_bytes(16));
         $_SESSION['admin'] = true;
         $_SESSION['until'] = time() + 8 * 3600;
         $_SESSION['pw']    = adm_pw_mark();   // şifre değişirse bu oturum geçersiz kalır
@@ -71,6 +77,8 @@ actor(['type' => 'panel', 'name' => 'Yönetim paneli']);   // bu istekteki deği
 if ($section === 'cikis' && $method === 'POST') {
     if (adm_csrf_ok()) {
         $_SESSION = [];
+        $cp = session_get_cookie_params();
+        setcookie(session_name(), '', ['expires' => time() - 3600, 'path' => $cp['path'], 'secure' => $cp['secure'], 'httponly' => true, 'samesite' => 'Strict']);
         session_destroy();
     }
     header('Location: ' . adm_url(), true, 303);

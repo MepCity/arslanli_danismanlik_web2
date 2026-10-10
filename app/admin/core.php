@@ -233,13 +233,16 @@ function adm_record_release(string $id): ?array
 function adm_spam_delete_all(): int
 {
     $n = 0;
-    spam_rewrite(function (array $r) use (&$n): ?array {
+    $gone = [];
+    spam_rewrite(function (array $r) use (&$n, &$gone): ?array {
         if (empty($r['spam']) || ($r['form'] ?? '') === 'kariyer') {
             return $r;
         }
         $n++;
+        $gone[] = $r;
         return null;
     });
+    spam_forget_subscribers($gone);   // kaydı kalmayan bülten adreslerinin ad ve adresi bülten deposundan da silinir (adresin başka kaydı varsa dokunulmaz)
     if ($n) {
         changelog_event('kayitlar', 'Şüpheli olarak ayrılan ' . $n . ' form kaydı kalıcı olarak silindi');
     }

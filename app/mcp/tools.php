@@ -285,6 +285,21 @@ function mcp_tool_call(array $p, array $ctx): array
     actor(['type' => 'mcp', 'name' => $pr['name'], 'client' => $client]);   // değişiklik geçmişinde kişi ve uygulama adıyla görünür
     try {
         $run = fn() => ($tool['fn'])($clean, $ctx);
+        if ($tool['write']) {
+            // Kilitte beklerken anahtar iptal edilmiş, süresi dolmuş ya da izinleri daraltılmış olabilir: kilit alınınca kimlik yeniden doğrulanır
+            $run = function () use ($tool, $clean, $ctx, $pr) {
+                $fresh = mcp_reauthenticate($pr);
+                if (!$fresh) {
+                    throw new McpToolError('Bu erişim anahtarı artık geçerli değil (iptal edilmiş ya da süresi dolmuş); değişiklik yapılmadı.');
+                }
+                if (!in_array($tool['scope'], $fresh['scopes'], true)) {
+                    throw new McpToolError('Bu erişim anahtarının izinleri değişti; "' . $tool['scope'] . '" izni artık yok. Değişiklik yapılmadı.');
+                }
+                $fresh['client'] = $pr['client'];
+                $ctx['principal'] = $fresh;
+                return ($tool['fn'])($clean, $ctx);
+            };
+        }
         $result = $tool['write'] ? mcp_write_lock($run) : $run();
     } catch (McpToolError $e) {
         $log(false, $e->getMessage());
@@ -544,6 +559,7 @@ function mcp_section_mtime(string $key): ?int
 /** Sayfa yolunun insan okur adı: sayfa kaydından (site_pages_all), hizmet, yazı ve ilan başlıklarından. */
 function mcp_path_title(string $path): string
 {
+    // Yalnızca yayındaki içeriğin başlığı çözülür: taslağa çekilmiş yazı, taslak duyuru ve yayında olmayan ilan "Duyurular"/"Sayfa içerikleri" izni olmayan anahtara sızmasın
     $path = trim($path, '/');
     foreach (site_pages_all() as $pg) {
         if ($pg['path'] === $path) {
@@ -555,18 +571,24 @@ function mcp_path_title(string $path): string
     }
     if (preg_match('#^blog/category/([a-z0-9\-]+)$#', $path, $m)) {
         foreach (mcp_posts() as $p) {
-            if (slugify((string) ($p['category'] ?? 'Genel')) === $m[1]) {
+            if (empty($p['draft']) && slugify((string) ($p['category'] ?? 'Genel')) === $m[1]) {
                 return 'Makaleler: ' . (string) ($p['category'] ?? 'Genel');
             }
         }
         return 'Makaleler: ' . $m[1];
     }
     if (preg_match('#^blog/([a-z0-9\-]+)$#', $path, $m)) {
-        return (string) (mcp_posts()[$m[1]]['title'] ?? $path);
+        $p = mcp_posts()[$m[1]] ?? null;
+        return $p !== null && empty($p['draft']) ? (string) ($p['title'] ?? $path) : $path;
+    }
+    if (preg_match('#^duyurular/([A-Za-z0-9\-]+)$#', $path, $m)) {
+        $x = ann_find($m[1]);
+        return $x && !empty($x['published']) ? 'Duyuru: ' . (string) $x['title'] : $path;
     }
     if (preg_match('#^kariyer/([a-z0-9\-]+)$#', $path, $m)) {
-        $x = ilan_find_slug($m[1]);
-        return $x ? 'İş ilanı: ' . (string) $x['title'] : $path;
+        $x = ilan_find_slug($m[1]);   // yalnızca yayınlanmış ve taslağa çekilmemiş ilanın başlığı
+        $live = $x && (string) ($x['published'] ?? '') !== '' && ilan_state($x) !== 'taslak';
+        return $live ? 'İş ilanı: ' . (string) $x['title'] : $path;
     }
     return $path === '' ? 'Ana sayfa' : $path;
 }
@@ -1041,7 +1063,8 @@ function mcp_tools_read(): array
             $counts = ilan_application_counts();
             $out = [];
             foreach ($items as $x) {
-                $never = (string) ($x['published'] ?? '') === '';   // taslak ya da hiç yayınlanmadan kapatılmış
+                // Taslak (yayınlanıp sonra taslağa geri alınmış olsa bile) ve hiç yayınlanmadan kapatılmış ilanlar yalnızca "Sayfa içerikleri" izniyle görülür
+                $never = (string) ($x['published'] ?? '') === '' || ilan_state($x) === 'taslak';
                 if ($never && (empty($a['taslaklar_dahil']) || !$canDrafts)) {
                     continue;
                 }
@@ -1174,10 +1197,13 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('degisiklik_gecmisi', 'okuma', 'Değişiklik geçmişi',
-        'Bir içerik bölümünün önceki sürümlerini listeler (en yeni önce). Her sürüm, o değişiklikten ÖNCEKİ halin kopyasıdır ("sonraki_degisiklik" o değişikliği kimin yaptığını ve ne olduğunu söyler); "ilk_hal" işaretlisi sitenin kurulumdaki özgün halidir ve hiç silinmez. Sürüm kimliğini geri_al aracına vererek o hale dönebilirsiniz. Son 25 değişiklik ve ilk hal saklanır. ilanlar ve posts (taslak içerebilir) bölümlerinin geçmişi yalnızca "Sayfa içerikleri" izni olan anahtarlara gösterilir. Tüm bölümleri birlikte, zaman sırasıyla görmek için son_degisiklikler kullanın.',
+        'Bir içerik bölümünün önceki sürümlerini listeler (en yeni önce). Her sürüm, o değişiklikten ÖNCEKİ halin kopyasıdır ("sonraki_degisiklik" o değişikliği kimin yaptığını ve ne olduğunu söyler); "ilk_hal" işaretlisi sitenin kurulumdaki özgün halidir ve hiç silinmez. Sürüm kimliğini geri_al aracına vererek o hale dönebilirsiniz. Son 25 değişiklik, son 7 günün sürümleri (aynı kişinin art arda yazımlarının ara sürümleri hariç) ve ilk hal saklanır. ilanlar ve posts (taslak içerebilir) bölümlerinin geçmişi yalnızca "Sayfa içerikleri", duyurular bölümünün geçmişi (taslak duyuruların başlığını ve metnini içerebilir) yalnızca "Duyurular" izni olan anahtarlara gösterilir. Tüm bölümleri birlikte, zaman sırasıyla görmek için son_degisiklikler kullanın.',
         sc_obj(['bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü: services (hizmetler), posts (yazılar), refs (referanslar), lists (kurumsal listeler), legal (yasal metinler), texts (sayfa metinleri), settings (iletişim ve e-posta ayarları), duyurular, ilanlar (iş ilanları), features (görünürlük), seo (arama motoru ayarları).')], ['bolum']),
         $RO, function (array $a, array $ctx): array {
             $key = $a['bolum'];
+            if ($key === 'duyurular' && !in_array('duyurular', $ctx['principal']['scopes'], true)) {
+                mcp_fail('Duyuruların geçmişini görmek için "Duyurular" izni gerekir (sürümler taslak duyuruların başlığını ve metnini içerebilir); bu erişim anahtarında yok.');
+            }
             if ($key === 'ilanlar' && !in_array('icerik', $ctx['principal']['scopes'], true)) {
                 mcp_fail('İş ilanlarının geçmişini görmek için "Sayfa içerikleri" izni gerekir (taslak ilan başlıkları içerebilir); bu erişim anahtarında yok.');
             }
@@ -1209,14 +1235,14 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('son_degisiklikler', 'okuma', 'Son değişiklikler',
-        'Sitede yapılan değişikliklerin günlüğü (en yeni önce): ne zaman, hangi bölümde, kim (yönetim paneli ya da yapay zekâ erişimi: kişi ve uygulama) ve ne değişti. Her içerik değişikliğinin "surum" değeri o değişiklikten ÖNCEKİ halin kimliğidir: geri_al (bolum, surum) ile o hale dönülür, degisiklik_ayrintisi ile öncesi ve sonrası görülür. "geri_alinabilir: false" olanlar içerik değişikliği değildir (şifre, erişim anahtarı, başvuru silme) ya da sürümü artık saklanmıyordur. ilanlar kayıtları (taslak ilan başlıkları içerebilir) ve posts kayıtları (taslak yazıların başlığı ve metni içerebilir) yalnızca "Sayfa içerikleri", erisim ve guvenlik kayıtları yalnızca "Ayarlar", basvurular kayıtları yalnızca "Gelen kutusu" izni olan anahtarlara gösterilir.',
+        'Sitede yapılan değişikliklerin günlüğü (en yeni önce): ne zaman, hangi bölümde, kim (yönetim paneli ya da yapay zekâ erişimi: kişi ve uygulama) ve ne değişti. Her içerik değişikliğinin "surum" değeri o değişiklikten ÖNCEKİ halin kimliğidir: geri_al (bolum, surum) ile o hale dönülür, degisiklik_ayrintisi ile öncesi ve sonrası görülür. "geri_alinabilir: false" olanlar içerik değişikliği değildir (şifre, erişim anahtarı, başvuru silme) ya da sürümü artık saklanmıyordur. ilanlar kayıtları (taslak ilan başlıkları içerebilir) ve posts kayıtları (taslak yazıların başlığı ve metni içerebilir) yalnızca "Sayfa içerikleri", duyurular kayıtları (taslak duyuruların başlığı ve metni içerebilir) yalnızca "Duyurular", erisim ve guvenlik kayıtları yalnızca "Ayarlar", basvurular kayıtları yalnızca "Gelen kutusu" izni olan anahtarlara gösterilir.',
         sc_obj([
             'bolum' => sc_enum(array_keys(changelog_sections()), 'İsteğe bağlı: yalnızca bu bölüm. duyurular, ilanlar (iş ilanları), services (hizmetler), posts (yazılar), refs (referanslar), texts (sayfa metinleri), lists (kurumsal listeler), features (görünürlük), settings (iletişim ve e-posta), seo, basvurular, erisim (erişim anahtarları), guvenlik.'),
             'limit' => sc_int('En fazla kaç kayıt (1-100). Varsayılan 30.', ['minimum' => 1, 'maximum' => 100]),
         ]), $RO, function (array $a, array $ctx): array {
             $sections = changelog_sections();
             // Erişim anahtarı ve güvenlik kayıtları "Ayarlar", iş başvurusu kayıtları "Gelen kutusu" izni olmadan gösterilmez
-            $need = ['ilanlar' => 'icerik', 'posts' => 'icerik', 'erisim' => 'ayarlar', 'guvenlik' => 'ayarlar', 'basvurular' => 'gelen_kutusu', 'kayitlar' => 'gelen_kutusu', 'bulten' => 'gelen_kutusu'];
+            $need = ['ilanlar' => 'icerik', 'posts' => 'icerik', 'duyurular' => 'duyurular', 'erisim' => 'ayarlar', 'guvenlik' => 'ayarlar', 'basvurular' => 'gelen_kutusu', 'kayitlar' => 'gelen_kutusu', 'bulten' => 'gelen_kutusu'];
             $can = fn(string $k): bool => !isset($need[$k]) || in_array($need[$k], $ctx['principal']['scopes'], true);
             $bolum = (string) ($a['bolum'] ?? '');
             if (!$can($bolum)) {
@@ -1243,11 +1269,14 @@ function mcp_tools_read(): array
 
 
     $T[] = mcp_def('degisiklik_ayrintisi', 'okuma', 'Değişiklik ayrıntısı',
-        'Bir değişikliğin alan alan öncesini ve sonrasını gösterir. bolum ve surum değerleri son_degisiklikler ya da degisiklik_gecmisi sonucundan alınır. Geri almadan önce neyin geri döneceğini görmek için kullanın. İş ilanları (ilanlar) ve yazıların (posts) ayrıntısı taslak içerebildiği için "Sayfa içerikleri" izni gerekir. İletişim ve e-posta ayarlarının (settings) ayrıntısı için "Ayarlar" izni gerekir; SMTP şifresi hiçbir zaman gösterilmez.',
+        'Bir değişikliğin alan alan öncesini ve sonrasını gösterir. bolum ve surum değerleri son_degisiklikler ya da degisiklik_gecmisi sonucundan alınır. Geri almadan önce neyin geri döneceğini görmek için kullanın. İş ilanları (ilanlar) ve yazıların (posts) ayrıntısı taslak içerebildiği için "Sayfa içerikleri", duyuruların (duyurular) ayrıntısı taslak duyuruları içerebildiği için "Duyurular" izni gerekir. İletişim ve e-posta ayarlarının (settings) ayrıntısı için "Ayarlar" izni gerekir; SMTP şifresi hiçbir zaman gösterilmez.',
         sc_obj([
             'bolum' => sc_enum(array_keys(mcp_history_sections()), 'İçerik bölümü.'),
             'surum' => sc_str('Sürüm kimliği, örneğin "20261002-153012-a1b2".', ['pattern' => '^\d{8}-\d{6}-[a-f0-9]{4}$', 'x-ipucu' => 'son_degisiklikler sonucundaki "surum" değeri']),
         ], ['bolum', 'surum']), $RO, function (array $a, array $ctx): array {
+            if ($a['bolum'] === 'duyurular' && !in_array('duyurular', $ctx['principal']['scopes'], true)) {
+                mcp_fail('Duyurulardaki değişikliklerin ayrıntısı için "Duyurular" izni gerekir (taslak duyuruların başlığı ve metni içerebilir); bu erişim anahtarında yok.');
+            }
             if ($a['bolum'] === 'ilanlar' && !in_array('icerik', $ctx['principal']['scopes'], true)) {
                 mcp_fail('İş ilanlarındaki değişikliklerin ayrıntısı için "Sayfa içerikleri" izni gerekir (taslak ilan başlıkları içerebilir); bu erişim anahtarında yok.');
             }

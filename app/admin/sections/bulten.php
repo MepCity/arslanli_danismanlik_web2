@@ -449,8 +449,19 @@ if ($yaz !== null) {
     if ($yaz['hatalar']) {
         echo ui_alert('<strong>İşlem yapılamadı.</strong> ' . implode(' ', array_map('e', $yaz['hatalar'])));
     }
-    if ($taslak && ($taslak['who']['type'] ?? '') === 'mcp') {
-        echo ui_alert('Bu taslağı <strong>' . e((string) $taslak['who']['name']) . '</strong> yapay zekâ erişimiyle hazırladı (' . e($zaman($taslak['created'] ?? '')) . '). Metni ve alıcıları kontrol edin; gönderim yalnızca buradan, sizin onayınızla başlar.', 'info');
+    if ($taslak) {
+        // İlk hazırlayan ("who") ile taslağı son yazan ("edited_by") farklı olabilir: yapay zekâ panelde başlatılmış bir taslağı yeniden yazmış olabilir
+        $ilk = is_array($taslak['who'] ?? null) ? $taslak['who'] : [];
+        $son = is_array($taslak['edited_by'] ?? null) ? $taslak['edited_by'] : $ilk;
+        $ilkAi = ($ilk['type'] ?? '') === 'mcp';
+        $sonAi = ($son['type'] ?? '') === 'mcp';
+        if ($sonAi && !$ilkAi) {
+            echo ui_alert('Bu taslak panelde başlatılmıştı; <strong>' . e((string) ($son['name'] ?? '')) . '</strong> yapay zekâ erişimiyle yeniden yazıldı (' . e($zaman($taslak['updated'] ?? '')) . '). Metni ve alıcıları kontrol edin; gönderim yalnızca buradan, sizin onayınızla başlar.', 'info');
+        } elseif ($sonAi) {
+            echo ui_alert('Bu taslağı <strong>' . e((string) ($son['name'] ?? '')) . '</strong> yapay zekâ erişimiyle hazırladı (' . e($zaman($taslak['updated'] ?? $taslak['created'] ?? '')) . '). Metni ve alıcıları kontrol edin; gönderim yalnızca buradan, sizin onayınızla başlar.', 'info');
+        } elseif ($ilkAi) {
+            echo ui_alert('Bu taslağı <strong>' . e((string) ($ilk['name'] ?? '')) . '</strong> yapay zekâ erişimiyle hazırlamıştı (' . e($zaman($taslak['created'] ?? '')) . '); sonra panelde düzenlendi. Metni ve alıcıları kontrol edin; gönderim yalnızca buradan, sizin onayınızla başlar.', 'info');
+        }
     }
     ?>
     <form id="bl-form" class="split bl-yaz" method="post" action="<?= adm_url('bulten/yeni') ?>" data-bl-yaz
@@ -771,7 +782,7 @@ if ($a0 === 'gonderimler') {
         $n = count(bulten_alicilar($c['filter']));
         $tl .= '<div class="list__row"><div class="list__main">'
             . '<span class="list__title">' . e((string) $c['subject'] !== '' ? (string) $c['subject'] : '(konu yazılmamış)') . '</span>'
-            . '<span class="list__meta"><span>' . e($zaman($c['updated'] ?? $c['created'] ?? '')) . '</span><span>' . e((string) ($c['filter_desc'] ?? '')) . '</span><span>şu an ' . $num($n) . ' alıcı</span>' . $kimRozeti($c['who'] ?? []) . '</span></div>'
+            . '<span class="list__meta"><span>' . e($zaman($c['updated'] ?? $c['created'] ?? '')) . '</span><span>' . e((string) ($c['filter_desc'] ?? '')) . '</span><span>şu an ' . $num($n) . ' alıcı</span>' . $kimRozeti($c['edited_by'] ?? $c['who'] ?? []) . '</span></div>'
             . '<div class="list__side"><a class="btn btn--soft btn--sm" href="' . adm_url('bulten/gonderimler/' . $c['id']) . '">' . ui_icon('pencil-simple') . 'Aç</a>'
             . '<form method="post" action="' . adm_url('bulten/gonderimler/' . $c['id'] . '/sil') . '" data-confirm="Bu taslak silinsin mi? Geri alınamaz.">' . adm_csrf_field()
             . '<button class="btn btn--danger btn--sm" type="submit" aria-label="Taslağı sil" title="Taslağı sil">' . ui_icon('trash') . '</button></form></div></div>';

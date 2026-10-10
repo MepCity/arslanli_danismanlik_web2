@@ -164,7 +164,8 @@ function oauth_issue_tokens(array &$d, string $clientId, string $keyId, string $
     $access = 'arat_' . mcp_random(48);
     $refresh = 'arrt_' . mcp_random(48);
     $now = time();
-    $d['access'][mcp_hash($access)] = ['client_id' => $clientId, 'key_id' => $keyId, 'family' => $family, 'expires' => $now + OAUTH_ACCESS_TTL];
+    // Verilen izinler belirteç satırında saklanır; kimlik doğrulamada anahtarın o anki izinleriyle kesiştirilir (bkz. mcp_authenticate)
+    $d['access'][mcp_hash($access)] = ['client_id' => $clientId, 'key_id' => $keyId, 'family' => $family, 'scopes' => $scopes, 'expires' => $now + OAUTH_ACCESS_TTL];
     $d['refresh'][mcp_hash($refresh)] = ['client_id' => $clientId, 'key_id' => $keyId, 'family' => $family, 'scopes' => $scopes, 'expires' => $now + OAUTH_REFRESH_TTL, 'used' => false];
     if (isset($d['clients'][$clientId])) {
         $d['clients'][$clientId]['last_used'] = $now;
@@ -403,7 +404,12 @@ function oauth_grant_code(array $client, array $in): void
         if (!$key || !mcp_key_active($key)) {
             return ['err' => 'Bu kodu veren erişim anahtarı artık geçerli değil.'];
         }
-        return ['ok' => oauth_issue_tokens($d, $client['id'], (string) $row['key_id'], (string) $row['family'], mcp_clean_scopes((array) ($key['scopes'] ?? [])))];
+        // Koda yazılan izinler (yetkilendirme isteğindeki "scope" ile daraltılmış olabilir) anahtarın şimdiki izinleriyle kesiştirilir
+        $granted = mcp_clean_scopes((array) ($key['scopes'] ?? []));
+        if (is_array($row['scopes'] ?? null)) {
+            $granted = mcp_clean_scopes(array_values(array_intersect($granted, (array) $row['scopes'])));
+        }
+        return ['ok' => oauth_issue_tokens($d, $client['id'], (string) $row['key_id'], (string) $row['family'], $granted)];
     });
     if (isset($result['err'])) {
         oauth_error(400, 'invalid_grant', $result['err']);
@@ -437,11 +443,15 @@ function oauth_grant_refresh(array $client, array $in): void
         if (!$key || !mcp_key_active($key)) {
             return ['err' => 'Bu belirteci veren erişim anahtarı artık geçerli değil.'];
         }
+        // Yenilemede izin yalnızca daralabilir (RFC 6749 6): üst sınır, bu belirteç ailesine daha önce verilen izinlerle anahtarın şimdiki izinlerinin kesişimidir
         $scopes = mcp_clean_scopes((array) ($key['scopes'] ?? []));
+        if (is_array($row['scopes'] ?? null)) {
+            $scopes = mcp_clean_scopes(array_values(array_intersect($scopes, (array) $row['scopes'])));
+        }
         if ($scopeReq !== null) {
             $bad = array_diff($scopeReq, $scopes);
             if ($bad) {
-                return ['scope' => 'İstenen izin bu anahtarda yok: ' . implode(', ', array_map(fn($s) => mb_substr((string) $s, 0, 30), $bad))];
+                return ['scope' => 'İstenen izin bu bağlantıya verilmemiş ya da bu anahtarda yok: ' . implode(', ', array_map(fn($s) => mb_substr((string) $s, 0, 30), $bad))];
             }
             $scopes = mcp_clean_scopes($scopeReq);
         }
@@ -557,7 +567,8 @@ function oauth_authorize_params(array $q): array
     if (!in_array($redir, $uris, true)) {
         return ['fatal' => 'Geri dönüş adresi (redirect_uri) uygulamanın kayıtlı adresleriyle eşleşmiyor. Güvenliğiniz için devam edilemez.'];
     }
-    $base = ['client' => $client, 'redirect_uri' => $redir, 'state' => mb_substr($get('state'), 0, 500), 'challenge' => '', 'resource' => ''];
+    $base = ['client' => $client, 'redirect_uri' => $redir, 'state' => mb_substr($get('state'), 0, 500), 'challenge' => '', 'resource' => '',
+        'scope' => implode(' ', array_values(array_intersect(preg_split('/[\s,+]+/', trim($get('scope'))) ?: [], oauth_scope_names())))];
     $err = null;
     if (!in_array('authorization_code', (array) $client['grant_types'], true)) {
         $err = ['unauthorized_client', 'Uygulama yetkilendirme kodu akışı için kayıtlı değil.'];
@@ -685,7 +696,7 @@ function oauth_consent_view(array $p, string $csrf, string $nonce, string $error
     $initial = mb_strtoupper(mb_substr($name, 0, 1)) ?: '?';
     $hidden = '';
     foreach (['client_id' => $client['id'], 'redirect_uri' => $p['redirect_uri'], 'state' => $p['state'], 'code_challenge' => $p['challenge'],
-        'code_challenge_method' => 'S256', 'response_type' => 'code', 'resource' => $p['resource'], 'csrf' => $csrf] as $k => $v) {
+        'code_challenge_method' => 'S256', 'response_type' => 'code', 'resource' => $p['resource'], 'scope' => $p['scope'] ?? '', 'csrf' => $csrf] as $k => $v) {
         $hidden .= '<input type="hidden" name="' . e($k) . '" value="' . e((string) $v) . '">';
     }
     $wave = '';
@@ -825,6 +836,11 @@ function oauth_authorize(): void
         oauth_consent_view($p, oauth_csrf_issue(), $nonce, $m);
     }
     $scopes = mcp_clean_scopes((array) ($key['scopes'] ?? []));
+    // Uygulama yetkilendirme isteğinde "scope" verdiyse izinler onunla daraltılır (genişletilmez); bilinen hiçbir izin adı yoksa (ör. "mcp") daraltma yapılmaz
+    $reqScope = array_values(array_filter(explode(' ', (string) ($p['scope'] ?? ''))));
+    if ($reqScope) {
+        $scopes = mcp_clean_scopes(array_values(array_intersect($scopes, $reqScope)));
+    }
     if ($action === 'check') {
         oauth_json(200, ['ok' => true, 'name' => (string) $key['name'], 'scopes' => oauth_scope_cards($scopes)]);
     }
